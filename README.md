@@ -7,7 +7,7 @@ Since some Stable Diffusion models were trained using this information, for exam
 
 I created this script as a convenience tool since it reduces the need of switching back and forth between the web UI and a booru site to copy-paste tags.
 
-[[Setup instructions]](#installation)
+You can either download the files manually as described below, or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)
 
 ### Disclaimer:
 This script is definitely not optimized, and it's not very intelligent. The tags are simply recommended based on their natural order in the CSV, which is their respective image count for the default Danbooru tag list. Also, at least for now, neither keyboard selection for tags nor completion for negative or img2img prompt textboxes is supported, and there's no way to turn the feature off from the ui, but I plan to get around to those features eventually.
