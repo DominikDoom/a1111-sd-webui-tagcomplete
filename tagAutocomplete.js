@@ -110,6 +110,13 @@ const debounce = (func, wait = 300) => {
     }
 }
 
+// Difference function to fix duplicates not being seen as changes in normal filter
+function difference(a, b) {
+    return [...b.reduce( (acc, v) => acc.set(v, (acc.get(v) || 0) - 1),
+            a.reduce( (acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map() ) 
+    )].reduce( (acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), [] );
+}
+
 // Create the result list div and necessary styling
 function createResultsDiv() {
     let resultsDiv = document.createElement("div");
@@ -186,16 +193,16 @@ function autocomplete(prompt) {
 
     // Match tags with RegEx to get the last edited one
     let tags = prompt.match(/[^, ]+/g);
-    let difference = tags.filter(x => !previousTags.includes(x));
+    let diff = difference(tags, previousTags)
     previousTags = tags;
 
     // Guard for no difference / only whitespace remaining
-    if (difference == undefined || difference.length == 0) {
+    if (diff == undefined || diff.length == 0) {
         hideResults();
         return;
     }
 
-    let tagword = difference[0]
+    let tagword = diff[0]
 
     // Guard for empty tagword
     if (tagword == undefined || tagword.length == 0) {
