@@ -1,0 +1,5 @@
+{
+	"tagFile": "danbooru.csv",
+	"maxResults": 10,
+	"replaceUnderscores": false
+}
