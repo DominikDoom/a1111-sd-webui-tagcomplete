@@ -20,6 +20,9 @@ const autocompleteCSS_dark = `
     #autocompleteResultsList > li:hover {
         background-color: #1f2937;
     }
+    #autocompleteResultsList > li.selected {
+        background-color: #374151;
+    }
 `;
 const autocompleteCSS_light = `
     #autocompleteResults {
@@ -41,6 +44,9 @@ const autocompleteCSS_light = `
     }
     #autocompleteResultsList > li:hover {
         background-color: #f5f6f8;
+    }
+    #autocompleteResultsList > li.selected {
+        background-color: #e5e7eb;
     }
 `;
 
@@ -129,14 +135,21 @@ function createResultsDiv() {
     return resultsDiv;
 }
 
+// The selected tag index. Needs to be up here so hide can access it.
+var selectedTag = null;
+
 // Show or hide the results div
+var isVisible = false;
 function showResults() {
     let resultsDiv = gradioApp().querySelector('#autocompleteResults');
     resultsDiv.style.display = "block";
+    isVisible = true;
 }
 function hideResults() {
     let resultsDiv = gradioApp().querySelector('#autocompleteResults');
     resultsDiv.style.display = "none";
+    isVisible = false;
+    selectedTag = null;
 }
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -181,9 +194,22 @@ function addResultsToList(results, tagword) {
     }
 }
 
+function updateSelectionStyle(num) {
+    let resultsList = gradioApp().querySelector('#autocompleteResultsList');
+    let items = resultsList.getElementsByTagName('li');
+
+    for (let i = 0; i < items.length; i++) {
+        items[i].classList.remove('selected');
+    }
+
+    items[num].classList.add('selected');
+}
+
 allTags = [];
 previousTags = [];
-
+results = [];
+tagword = "";
+resultCount = 0;
 function autocomplete(prompt) {
     // Guard for empty prompt
     if (prompt.length == 0) {
@@ -202,7 +228,7 @@ function autocomplete(prompt) {
         return;
     }
 
-    let tagword = diff[0]
+    tagword = diff[0]
 
     // Guard for empty tagword
     if (tagword == undefined || tagword.length == 0) {
@@ -210,16 +236,56 @@ function autocomplete(prompt) {
         return;
     }
     
-    let results = allTags.filter(x => x[0].includes(tagword)).slice(0, acConfig.maxResults);
+    results = allTags.filter(x => x[0].includes(tagword)).slice(0, acConfig.maxResults);
+    resultCount = results.length;
 
     // Guard for empty results
-    if (results.length == 0) {
+    if (resultCount == 0) {
         hideResults();
         return;
     }
 
     showResults();
     addResultsToList(results, tagword);
+}
+
+function navigateInList(event) {
+    validKeys = ["ArrowUp", "ArrowDown", "Enter", "Escape"];
+
+    if (!validKeys.includes(event.key)) return;
+    if (!isVisible) return
+
+    switch (event.key) {
+        case "ArrowUp":
+            if (selectedTag == null) {
+                selectedTag = resultCount - 1;
+            } else {
+                selectedTag = (selectedTag - 1 + resultCount) % resultCount;
+            }
+            break;
+        case "ArrowDown":
+            if (selectedTag == null) {
+                selectedTag = 0;
+            } else {
+                selectedTag = (selectedTag + 1) % resultCount;
+            }
+            break;
+        case "Enter":
+            if (selectedTag != null) {
+                insertTextAtCursor(results[selectedTag][0], tagword);
+            }
+            break;
+        case "Escape":
+            hideResults();
+            break;
+    }
+    // Update highlighting
+    if (selectedTag != null)
+        updateSelectionStyle(selectedTag);
+
+    // Prevent default behavior
+    event.preventDefault();
+    event.stopPropagation();
 }
 
 onUiUpdate(function(){
@@ -244,6 +310,10 @@ onUiUpdate(function(){
         promptTextbox.addEventListener('input', debounce(() => autocomplete(promptTextbox.value), 100));
         // Add focusout event listener
         promptTextbox.addEventListener('focusout', debounce(() => hideResults(), 400));
+        // Add up and down arrow event listener
+        promptTextbox.addEventListener('keydown', function(e) { navigateInList(e); });
+
+    
 
         // Add class so we know we've already added the listeners
         promptTextbox.classList.add('autocomplete');
