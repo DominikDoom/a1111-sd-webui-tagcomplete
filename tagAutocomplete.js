@@ -250,7 +250,7 @@ function autocomplete(prompt) {
 }
 
 function navigateInList(event) {
-    validKeys = ["ArrowUp", "ArrowDown", "Enter", "Escape"];
+    validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Escape"];
 
     if (!validKeys.includes(event.key)) return;
     if (!isVisible) return
@@ -269,6 +269,12 @@ function navigateInList(event) {
             } else {
                 selectedTag = (selectedTag + 1) % resultCount;
             }
+            break;
+        case "ArrowLeft":
+            selectedTag = 0;
+            break;
+        case "ArrowRight":
+            selectedTag = resultCount - 1;
             break;
         case "Enter":
             if (selectedTag != null) {
