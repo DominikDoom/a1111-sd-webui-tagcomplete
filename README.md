@@ -9,6 +9,8 @@ I created this script as a convenience tool since it reduces the need of switchi
 
 You can either download the files manually as described below, or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
+(Note: e621 tags aren't added to the releases yet since coloring is broken for them at the moment).
+
 ### Disclaimer:
 This script is definitely not optimized, and it's not very intelligent. The tags are simply recommended based on their natural order in the CSV, which is their respective image count for the default Danbooru tag list. Also, at least for now, neither keyboard selection for tags nor completion for negative or img2img prompt textboxes is supported, and there's no way to turn the feature off from the ui, but I plan to get around to those features eventually.
 
