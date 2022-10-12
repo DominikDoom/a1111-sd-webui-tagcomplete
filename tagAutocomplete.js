@@ -164,7 +164,7 @@ function insertTextAtCursor(text, tagword) {
     let promptTextbox = gradioApp().querySelector('#txt2img_prompt > label > textarea');
     let cursorPos = promptTextbox.selectionStart;
     let sanitizedText = acConfig.replaceUnderscores ? text.replaceAll("_", " ") : text;
-
+    
     var prompt = promptTextbox.value;
     let optionalComma = (prompt[cursorPos] === "," || prompt[cursorPos + tagword.length] === ",") ? "" : ", ";
 
@@ -234,7 +234,7 @@ tagword = "";
 resultCount = 0;
 function autocomplete(prompt) {
     // Guard for empty prompt
-    if (prompt.length == 0) {
+    if (prompt.length === 0) {
         hideResults();
         return;
     }
@@ -245,7 +245,7 @@ function autocomplete(prompt) {
     previousTags = tags;
 
     // Guard for no difference / only whitespace remaining
-    if (diff == undefined || diff.length == 0) {
+    if (diff === undefined || diff.length === 0) {
         hideResults();
         return;
     }
@@ -253,7 +253,7 @@ function autocomplete(prompt) {
     tagword = diff[0]
 
     // Guard for empty tagword
-    if (tagword == undefined || tagword.length == 0) {
+    if (tagword === undefined || tagword.length === 0) {
         hideResults();
         return;
     }
@@ -262,7 +262,7 @@ function autocomplete(prompt) {
     resultCount = results.length;
 
     // Guard for empty results
-    if (resultCount == 0) {
+    if (resultCount === 0) {
         hideResults();
         return;
     }
@@ -279,14 +279,14 @@ function navigateInList(event) {
 
     switch (event.key) {
         case "ArrowUp":
-            if (selectedTag == null) {
+            if (selectedTag === null) {
                 selectedTag = resultCount - 1;
             } else {
                 selectedTag = (selectedTag - 1 + resultCount) % resultCount;
             }
             break;
         case "ArrowDown":
-            if (selectedTag == null) {
+            if (selectedTag === null) {
                 selectedTag = 0;
             } else {
                 selectedTag = (selectedTag + 1) % resultCount;
@@ -299,7 +299,7 @@ function navigateInList(event) {
             selectedTag = resultCount - 1;
             break;
         case "Enter":
-            if (selectedTag != null) {
+            if (selectedTag !== null) {
                 insertTextAtCursor(results[selectedTag][0], tagword);
             }
             break;
@@ -308,7 +308,7 @@ function navigateInList(event) {
             break;
     }
     // Update highlighting
-    if (selectedTag != null)
+    if (selectedTag !== null)
         updateSelectionStyle(selectedTag);
 
     // Prevent default behavior
@@ -318,12 +318,12 @@ function navigateInList(event) {
 
 onUiUpdate(function(){
     // One-time CSV setup
-    if (acConfig == null) acConfig = JSON.parse(readFile("file/tags/config.json"));
-    if (allTags.length == 0) allTags = loadCSV();
+    if (acConfig === null) acConfig = JSON.parse(readFile("file/tags/config.json"));
+    if (allTags.length === 0) allTags = loadCSV();
 
 	let promptTextbox = gradioApp().querySelector('#txt2img_prompt > label > textarea');
 	
-    if (promptTextbox == null) return;
+    if (promptTextbox === null) return;
     if (gradioApp().querySelector('#autocompleteResults') != null) return;
 
     // Only add listeners once
@@ -339,7 +339,7 @@ onUiUpdate(function(){
         // Add focusout event listener
         promptTextbox.addEventListener('focusout', debounce(() => hideResults(), 400));
         // Add up and down arrow event listener
-        promptTextbox.addEventListener('keydown', function(e) { navigateInList(e); });
+        promptTextbox.addEventListener('keydown', (e) => navigateInList(e));
 
     
 
