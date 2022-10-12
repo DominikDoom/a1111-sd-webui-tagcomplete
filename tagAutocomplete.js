@@ -172,13 +172,13 @@ function insertTextAtCursor(text, tagword) {
     let direction = prompt.substring(cursorPos, cursorPos + tagword.length) === tagword ? 1 : -1;
     if (direction === 1) {
         promptTextbox.value = prompt.substring(0, cursorPos) + sanitizedText + optionalComma + prompt.substring(cursorPos + tagword.length)
+        // Update cursor position to after the inserted text
+        promptTextbox.selectionStart = cursorPos + sanitizedText.length + optionalComma.length;
     } else {  
         promptTextbox.value = prompt.substring(0, cursorPos - tagword.length) + sanitizedText + optionalComma + prompt.substring(cursorPos)
+        promptTextbox.selectionStart = cursorPos - tagword.length + sanitizedText.length + optionalComma.length;
     }
     prompt = promptTextbox.value;
-
-    // Update cursor position to after the inserted text
-    promptTextbox.selectionStart = cursorPos + sanitizedText.length;
     promptTextbox.selectionEnd = promptTextbox.selectionStart;
 
     // Hide results after inserting
