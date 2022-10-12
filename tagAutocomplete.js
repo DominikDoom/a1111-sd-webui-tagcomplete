@@ -118,6 +118,13 @@ const debounce = (func, wait = 300) => {
 
 // Difference function to fix duplicates not being seen as changes in normal filter
 function difference(a, b) {
+    if (a.length == 0) {
+        return b;
+    }
+    if (b.length == 0) {
+        return a;
+    }
+
     return [...b.reduce( (acc, v) => acc.set(v, (acc.get(v) || 0) - 1),
             a.reduce( (acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map() ) 
     )].reduce( (acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), [] );
@@ -157,11 +164,17 @@ function insertTextAtCursor(text, tagword) {
     let promptTextbox = gradioApp().querySelector('#txt2img_prompt > label > textarea');
     let cursorPos = promptTextbox.selectionStart;
     let sanitizedText = acConfig.replaceUnderscores ? text.replaceAll("_", " ") : text;
-    let optionalComma = (promptTextbox.value[cursorPos] == ",") ? "" : ", ";
+
+    var prompt = promptTextbox.value;
+    let optionalComma = (prompt[cursorPos] === "," || prompt[cursorPos + tagword.length] === ",") ? "" : ", ";
 
     // Edit prompt text
-    var prompt = promptTextbox.value;
-    promptTextbox.value = prompt.substring(0, cursorPos - tagword.length) + sanitizedText + optionalComma + prompt.substring(cursorPos);
+    let direction = prompt.substring(cursorPos, cursorPos + tagword.length) === tagword ? 1 : -1;
+    if (direction === 1) {
+        promptTextbox.value = prompt.substring(0, cursorPos) + sanitizedText + optionalComma + prompt.substring(cursorPos + tagword.length)
+    } else {  
+        promptTextbox.value = prompt.substring(0, cursorPos - tagword.length) + sanitizedText + optionalComma + prompt.substring(cursorPos)
+    }
     prompt = promptTextbox.value;
 
     // Update cursor position to after the inserted text
