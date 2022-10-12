@@ -176,20 +176,29 @@ function insertTextAtCursor(text, tagword) {
     previousTags = tags;
 }
 
-const colors_dark = ["lightblue", "indianred", "unused", "violet", "lightgreen", "orange"];
-const colors_light = ["dodgerblue", "firebrick", "unused", "darkorchid", "darkgreen", "darkorange" ]
 function addResultsToList(results, tagword) {
     let resultsList = gradioApp().querySelector('#autocompleteResultsList');
     resultsList.innerHTML = "";
 
-    let colors = gradioApp().querySelector('.dark') ? colors_dark : colors_light;
+    // Find right colors from config
+    let tagFileName = acConfig.tagFile.split(".")[0];
+    let tagColors = acConfig.colors;
+    //let colorIndex = Object.keys(tagColors).findIndex(key => key === tagFileName);
+    //let colorValues = Object.values(tagColors)[colorIndex];
+
+    let mode = gradioApp().querySelector('.dark') ? 0 : 1;
 
     for (let i = 0; i < results.length; i++) {
         let result = results[i];
         let li = document.createElement("li");
         li.innerHTML = result[0];
-        li.style = `color: ${colors[result[1]]};`;
+
+        // Set the color of the tag
+        let tagType = result[1];
+        li.style = `color: ${tagColors[tagFileName][tagType][mode]};`;
+        // Add listener
         li.addEventListener("click", function() { insertTextAtCursor(result[0], tagword); });
+        // Add element to list
         resultsList.appendChild(li);
     }
 }
