@@ -2,6 +2,7 @@
 	"tagFile": "danbooru.csv",
 	"maxResults": 5,
 	"replaceUnderscores": true,
+	"escapeParentheses": true,
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],

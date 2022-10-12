@@ -164,6 +164,7 @@ function insertTextAtCursor(text, tagword) {
     let promptTextbox = gradioApp().querySelector('#txt2img_prompt > label > textarea');
     let cursorPos = promptTextbox.selectionStart;
     let sanitizedText = acConfig.replaceUnderscores ? text.replaceAll("_", " ") : text;
+    sanitizedText = acConfig.escapeParentheses ? sanitizedText.replaceAll("(", "\\(").replaceAll(")", "\\)") : sanitizedText;
     
     var prompt = promptTextbox.value;
     let optionalComma = (prompt[cursorPos] === "," || prompt[cursorPos + tagword.length] === ",") ? "" : ", ";
@@ -340,8 +341,6 @@ onUiUpdate(function(){
         promptTextbox.addEventListener('focusout', debounce(() => hideResults(), 400));
         // Add up and down arrow event listener
         promptTextbox.addEventListener('keydown', (e) => navigateInList(e));
-
-    
 
         // Add class so we know we've already added the listeners
         promptTextbox.classList.add('autocomplete');
