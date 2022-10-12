@@ -14,10 +14,10 @@ This script is definitely not optimized, and it's not very intelligent. The tags
 
 ### Known Issues:
 If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
-E.g. if editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part as the same tag.
+For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
 
 ## Screenshots
-Demo video (with keyboard navigation)
+Demo video (with keyboard navigation):
 
 https://user-images.githubusercontent.com/34448969/195344430-2b5f9945-b98b-4943-9fbc-82cf633321b1.mp4
 
@@ -87,5 +87,18 @@ The numbering system follows the [tag API docs](https://danbooru.donmai.us/wiki_
 |3	    | Copyright   |
 |4	    | Character   |
 |5	    | Meta        |
+
+or of e621:
+| Value	| Description |
+|-------|-------------|
+|-1	    | Invalid     |
+|0	    | General     |
+|1	    | Artist      |
+|3	    | Copyright   |
+|4	    | Character   |
+|5	    | Species     |
+|6	    | Invalid     |
+|7	    | Meta        |
+|8	    | Lore        |
 
 The tag type is used for coloring entries in the result list.
