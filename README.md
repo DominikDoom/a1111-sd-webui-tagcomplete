@@ -9,15 +9,17 @@ I created this script as a convenience tool since it reduces the need of switchi
 
 You can either download the files manually as described below, or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
-(Note: e621 tags aren't added to the releases yet since coloring is broken for them at the moment).
-
 ### Disclaimer:
-This script is definitely not optimized, and it's not very intelligent. The tags are simply recommended based on their natural order in the CSV, which is their respective image count for the default Danbooru tag list. Also, at least for now, neither keyboard selection for tags nor completion for negative or img2img prompt textboxes is supported, and there's no way to turn the feature off from the ui, but I plan to get around to those features eventually.
+This script is definitely not optimized, and it's not very intelligent. The tags are simply recommended based on their natural order in the CSV, which is their respective image count for the default Danbooru tag list. Also, at least for now, completion for negative or img2img prompt textboxes isn't supported, and there's no way to turn the script off from the ui, but I plan to get around to those features eventually.
+
+### Known Issues:
+If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
+For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
 
 ## Screenshots
-Demo video
+Demo video (with keyboard navigation):
 
-https://user-images.githubusercontent.com/34448969/195185810-547d8d0a-bf87-465d-91f1-7fb5c3259c3f.mp4
+https://user-images.githubusercontent.com/34448969/195344430-2b5f9945-b98b-4943-9fbc-82cf633321b1.mp4
 
 Dark and Light mode supported, including tag colors:
 
@@ -29,7 +31,7 @@ Dark and Light mode supported, including tag colors:
 Simply put `tagAutocomplete.js` into the `javascript` folder of your web UI installation. It will run automatically the next time the web UI is started.
 For the script to work, you also need to download the `tags` folder from this repo and paste it and its contents into the web UI root, or create them there manually.
 
-The tags folder contains two files: `config.json` and `danbooru.csv`. This is the data the script uses for autocompletion.
+The tags folder contains `config.json` and the tag data the script uses for autocompletion. By default, Danbooru and e621 tags are included.
 
 ### Config
 The config contains the following settings and defaults:
@@ -37,7 +39,27 @@ The config contains the following settings and defaults:
 {
 	"tagFile": "danbooru.csv",
 	"maxResults": 5,
-	"replaceUnderscores": true
+	"replaceUnderscores": true,
+	"colors": {
+		"danbooru": {
+			"0": ["lightblue", "dodgerblue"],
+			"1": ["indianred", "firebrick"],
+			"3": ["violet", "darkorchid"],
+			"4": ["lightgreen", "darkgreen"],
+			"5": ["orange", "darkorange"]
+		},
+		"e621": {
+			"-1": ["red", "maroon"],
+			"0": ["lightblue", "dodgerblue"],
+			"1": ["gold", "goldenrod"],
+			"3": ["violet", "darkorchid"],
+			"4": ["lightgreen", "darkgreen"],
+			"5": ["tomato", "darksalmon"],
+			"6": ["red", "maroon"],
+			"7": ["whitesmoke", "black"],
+			"8": ["seagreen", "darkseagreen"]
+		}
+	}
 }
 ```
 | Setting	| Description |
@@ -45,6 +67,7 @@ The config contains the following settings and defaults:
 | tagFile | Specifies the tag file to use. You can provide a custom tag database of your liking, but since the script was developed with Danbooru tags in mind, it might not work properly with other configurations.|
 | maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
+| colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
 
 ### CSV tag data
 The script expects a CSV file with tags saved in the following way:
@@ -64,5 +87,18 @@ The numbering system follows the [tag API docs](https://danbooru.donmai.us/wiki_
 |3	    | Copyright   |
 |4	    | Character   |
 |5	    | Meta        |
+
+or of e621:
+| Value	| Description |
+|-------|-------------|
+|-1	    | Invalid     |
+|0	    | General     |
+|1	    | Artist      |
+|3	    | Copyright   |
+|4	    | Character   |
+|5	    | Species     |
+|6	    | Invalid     |
+|7	    | Meta        |
+|8	    | Lore        |
 
 The tag type is used for coloring entries in the result list.
