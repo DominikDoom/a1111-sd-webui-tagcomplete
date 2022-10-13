@@ -170,12 +170,12 @@ function insertTextAtCursor(text, tagword) {
     let optionalComma = (prompt[cursorPos] === "," || prompt[cursorPos + tagword.length] === ",") ? "" : ", ";
 
     // Edit prompt text
-    let direction = prompt.substring(cursorPos, cursorPos + tagword.length) === tagword ? 1 : -1;
-    if (direction === 1) {
+    let toRight = prompt.substring(cursorPos, cursorPos + tagword.length) === tagword;
+    if (toRight) {
         promptTextbox.value = prompt.substring(0, cursorPos) + sanitizedText + optionalComma + prompt.substring(cursorPos + tagword.length)
         // Update cursor position to after the inserted text
         promptTextbox.selectionStart = cursorPos + sanitizedText.length + optionalComma.length;
-    } else {  
+    } else {
         promptTextbox.value = prompt.substring(0, cursorPos - tagword.length) + sanitizedText + optionalComma + prompt.substring(cursorPos)
         promptTextbox.selectionStart = cursorPos - tagword.length + sanitizedText.length + optionalComma.length;
     }
@@ -201,8 +201,6 @@ function addResultsToList(results, tagword) {
     // Find right colors from config
     let tagFileName = acConfig.tagFile.split(".")[0];
     let tagColors = acConfig.colors;
-    //let colorIndex = Object.keys(tagColors).findIndex(key => key === tagFileName);
-    //let colorValues = Object.values(tagColors)[colorIndex];
 
     let mode = gradioApp().querySelector('.dark') ? 0 : 1;
 
@@ -213,7 +211,11 @@ function addResultsToList(results, tagword) {
 
         // Set the color of the tag
         let tagType = result[1];
-        li.style = `color: ${tagColors[tagFileName][tagType][mode]};`;
+        let colorGroup = tagColors[tagFileName];
+        // Default to danbooru scheme if no matching one is found
+        if (colorGroup === undefined) colorGroup = tagColors["danbooru"];
+
+        li.style = `color: ${colorGroup[tagType][mode]};`;
         // Add listener
         li.addEventListener("click", function() { insertTextAtCursor(result[0], tagword); });
         // Add element to list
