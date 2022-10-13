@@ -188,6 +188,10 @@ function hideResults(textArea) {
     selectedTag = null;
 }
 
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
 let hideBlocked = false;
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 function insertTextAtCursor(textArea, result, tagword) {
@@ -215,12 +219,12 @@ function insertTextAtCursor(textArea, result, tagword) {
     let editStart = Math.max(cursorPos - tagword.length, 0);
     let editEnd = Math.min(cursorPos + tagword.length, prompt.length);
     let surrounding = prompt.substring(editStart, editEnd);
-    let match = surrounding.match(new RegExp(`${tagword}`));
+    let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`)));
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
     var optionalComma = "";
     if (tagType !== "wildcardFile") {
-        optionalComma = surrounding.match(new RegExp(`${tagword},`)) !== null ? "" : ", ";
+        optionalComma = surrounding.match(new RegExp(escapeRegExp(`${tagword},`))) !== null ? "" : ", ";
     }
 
     // Replace partial tag word with new text, add comma if needed
