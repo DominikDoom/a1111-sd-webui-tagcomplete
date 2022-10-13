@@ -15,7 +15,7 @@ You can either download the files manually as described below, or use a pre-pack
 Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or event replace them with the actual wildcard file content in the same step.
 #### Important:
 Since not everyone has the script, it is **disabled by default**. Edit the config to enable it and uncomment / add the filenames you use in `wildcardNames.txt`.
-
+As per the instructions of the wildcard script, the files are expected in `/scripts/wildcards/`, it will likely fail if you have another folder structure.
 
 ### Known Issues:
 If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
