@@ -9,10 +9,10 @@ Since some Stable Diffusion models were trained using this information, for exam
 
 I created this script as a convenience tool since it reduces the need of switching back and forth between the web UI and a booru site to copy-paste tags.
 
-You can either download the files manually as described below, or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
+You can either clone / download the files manually as described [below](#installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
 ### NEW - Wildcard support
-Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or event replace them with the actual wildcard file content in the same step.
+Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or even replace them with the actual wildcard file content in the same step.
 #### Important:
 Since not everyone has the script, it is **disabled by default**. Edit the config to enable it and uncomment / add the filenames you use in `wildcardNames.txt`.
 As per the instructions of the wildcard script, the files are expected in `/scripts/wildcards/`, it will likely fail if you have another folder structure.
@@ -39,7 +39,7 @@ Dark and Light mode supported, including tag colors:
 
 
 ## Installation
-Simply put `tagAutocomplete.js` into the `javascript` folder of your web UI installation. It will run automatically the next time the web UI is started.
+Simply put `tagAutocomplete.js` into the **`javascript`** folder of your web UI installation (**NOT** the `scripts` folder where most other scripts are installed). It will run automatically the next time the web UI is started.
 For the script to work, you also need to download the `tags` folder from this repo and paste it and its contents into the web UI root, or create them there manually.
 
 The folder structure should look similar to this at the end:
