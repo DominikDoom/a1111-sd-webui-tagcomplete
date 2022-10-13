@@ -1,5 +1,7 @@
+var acConfig = null;
+
 // Style for new elements. Gets appended to the Gradio root.
-const autocompleteCSS_dark = `
+let autocompleteCSS_dark = `
     .autocompleteResults {
         position: absolute;
         z-index: 999;
@@ -7,7 +9,7 @@ const autocompleteCSS_dark = `
         background-color: #0b0f19 !important;
         border: 1px solid #4b5563 !important;
         border-radius: 12px !important;
-        overflow: hidden;
+        overflow-y: auto;
     }
     .autocompleteResultsList > li:nth-child(odd) {
         background-color: #111827;
@@ -24,7 +26,7 @@ const autocompleteCSS_dark = `
         background-color: #374151;
     }
 `;
-const autocompleteCSS_light = `
+let autocompleteCSS_light = `
     .autocompleteResults {
         position: absolute;
         z-index: 999;
@@ -32,7 +34,7 @@ const autocompleteCSS_light = `
         background-color: #ffffff !important;
         border: 1.5px solid #e5e7eb !important;
         border-radius: 12px !important;
-        overflow: hidden;
+        overflow-y: auto;
     }
     .autocompleteResultsList > li:nth-child(odd) {
         background-color: #f9fafb;
@@ -50,8 +52,6 @@ const autocompleteCSS_light = `
     }
 `;
 
-var acConfig = null;
-
 // Parse the CSV file into a 2D array. Doesn't use regex, so it is very lightweight.
 function parseCSV(str) {
     var arr = [];
@@ -59,7 +59,7 @@ function parseCSV(str) {
 
     // Iterate over each character, keep track of current row and column (of the returned array)
     for (var row = 0, col = 0, c = 0; c < str.length; c++) {
-        var cc = str[c], nc = str[c+1];        // Current character, next character
+        var cc = str[c], nc = str[c + 1];        // Current character, next character
         arr[row] = arr[row] || [];             // Create a new row if necessary
         arr[row][col] = arr[row][col] || '';   // Create a new column (start with empty string) if necessary
 
@@ -105,7 +105,7 @@ function loadCSV() {
 // Debounce function to prevent spamming the autocomplete function
 var dbTimeOut;
 const debounce = (func, wait = 300) => {
-    return function(...args) {
+    return function (...args) {
         if (dbTimeOut) {
             clearTimeout(dbTimeOut);
         }
@@ -125,9 +125,9 @@ function difference(a, b) {
         return a;
     }
 
-    return [...b.reduce( (acc, v) => acc.set(v, (acc.get(v) || 0) - 1),
-            a.reduce( (acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map() ) 
-    )].reduce( (acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), [] );
+    return [...b.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) - 1),
+        a.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map())
+    )].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
 }
 // Get the identifier for the text area to differentiate between positive and negative
 function getTextAreaIdentifier(textArea) {
@@ -135,7 +135,7 @@ function getTextAreaIdentifier(textArea) {
     let img2img = gradioApp().querySelector('#tab_img2img');
     let img2img_p = img2img.querySelector('#img2img_prompt > label > textarea');
     let img2img_n = img2img.querySelector('#negative_prompt > label > textarea');
-    
+
     let modifier = "";
     if (textArea === img2img_p || textArea === img2img_n) {
         modifier += ".img2img";
@@ -152,10 +152,11 @@ function getTextAreaIdentifier(textArea) {
 function createResultsDiv(textArea) {
     let resultsDiv = document.createElement("div");
     let resultsList = document.createElement('ul');
-    
+
     let textAreaId = getTextAreaIdentifier(textArea);
     let typeClass = textAreaId.replaceAll(".", " ");
 
+    resultsDiv.style.setProperty("max-height", acConfig.maxResults * 50 + "px");
     resultsDiv.setAttribute('class', `autocompleteResults ${typeClass}`);
     resultsList.setAttribute('class', 'autocompleteResultsList');
     resultsDiv.appendChild(resultsList);
@@ -186,38 +187,66 @@ function hideResults(textArea) {
     selectedTag = null;
 }
 
+let hideBlocked = false;
 // On click, insert the tag into the prompt textbox with respect to the cursor position
-function insertTextAtCursor(textArea, text, tagword) {
+function insertTextAtCursor(textArea, result, tagword) {
+    let text = result[0];
+    let tagType = result[1];
+
     let cursorPos = textArea.selectionStart;
-    let sanitizedText = acConfig.replaceUnderscores ? text.replaceAll("_", " ") : text;
+    var sanitizedText = text
+
+    // Replace differently depending on if it's a tag or wildcard
+    if (tagType === "wildcardFile") {
+        sanitizedText = "__" + text.replace("Wildcards: ", "") + "__";
+    } else if (tagType === "wildcardTag") {
+        sanitizedText = text.replace(/^.*?: /g, "");
+    } else {
+        sanitizedText = acConfig.replaceUnderscores ? text.replaceAll("_", " ") : text;
+    }
+
     sanitizedText = acConfig.escapeParentheses ? sanitizedText.replaceAll("(", "\\(").replaceAll(")", "\\)") : sanitizedText;
-    
+
     var prompt = textArea.value;
-    let optionalComma = (prompt[cursorPos] === "," || prompt[cursorPos + tagword.length] === ",") ? "" : ", ";
+
 
     // Edit prompt text
-    let toRight = prompt.substring(cursorPos, cursorPos + tagword.length) === tagword;
-    if (toRight) {
-        textArea.value = prompt.substring(0, cursorPos) + sanitizedText + optionalComma + prompt.substring(cursorPos + tagword.length)
-        // Update cursor position to after the inserted text
-        textArea.selectionStart = cursorPos + sanitizedText.length + optionalComma.length;
-    } else {
-        textArea.value = prompt.substring(0, cursorPos - tagword.length) + sanitizedText + optionalComma + prompt.substring(cursorPos)
-        textArea.selectionStart = cursorPos - tagword.length + sanitizedText.length + optionalComma.length;
+    let editStart = Math.max(cursorPos - tagword.length, 0);
+    let editEnd = Math.min(cursorPos + tagword.length, prompt.length);
+    let surrounding = prompt.substring(editStart, editEnd);
+    let insert = surrounding.replace(tagword, sanitizedText);
+
+    // Add back start
+    var newPrompt = prompt.substring(0, editStart) + insert;
+    // Add comma if needed
+    var optionalComma = "";
+    if (tagType !== "wildcardFile") {
+        optionalComma = surrounding.match(`/${tagword},/g`) !== null ? "" : ", ";
     }
-    prompt = textArea.value;
+    // Set selection after insertion
+    textArea.selectionStart = editStart + newPrompt.length + optionalComma.length;
     textArea.selectionEnd = textArea.selectionStart;
+    // Add back end
+    newPrompt += optionalComma + prompt.substring(editEnd);
+    textArea.value = newPrompt;
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure its
     // internal Svelte data binding remains in sync.
     textArea.dispatchEvent(new Event("input", { bubbles: true }));
 
-    // Hide results after inserting
-    hideResults(textArea);
-
     // Update previous tags with the edited prompt to prevent re-searching the same term
-    let tags = prompt.match(/[^, ]+/g);
+    let tags = newPrompt.match(/[^, ]+/g);
     previousTags = tags;
+
+    // Hide results after inserting
+    if (tagType === "wildcardFile") {
+        // If it's a wildcard, we want to keep the results open so the user can select another wildcard
+        hideBlocked = true;
+        autocomplete(textArea, prompt, sanitizedText);
+        setTimeout(() => { hideBlocked = false; }, 100);
+    } else {
+        hideResults(textArea);
+    }
 }
 
 function addResultsToList(textArea, results, tagword) {
@@ -236,15 +265,19 @@ function addResultsToList(textArea, results, tagword) {
         let li = document.createElement("li");
         li.innerHTML = result[0];
 
-        // Set the color of the tag
-        let tagType = result[1];
-        let colorGroup = tagColors[tagFileName];
-        // Default to danbooru scheme if no matching one is found
-        if (colorGroup === undefined) colorGroup = tagColors["danbooru"];
+        // Wildcards have no tag type
+        if (!result[1].startsWith("wildcard")) {
+            // Set the color of the tag
+            let tagType = result[1];
+            let colorGroup = tagColors[tagFileName];
+            // Default to danbooru scheme if no matching one is found
+            if (colorGroup === undefined) colorGroup = tagColors["danbooru"];
 
-        li.style = `color: ${colorGroup[tagType][mode]};`;
+            li.style = `color: ${colorGroup[tagType][mode]};`;
+        }
+
         // Add listener
-        li.addEventListener("click", function() { insertTextAtCursor(textArea, result[0], tagword); });
+        li.addEventListener("click", function () { insertTextAtCursor(textArea, result, tagword); });
         // Add element to list
         resultsList.appendChild(li);
     }
@@ -252,7 +285,8 @@ function addResultsToList(textArea, results, tagword) {
 
 function updateSelectionStyle(textArea, num) {
     let textAreaId = getTextAreaIdentifier(textArea);
-    let resultsList = gradioApp().querySelector('.autocompleteResults' + textAreaId + ' > ul');
+    let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
+    let resultsList = resultDiv.querySelector('ul');
     let items = resultsList.getElementsByTagName('li');
 
     for (let i = 0; i < items.length; i++) {
@@ -260,40 +294,72 @@ function updateSelectionStyle(textArea, num) {
     }
 
     items[num].classList.add('selected');
+
+    // Set scrolltop to selected item if we are showing more than max results
+    if (items.length > acConfig.maxResults) {
+        let selected = items[num];
+        resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
+    }
 }
 
+wildcardFiles = [];
+wildcards = {};
 allTags = [];
 previousTags = [];
 results = [];
 tagword = "";
 resultCount = 0;
-function autocomplete(textArea, prompt) {
+function autocomplete(textArea, prompt, fixedTag = null) {
     // Guard for empty prompt
     if (prompt.length === 0) {
         hideResults(textArea);
         return;
     }
 
-    // Match tags with RegEx to get the last edited one
-    let tags = prompt.match(/[^, ]+/g);
-    let diff = difference(tags, previousTags)
-    previousTags = tags;
+    if (fixedTag === null) {
+        // Match tags with RegEx to get the last edited one
+        let tags = prompt.match(/[^, ]+/g);
+        let diff = difference(tags, previousTags)
+        previousTags = tags;
 
-    // Guard for no difference / only whitespace remaining
-    if (diff === undefined || diff.length === 0) {
-        hideResults(textArea);
-        return;
+        // Guard for no difference / only whitespace remaining
+        if (diff === null || diff.length === 0) {
+            if (!hideBlocked) hideResults(textArea);
+            return;
+        }
+
+        tagword = diff[0]
+
+        // Guard for empty tagword
+        if (tagword === null || tagword.length === 0) {
+            hideResults(textArea);
+            return;
+        }
+    } else {
+        tagword = fixedTag;
     }
 
-    tagword = diff[0]
+    tagword = tagword.toLowerCase();
 
-    // Guard for empty tagword
-    if (tagword === undefined || tagword.length === 0) {
-        hideResults(textArea);
-        return;
+    if ([...tagword.matchAll(/\b__([^,_ ]+)__([^, ]*)\b/g)].length > 0 && acConfig.useWildcards) {
+        // Show wildcards from a file with that name
+        wcMatch = [...tagword.matchAll(/\b__([^,_ ]+)__([^, ]*)\b/g)]
+        let wcFile = wcMatch[0][1];
+        let wcWord = wcMatch[0][2];
+        results = wildcards[wcFile].filter(x => (wcWord !== null) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
+            .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
+    } else if ((tagword.startsWith("__") && !tagword.endsWith("__") || tagword === "__") && acConfig.useWildcards) {
+        // Show available wildcard files
+        let tempResults = [];
+        if (tagword !== "__") {
+            tempResults = wildcardFiles.filter(x => x.toLowerCase().includes(tagword.replace("__", ""))) // Filter by tagword
+        } else {
+            tempResults = wildcardFiles;
+        }
+        results = tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"]); // Mark as wildcard
+    } else {
+        results = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
     }
-    
-    results = allTags.filter(x => x[0].includes(tagword)).slice(0, acConfig.maxResults);
     resultCount = results.length;
 
     // Guard for empty results
@@ -302,6 +368,7 @@ function autocomplete(textArea, prompt) {
         return;
     }
 
+    selectedTag = null; // Reset since the list changed
     showResults(textArea);
     addResultsToList(textArea, results, tagword);
 }
@@ -335,7 +402,7 @@ function navigateInList(textArea, event) {
             break;
         case "Enter":
             if (selectedTag !== null) {
-                insertTextAtCursor(textArea, results[selectedTag][0], tagword);
+                insertTextAtCursor(textArea, results[selectedTag], tagword);
             }
             break;
         case "Escape":
@@ -351,12 +418,47 @@ function navigateInList(textArea, event) {
     event.stopPropagation();
 }
 
-onUiUpdate(function(){
-    // One-time CSV setup
-    if (acConfig === null) acConfig = JSON.parse(readFile("file/tags/config.json"));
-    if (allTags.length === 0) allTags = loadCSV();
+styleAdded = false;
+onUiUpdate(function () {
+    // One-time config, tags & wildcards loading
+    if (acConfig === null) {
+        try {
+            acConfig = JSON.parse(readFile("file/tags/config.json"));
+        } catch (e) {
+            console.error("Error loading config.json: " + e);
+            return;
+        }
+    }
+    if (allTags.length === 0) {
+        try {
+            allTags = loadCSV();
+        } catch (e) {
+            console.error("Error loading tags file: " + e);
+            return;
+        }
+    }
+    if (wildcardFiles.length === 0 && acConfig.useWildcards) {
+        try {
+            wildcardFiles = readFile("file/tags/wildcardNames.txt").split("\n")
+                .filter(x => !x.startsWith("//")) // Remove comments
+                .filter(x => x.toLowerCase().includes(tagword.substring(2))) // Filter by tagword
+                .filter(x => x.trim().length > 0) // Remove empty lines
 
-	let txt2imgTextArea = gradioApp().querySelector('#txt2img_prompt > label > textarea');
+            wildcardFiles.forEach(fName => {
+                try {
+                    wildcards[fName.trim()] = readFile(`file/scripts/wildcards/${fName}.txt`).split("\n")
+                        .filter(x => x.trim().length > 0) // Remove empty lines
+                } catch (e) {
+                    console.log(`Could not load wildcards for ${fName}`);
+                }
+            });
+        } catch (e) {
+            console.error("Error loading wildcardNames.txt: " + e);
+        }
+    }
+
+    // Find all textareas
+    let txt2imgTextArea = gradioApp().querySelector('#txt2img_prompt > label > textarea');
     let img2imgTextArea = gradioApp().querySelector('#img2img_prompt > label > textarea');
     let negativeTextAreas = Array.from(gradioApp().querySelectorAll('#negative_prompt > label > textarea'));
     let textAreas = [txt2imgTextArea, img2imgTextArea, negativeTextAreas[0], negativeTextAreas[1]];
@@ -373,7 +475,7 @@ onUiUpdate(function(){
     textAreas.forEach(area => {
         // Skip directly if not found on the page
         if (area === null || area === undefined) return;
-        
+
         // Return if autocomplete is disabled for the current area type in config
         let textAreaId = getTextAreaIdentifier(area);
         if (textAreaId.includes("p") || (textAreaId.includes("n") && acConfig.activeIn.negativePrompts)) {
@@ -391,7 +493,7 @@ onUiUpdate(function(){
             area.parentNode.insertBefore(resultsDiv, area.nextSibling);
             // Hide by default so it doesn't show up on page load
             hideResults(area);
-            
+
             // Add autocomplete event listener
             area.addEventListener('input', debounce(() => autocomplete(area, area.value), 100));
             // Add focusout event listener
@@ -401,17 +503,19 @@ onUiUpdate(function(){
 
             // Add class so we know we've already added the listeners
             area.classList.add('autocomplete');
-
-            // Add style to dom
-            let acStyle = document.createElement('style');
-
-            let css = gradioApp().querySelector('.dark') ? autocompleteCSS_dark : autocompleteCSS_light;
-            if (acStyle.styleSheet) {
-                acStyle.styleSheet.cssText = css;
-            } else {
-                acStyle.appendChild(document.createTextNode(css));
-            }
-            gradioApp().appendChild(acStyle);
         }
     });
+
+    if (styleAdded) return;
+
+    // Add style to dom
+    let acStyle = document.createElement('style');
+    let css = gradioApp().querySelector('.dark') ? autocompleteCSS_dark : autocompleteCSS_light;
+    if (acStyle.styleSheet) {
+        acStyle.styleSheet.cssText = css;
+    } else {
+        acStyle.appendChild(document.createTextNode(css));
+    }
+    gradioApp().appendChild(acStyle);
+    styleAdded = true;
 });

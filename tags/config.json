@@ -8,6 +8,7 @@
 	"maxResults": 5,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
+	"useWildcards": false,
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],

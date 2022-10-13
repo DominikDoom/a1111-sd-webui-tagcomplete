@@ -1,0 +1,7 @@
+// Put the file names of wildcard files you want to use here. Needed so that the script can access them.
+// The default ones are the following, you can uncomment them if you have them
+//adjective
+//artist
+//genre
+//site
+//style
