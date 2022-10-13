@@ -1,5 +1,10 @@
 {
 	"tagFile": "danbooru.csv",
+	"activeIn": {
+		"txt2img": true,
+		"img2img": true,
+		"negativePrompts": true
+	},
 	"maxResults": 5,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,

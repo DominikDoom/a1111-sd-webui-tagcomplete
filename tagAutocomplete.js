@@ -1,6 +1,6 @@
 // Style for new elements. Gets appended to the Gradio root.
 const autocompleteCSS_dark = `
-    #autocompleteResults {
+    .autocompleteResults {
         position: absolute;
         z-index: 999;
         margin: 5px 0 0 0;
@@ -9,23 +9,23 @@ const autocompleteCSS_dark = `
         border-radius: 12px !important;
         overflow: hidden;
     }
-    #autocompleteResultsList > li:nth-child(odd) {
+    .autocompleteResultsList > li:nth-child(odd) {
         background-color: #111827;
     }
-    #autocompleteResultsList > li {
+    .autocompleteResultsList > li {
         list-style-type: none;
         padding: 10px;
         cursor: pointer;
     }
-    #autocompleteResultsList > li:hover {
+    .autocompleteResultsList > li:hover {
         background-color: #1f2937;
     }
-    #autocompleteResultsList > li.selected {
+    .autocompleteResultsList > li.selected {
         background-color: #374151;
     }
 `;
 const autocompleteCSS_light = `
-    #autocompleteResults {
+    .autocompleteResults {
         position: absolute;
         z-index: 999;
         margin: 5px 0 0 0;
@@ -34,18 +34,18 @@ const autocompleteCSS_light = `
         border-radius: 12px !important;
         overflow: hidden;
     }
-    #autocompleteResultsList > li:nth-child(odd) {
+    .autocompleteResultsList > li:nth-child(odd) {
         background-color: #f9fafb;
     }
-    #autocompleteResultsList > li {
+    .autocompleteResultsList > li {
         list-style-type: none;
         padding: 10px;
         cursor: pointer;
     }
-    #autocompleteResultsList > li:hover {
+    .autocompleteResultsList > li:hover {
         background-color: #f5f6f8;
     }
-    #autocompleteResultsList > li.selected {
+    .autocompleteResultsList > li.selected {
         background-color: #e5e7eb;
     }
 `;
@@ -129,14 +129,35 @@ function difference(a, b) {
             a.reduce( (acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map() ) 
     )].reduce( (acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), [] );
 }
+// Get the identifier for the text area to differentiate between positive and negative
+function getTextAreaIdentifier(textArea) {
+    let txt2img_n = gradioApp().querySelector('#negative_prompt > label > textarea');
+    let img2img = gradioApp().querySelector('#tab_img2img');
+    let img2img_p = img2img.querySelector('#img2img_prompt > label > textarea');
+    let img2img_n = img2img.querySelector('#negative_prompt > label > textarea');
+    
+    let modifier = "";
+    if (textArea === img2img_p || textArea === img2img_n) {
+        modifier += ".img2img";
+    }
+    if (textArea === txt2img_n || textArea === img2img_n) {
+        modifier += ".n";
+    } else {
+        modifier += ".p";
+    }
+    return modifier;
+}
 
 // Create the result list div and necessary styling
-function createResultsDiv() {
+function createResultsDiv(textArea) {
     let resultsDiv = document.createElement("div");
     let resultsList = document.createElement('ul');
     
-    resultsDiv.setAttribute('id', 'autocompleteResults');
-    resultsList.setAttribute('id', 'autocompleteResultsList');
+    let textAreaId = getTextAreaIdentifier(textArea);
+    let typeClass = textAreaId.replaceAll(".", " ");
+
+    resultsDiv.setAttribute('class', `autocompleteResults ${typeClass}`);
+    resultsList.setAttribute('class', 'autocompleteResultsList');
     resultsDiv.appendChild(resultsList);
 
     return resultsDiv;
@@ -146,56 +167,62 @@ function createResultsDiv() {
 var selectedTag = null;
 
 // Show or hide the results div
-var isVisible = false;
-function showResults() {
-    let resultsDiv = gradioApp().querySelector('#autocompleteResults');
-    resultsDiv.style.display = "block";
-    isVisible = true;
+function isVisible(textArea) {
+    let textAreaId = getTextAreaIdentifier(textArea);
+    let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
+    return resultsDiv.style.display === "block";
 }
-function hideResults() {
-    let resultsDiv = gradioApp().querySelector('#autocompleteResults');
+function showResults(textArea) {
+    let textAreaId = getTextAreaIdentifier(textArea);
+
+    let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
+    resultsDiv.style.display = "block";
+}
+function hideResults(textArea) {
+    let textAreaId = getTextAreaIdentifier(textArea);
+
+    let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     resultsDiv.style.display = "none";
-    isVisible = false;
     selectedTag = null;
 }
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
-function insertTextAtCursor(text, tagword) {
-    let promptTextbox = gradioApp().querySelector('#txt2img_prompt > label > textarea');
-    let cursorPos = promptTextbox.selectionStart;
+function insertTextAtCursor(textArea, text, tagword) {
+    let cursorPos = textArea.selectionStart;
     let sanitizedText = acConfig.replaceUnderscores ? text.replaceAll("_", " ") : text;
     sanitizedText = acConfig.escapeParentheses ? sanitizedText.replaceAll("(", "\\(").replaceAll(")", "\\)") : sanitizedText;
     
-    var prompt = promptTextbox.value;
+    var prompt = textArea.value;
     let optionalComma = (prompt[cursorPos] === "," || prompt[cursorPos + tagword.length] === ",") ? "" : ", ";
 
     // Edit prompt text
     let toRight = prompt.substring(cursorPos, cursorPos + tagword.length) === tagword;
     if (toRight) {
-        promptTextbox.value = prompt.substring(0, cursorPos) + sanitizedText + optionalComma + prompt.substring(cursorPos + tagword.length)
+        textArea.value = prompt.substring(0, cursorPos) + sanitizedText + optionalComma + prompt.substring(cursorPos + tagword.length)
         // Update cursor position to after the inserted text
-        promptTextbox.selectionStart = cursorPos + sanitizedText.length + optionalComma.length;
+        textArea.selectionStart = cursorPos + sanitizedText.length + optionalComma.length;
     } else {
-        promptTextbox.value = prompt.substring(0, cursorPos - tagword.length) + sanitizedText + optionalComma + prompt.substring(cursorPos)
-        promptTextbox.selectionStart = cursorPos - tagword.length + sanitizedText.length + optionalComma.length;
+        textArea.value = prompt.substring(0, cursorPos - tagword.length) + sanitizedText + optionalComma + prompt.substring(cursorPos)
+        textArea.selectionStart = cursorPos - tagword.length + sanitizedText.length + optionalComma.length;
     }
-    prompt = promptTextbox.value;
-    promptTextbox.selectionEnd = promptTextbox.selectionStart;
+    prompt = textArea.value;
+    textArea.selectionEnd = textArea.selectionStart;
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure its
     // internal Svelte data binding remains in sync.
-    promptTextbox.dispatchEvent(new Event("input", { bubbles: true }));
+    textArea.dispatchEvent(new Event("input", { bubbles: true }));
 
     // Hide results after inserting
-    hideResults();
+    hideResults(textArea);
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
     let tags = prompt.match(/[^, ]+/g);
     previousTags = tags;
 }
 
-function addResultsToList(results, tagword) {
-    let resultsList = gradioApp().querySelector('#autocompleteResultsList');
+function addResultsToList(textArea, results, tagword) {
+    let textAreaId = getTextAreaIdentifier(textArea);
+    let resultsList = gradioApp().querySelector('.autocompleteResults' + textAreaId + ' > ul');
     resultsList.innerHTML = "";
 
     // Find right colors from config
@@ -217,14 +244,15 @@ function addResultsToList(results, tagword) {
 
         li.style = `color: ${colorGroup[tagType][mode]};`;
         // Add listener
-        li.addEventListener("click", function() { insertTextAtCursor(result[0], tagword); });
+        li.addEventListener("click", function() { insertTextAtCursor(textArea, result[0], tagword); });
         // Add element to list
         resultsList.appendChild(li);
     }
 }
 
-function updateSelectionStyle(num) {
-    let resultsList = gradioApp().querySelector('#autocompleteResultsList');
+function updateSelectionStyle(textArea, num) {
+    let textAreaId = getTextAreaIdentifier(textArea);
+    let resultsList = gradioApp().querySelector('.autocompleteResults' + textAreaId + ' > ul');
     let items = resultsList.getElementsByTagName('li');
 
     for (let i = 0; i < items.length; i++) {
@@ -239,10 +267,10 @@ previousTags = [];
 results = [];
 tagword = "";
 resultCount = 0;
-function autocomplete(prompt) {
+function autocomplete(textArea, prompt) {
     // Guard for empty prompt
     if (prompt.length === 0) {
-        hideResults();
+        hideResults(textArea);
         return;
     }
 
@@ -253,7 +281,7 @@ function autocomplete(prompt) {
 
     // Guard for no difference / only whitespace remaining
     if (diff === undefined || diff.length === 0) {
-        hideResults();
+        hideResults(textArea);
         return;
     }
 
@@ -261,7 +289,7 @@ function autocomplete(prompt) {
 
     // Guard for empty tagword
     if (tagword === undefined || tagword.length === 0) {
-        hideResults();
+        hideResults(textArea);
         return;
     }
     
@@ -270,19 +298,19 @@ function autocomplete(prompt) {
 
     // Guard for empty results
     if (resultCount === 0) {
-        hideResults();
+        hideResults(textArea);
         return;
     }
 
-    showResults();
-    addResultsToList(results, tagword);
+    showResults(textArea);
+    addResultsToList(textArea, results, tagword);
 }
 
-function navigateInList(event) {
+function navigateInList(textArea, event) {
     validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Escape"];
 
     if (!validKeys.includes(event.key)) return;
-    if (!isVisible) return
+    if (!isVisible(textArea)) return
 
     switch (event.key) {
         case "ArrowUp":
@@ -307,16 +335,16 @@ function navigateInList(event) {
             break;
         case "Enter":
             if (selectedTag !== null) {
-                insertTextAtCursor(results[selectedTag][0], tagword);
+                insertTextAtCursor(textArea, results[selectedTag][0], tagword);
             }
             break;
         case "Escape":
-            hideResults();
+            hideResults(textArea);
             break;
     }
     // Update highlighting
     if (selectedTag !== null)
-        updateSelectionStyle(selectedTag);
+        updateSelectionStyle(textArea, selectedTag);
 
     // Prevent default behavior
     event.preventDefault();
@@ -328,38 +356,59 @@ onUiUpdate(function(){
     if (acConfig === null) acConfig = JSON.parse(readFile("file/tags/config.json"));
     if (allTags.length === 0) allTags = loadCSV();
 
-	let promptTextbox = gradioApp().querySelector('#txt2img_prompt > label > textarea');
-	
-    if (promptTextbox === null) return;
-    if (gradioApp().querySelector('#autocompleteResults') != null) return;
+	let txt2imgTextArea = gradioApp().querySelector('#txt2img_prompt > label > textarea');
+    let img2imgTextArea = gradioApp().querySelector('#img2img_prompt > label > textarea');
+    let negativeTextAreas = Array.from(gradioApp().querySelectorAll('#negative_prompt > label > textarea'));
+    let textAreas = [txt2imgTextArea, img2imgTextArea, negativeTextAreas[0], negativeTextAreas[1]];
 
-    // Only add listeners once
-    if (!promptTextbox.classList.contains('autocomplete')) {
-        // Add our new element
-        var resultsDiv = gradioApp().querySelector('#autocompleteResults') ?? createResultsDiv();
-        promptTextbox.parentNode.insertBefore(resultsDiv, promptTextbox.nextSibling);
-        // Hide by default so it doesn't show up on page load
-        hideResults();
-        
-        // Add autocomplete event listener
-        promptTextbox.addEventListener('input', debounce(() => autocomplete(promptTextbox.value), 100));
-        // Add focusout event listener
-        promptTextbox.addEventListener('focusout', debounce(() => hideResults(), 400));
-        // Add up and down arrow event listener
-        promptTextbox.addEventListener('keydown', (e) => navigateInList(e));
-
-        // Add class so we know we've already added the listeners
-        promptTextbox.classList.add('autocomplete');
-
-        // Add style to dom
-        let acStyle = document.createElement('style');
-
-        let css = gradioApp().querySelector('.dark') ? autocompleteCSS_dark : autocompleteCSS_light;
-        if (acStyle.styleSheet) {
-            acStyle.styleSheet.cssText = css;
-        } else {
-            acStyle.appendChild(document.createTextNode(css));
-        }
-        gradioApp().appendChild(acStyle);
+    // Not found, we're on a page without prompt textareas
+    if (textAreas.every(v => v === null || v === undefined)) return;
+    // Already added?
+    if (gradioApp().querySelector('.autocompleteResults.p') !== null
+        && (gradioApp().querySelector('.autocompleteResults.n') === null
+            && !acConfig.activeIn.negativePrompts)) {
+        return;
     }
+
+    textAreas.forEach(area => {
+        // Skip directly if not found on the page
+        if (area === null || area === undefined) return;
+        
+        // Check config for which textareas to add autocomplete to
+        let shouldAdd = area === txt2imgTextArea && acConfig.activeIn.txt2img
+            || area === img2imgTextArea && acConfig.activeIn.img2img
+            || negativeTextAreas.includes(area) && acConfig.activeIn.negativePrompts;
+        
+        if (!shouldAdd) return;
+
+        // Only add listeners once
+        if (!area.classList.contains('autocomplete')) {
+            // Add our new element
+            var resultsDiv = createResultsDiv(area);
+            area.parentNode.insertBefore(resultsDiv, area.nextSibling);
+            // Hide by default so it doesn't show up on page load
+            hideResults(area);
+            
+            // Add autocomplete event listener
+            area.addEventListener('input', debounce(() => autocomplete(area, area.value), 100));
+            // Add focusout event listener
+            area.addEventListener('focusout', debounce(() => hideResults(area), 400));
+            // Add up and down arrow event listener
+            area.addEventListener('keydown', (e) => navigateInList(area, e));
+
+            // Add class so we know we've already added the listeners
+            area.classList.add('autocomplete');
+
+            // Add style to dom
+            let acStyle = document.createElement('style');
+
+            let css = gradioApp().querySelector('.dark') ? autocompleteCSS_dark : autocompleteCSS_light;
+            if (acStyle.styleSheet) {
+                acStyle.styleSheet.cssText = css;
+            } else {
+                acStyle.appendChild(document.createTextNode(css));
+            }
+            gradioApp().appendChild(acStyle);
+        }
+    });
 });
