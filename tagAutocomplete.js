@@ -166,6 +166,7 @@ function createResultsDiv(textArea) {
 
 // The selected tag index. Needs to be up here so hide can access it.
 var selectedTag = null;
+var previousTags = [];
 
 // Show or hide the results div
 function isVisible(textArea) {
@@ -214,21 +215,22 @@ function insertTextAtCursor(textArea, result, tagword) {
     let editStart = Math.max(cursorPos - tagword.length, 0);
     let editEnd = Math.min(cursorPos + tagword.length, prompt.length);
     let surrounding = prompt.substring(editStart, editEnd);
-    let insert = surrounding.replace(tagword, sanitizedText);
+    let match = surrounding.match(new RegExp(`${tagword}`));
+    let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
-    // Add back start
-    var newPrompt = prompt.substring(0, editStart) + insert;
-    // Add comma if needed
     var optionalComma = "";
     if (tagType !== "wildcardFile") {
-        optionalComma = surrounding.match(`/${tagword},/g`) !== null ? "" : ", ";
+        optionalComma = surrounding.match(new RegExp(`${tagword},`)) !== null ? "" : ", ";
     }
-    // Set selection after insertion
-    textArea.selectionStart = editStart + newPrompt.length + optionalComma.length;
-    textArea.selectionEnd = textArea.selectionStart;
-    // Add back end
-    newPrompt += optionalComma + prompt.substring(editEnd);
+
+    // Replace partial tag word with new text, add comma if needed
+    let insert = surrounding.replace(tagword, sanitizedText + optionalComma);
+
+    // Add back start
+    var newPrompt = prompt.substring(0, editStart) + insert + prompt.substring(editEnd);
     textArea.value = newPrompt;
+    textArea.selectionStart = afterInsertCursorPos + optionalComma.length;
+    textArea.selectionEnd = textArea.selectionStart
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure its
     // internal Svelte data binding remains in sync.
@@ -305,7 +307,6 @@ function updateSelectionStyle(textArea, num) {
 wildcardFiles = [];
 wildcards = {};
 allTags = [];
-previousTags = [];
 results = [];
 tagword = "";
 resultCount = 0;
