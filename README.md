@@ -10,7 +10,7 @@ I created this script as a convenience tool since it reduces the need of switchi
 You can either download the files manually as described below, or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
 ### Disclaimer:
-This script is definitely not optimized, and it's not very intelligent. The tags are simply recommended based on their natural order in the CSV, which is their respective image count for the default Danbooru tag list. Also, at least for now, completion for negative or img2img prompt textboxes isn't supported, and there's no way to turn the script off from the ui, but I plan to get around to those features eventually.
+This script is definitely not optimized, and it's not very intelligent. The tags are simply recommended based on their natural order in the CSV, which is their respective image count for the default Danbooru tag list. Also, at least for now there's no way to turn the script off from the ui, but I plan to get around to that eventually.
 
 ### Known Issues:
 If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
@@ -38,8 +38,14 @@ The config contains the following settings and defaults:
 ```json
 {
 	"tagFile": "danbooru.csv",
+	"activeIn": {
+		"txt2img": true,
+		"img2img": true,
+		"negativePrompts": true
+	},
 	"maxResults": 5,
 	"replaceUnderscores": true,
+	"escapeParentheses": true,
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],
@@ -65,8 +71,10 @@ The config contains the following settings and defaults:
 | Setting	| Description |
 |---------|-------------|
 | tagFile | Specifies the tag file to use. You can provide a custom tag database of your liking, but since the script was developed with Danbooru tags in mind, it might not work properly with other configurations.|
+| activeIn | Allows to selectively (de)activate the script for txt2img, img2img, and the negative prompts for both. |
 | maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
+| escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
 | colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
 
 ### CSV tag data
