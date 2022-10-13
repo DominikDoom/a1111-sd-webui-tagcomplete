@@ -11,17 +11,26 @@ I created this script as a convenience tool since it reduces the need of switchi
 
 You can either download the files manually as described below, or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
-### Disclaimer:
-This script is definitely not optimized, and it's not very intelligent. The tags are simply recommended based on their natural order in the CSV, which is their respective image count for the default Danbooru tag list. Also, at least for now there's no way to turn the script off from the ui, but I plan to get around to that eventually.
+### NEW - Wildcard support
+Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or event replace them with the actual wildcard file content in the same step.
+#### Important:
+Since not everyone has the script, it is **disabled by default**. Edit the config to enable it and uncomment / add the filenames you use in `wildcardNames.txt`.
+
 
 ### Known Issues:
 If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
 For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
 
+Also, at least for now there's no way to turn the script off from the ui, but I plan to get around to that eventually.
+
 ## Screenshots
 Demo video (with keyboard navigation):
 
 https://user-images.githubusercontent.com/34448969/195344430-2b5f9945-b98b-4943-9fbc-82cf633321b1.mp4
+
+Wildcard script support:
+
+https://user-images.githubusercontent.com/34448969/195632461-49d226ae-d393-453d-8f04-1e44b073234c.mp4
 
 Dark and Light mode supported, including tag colors:
 
@@ -48,6 +57,7 @@ The config contains the following settings and defaults:
 	"maxResults": 5,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
+	"useWildcards": false,
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],
@@ -77,6 +87,7 @@ The config contains the following settings and defaults:
 | maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
 | escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
+| useWildcards | Used to toggle the recently added wildcard completion functionality. Also needs `wildcardNames.txt` to contain proper file names for your wildcard files. |
 | colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
 
 ### CSV tag data
