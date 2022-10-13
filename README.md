@@ -42,6 +42,10 @@ Dark and Light mode supported, including tag colors:
 Simply put `tagAutocomplete.js` into the `javascript` folder of your web UI installation. It will run automatically the next time the web UI is started.
 For the script to work, you also need to download the `tags` folder from this repo and paste it and its contents into the web UI root, or create them there manually.
 
+The folder structure should look similar to this at the end:
+
+![image](https://user-images.githubusercontent.com/34448969/195697260-526a1ab8-4a63-4b8b-a9bf-ae0f3eef780f.png)
+
 The tags folder contains `config.json` and the tag data the script uses for autocompletion. By default, Danbooru and e621 tags are included.
 
 ### Config
