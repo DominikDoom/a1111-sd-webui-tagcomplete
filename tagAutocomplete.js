@@ -374,12 +374,15 @@ onUiUpdate(function(){
         // Skip directly if not found on the page
         if (area === null || area === undefined) return;
         
-        // Check config for which textareas to add autocomplete to
-        let shouldAdd = area === txt2imgTextArea && acConfig.activeIn.txt2img
-            || area === img2imgTextArea && acConfig.activeIn.img2img
-            || negativeTextAreas.includes(area) && acConfig.activeIn.negativePrompts;
-        
-        if (!shouldAdd) return;
+        // Return if autocomplete is disabled for the current area type in config
+        let textAreaId = getTextAreaIdentifier(area);
+        if (textAreaId.includes("p") || (textAreaId.includes("n") && acConfig.activeIn.negativePrompts)) {
+            if (textAreaId.includes("img2img")) {
+                if (!acConfig.activeIn.img2img) return;
+            } else {
+                if (!acConfig.activeIn.txt2img) return;
+            }
+        }
 
         // Only add listeners once
         if (!area.classList.contains('autocomplete')) {
