@@ -182,6 +182,10 @@ function insertTextAtCursor(text, tagword) {
     prompt = promptTextbox.value;
     promptTextbox.selectionEnd = promptTextbox.selectionStart;
 
+    // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure its
+	// internal Svelte data binding remains in sync.
+	promptTextbox.dispatchEvent(new Event("input", { bubbles: true }));
+
     // Hide results after inserting
     hideResults();
 
