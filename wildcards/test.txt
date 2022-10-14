@@ -1,0 +1,76 @@
+#图片属性
+cg >> 非galgame游戏cg
+gap >> 杂志扫图中间留有一条线
+screening >> 扫图
+paper_texture >> 纸张质地
+tagme >> 图片有一些上传者未知的项目
+character_design >> 人物设计
+disc_cover >> 唱片封面图片
+duplicate >> 复制
+expression >> 人物表情
+fixed >> 挂画
+stick_poster >> 海报
+index_page >> 目录页
+partial_scan >> 局部扫描
+photoshop >> 作画工具
+transparent_png >> 透明背景的png图片
+vector_trace >> 矢量图
+tutorial >> 绘画教程
+
+#人物类型
+witch >> 女巫
+kitsune >> 狐人
+tagme >> 参谋长
+
+#人物形态
+wings >> 翅膀/翼
+feet >> 足（足控用）
+genderswap >> 性别交换
+horns >> 兽角
+neko >> 猫
+tan_lines >> 晒日线
+
+#服装风格
+open_shirt >> 敞开衬衫（开的大）
+shirt_lift >> 敞开衬衫（开的小）
+onsen >> 温泉
+smoking >> 抽烟
+underboob >> 从下往上看女性乳房
+
+#服装类物品
+megane >> 眼镜
+sheets >> 被单
+towel >> 毛巾
+buruma >> 日本女生运动短裤
+seifuku >> 日本学生服
+pasties >> 乳饰
+leotard >> 紧身连衣裤
+dress_shirt >> 男式白衬衫
+panties/pantsu >> 内裤
+no_panties/nopan >> 没内裤
+shimapan >> 条纹内裤
+string_panties >> 细带三角裤
+garter >> 吊带袜
+overalls >> 吊带裤
+#物品
+armor >> 装甲
+bandages >> 绷带
+calendar >> 日历
+car >> 卡片
+headphones >> 耳机
+mecha >> 机甲
+mecha_musume >> 机器娘
+penguin >> 企鹅
+tennis >> 网球
+
+#和谐类
+nipple_slip >> 乳头从上衣滑出来
+erect_nipples >> 竖立的乳头
+areola >> 乳晕
+breast_hold >> 自己抓自己乳房
+bukkake >> 颜射
+ass_grab >> 手抓着屁股
+fellatio >> 口交
+extreme_content >> 重口味
+pee >> 撒尿
+tentacles >> 触手
