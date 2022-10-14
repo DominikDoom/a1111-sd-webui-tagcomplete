@@ -210,7 +210,13 @@ function insertTextAtCursor(textArea, result, tagword) {
         sanitizedText = acConfig.replaceUnderscores ? text.replaceAll("_", " ") : text;
     }
 
-    sanitizedText = acConfig.escapeParentheses ? sanitizedText.replaceAll("(", "\\(").replaceAll(")", "\\)") : sanitizedText;
+    if (acConfig.escapeParentheses) {
+        sanitizedText = sanitizedText
+        .replaceAll("(", "\\(")
+        .replaceAll(")", "\\)")
+        .replaceAll("[", "\\[")
+        .replaceAll("]", "\\]");
+    }
 
     var prompt = textArea.value;
 
@@ -269,7 +275,7 @@ function addResultsToList(textArea, results, tagword) {
     for (let i = 0; i < results.length; i++) {
         let result = results[i];
         let li = document.createElement("li");
-        li.innerHTML = result[0];
+        li.textContent = result[0];
 
         // Wildcards have no tag type
         if (!result[1].startsWith("wildcard")) {
