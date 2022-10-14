@@ -207,7 +207,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     } else {
         sanitizedText = acConfig.replaceUnderscores ? text.replaceAll("_", " ") : text;
         if (tagType === "wildcardTag") {
-            sanitizedText = sanitizedText.replace(/\s*>>.*/g, "");
+            sanitizedText = sanitizedText.replace(/\s*>>.*/g, ""); //delete translation
         }
     }
 
