@@ -132,10 +132,10 @@ function difference(a, b) {
 }
 // Get the identifier for the text area to differentiate between positive and negative
 function getTextAreaIdentifier(textArea) {
-    let txt2img_n = gradioApp().querySelector('#negative_prompt > label > textarea');
+    let txt2img_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
     let img2img = gradioApp().querySelector('#tab_img2img');
     let img2img_p = img2img.querySelector('#img2img_prompt > label > textarea');
-    let img2img_n = img2img.querySelector('#negative_prompt > label > textarea');
+    let img2img_n = img2img.querySelector('#img2img_neg_prompt > label > textarea');
 
     let modifier = "";
     if (textArea === img2img_p || textArea === img2img_n) {
@@ -526,8 +526,9 @@ onUiUpdate(function () {
     // Find all textareas
     let txt2imgTextArea = gradioApp().querySelector('#txt2img_prompt > label > textarea');
     let img2imgTextArea = gradioApp().querySelector('#img2img_prompt > label > textarea');
-    let negativeTextAreas = Array.from(gradioApp().querySelectorAll('#negative_prompt > label > textarea'));
-    let textAreas = [txt2imgTextArea, img2imgTextArea, negativeTextAreas[0], negativeTextAreas[1]];
+    let txt2imgTextArea_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
+    let img2imgTextArea_n = gradioApp().querySelector('#img2img_neg_prompt > label > textarea');
+    let textAreas = [txt2imgTextArea, img2imgTextArea, txt2imgTextArea_n, img2imgTextArea_n];
 
     let quicksettings = gradioApp().querySelector('#quicksettings');
 
