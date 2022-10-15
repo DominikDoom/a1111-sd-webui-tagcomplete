@@ -497,6 +497,7 @@ onUiUpdate(function () {
     if (wildcardFiles.length === 0 && acConfig.useWildcards) {
         try {
             wildcardFiles = readFile("file/tags/temp/wc.txt").split("\n")
+                .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
 
             wildcardFiles.forEach(fName => {
@@ -515,6 +516,7 @@ onUiUpdate(function () {
     if (embeddings.length === 0 && acConfig.useEmbeddings) {
         try {
             embeddings = readFile("file/tags/temp/emb.txt").split("\n")
+                .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.replace(".bin", "").replace(".pt", "")); // Remove file extensions
         } catch (e) {
             console.error("Error loading embeddings.txt: " + e);
