@@ -176,7 +176,7 @@ function createCheckbox() {
     input.setAttribute('type', 'checkbox');
     input.setAttribute('class', 'gr-check-radio gr-checkbox')
     span.setAttribute('class', 'ml-2');
-    
+
     span.textContent = "Enable Autocomplete";
 
     label.appendChild(input);
@@ -234,10 +234,10 @@ function insertTextAtCursor(textArea, result, tagword) {
 
     if (acConfig.escapeParentheses) {
         sanitizedText = sanitizedText
-        .replaceAll("(", "\\(")
-        .replaceAll(")", "\\)")
-        .replaceAll("[", "\\[")
-        .replaceAll("]", "\\]");
+            .replaceAll("(", "\\(")
+            .replaceAll(")", "\\)")
+            .replaceAll("[", "\\[")
+            .replaceAll("]", "\\]");
     }
 
     var prompt = textArea.value;
@@ -351,7 +351,7 @@ resultCount = 0;
 function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
     if (!acActive) return;
-    
+
     // Guard for empty prompt
     if (prompt.length === 0) {
         hideResults(textArea);

@@ -10,18 +10,22 @@ EMB_PATH = os.path.join(FILE_DIR, 'embeddings')
 # The path to the temporary file
 TEMP_PATH = os.path.join(FILE_DIR, 'tags/temp')
 
+
 def get_wildcards():
     """Returns a list of all wildcards"""
     return filter(lambda f: f.endswith(".txt"), os.listdir(WILDCARD_PATH))
+
 
 def get_embeddings():
     """Returns a list of all embeddings"""
     return filter(lambda f: f.endswith(".bin") or f.endswith(".pt"), os.listdir(EMB_PATH))
 
+
 def write_to_temp_file(name, data):
     """Writes the given data to a temporary file"""
     with open(os.path.join(TEMP_PATH, name), 'w') as f:
         f.write(('\n'.join(data)))
+
 
 # Check if the temp path exists and create it if not
 if not os.path.exists(TEMP_PATH):
