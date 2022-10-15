@@ -11,17 +11,16 @@ I created this script as a convenience tool since it reduces the need of switchi
 
 You can either clone / download the files manually as described [below](#installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
-### NEW - Wildcard support
+### Wildcard & Embedding support
 Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or even replace them with the actual wildcard file content in the same step.
-#### Important:
-Since not everyone has the script, it is **disabled by default**. Edit the config to enable it and uncomment / add the filenames you use in `wildcardNames.txt`.
-As per the instructions of the wildcard script, the files are expected in `/scripts/wildcards/`, it will likely fail if you have another folder structure.
+
+It also scans the embeddings folder and displays completion hints for the names of all .pt and .bin files inside if you start typing `<`. Note that some normal tags also use < in Kaomoji (like ">_<" for example), so the results will contain both.
+
+Both are now enabled by default and scan the `/embeddings` and `/scripts/wildcards` folders automatically.
 
 ### Known Issues:
 If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
 For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
-
-Also, at least for now there's no way to turn the script off from the ui, but I plan to get around to that eventually.
 
 ## Screenshots
 Demo video (with keyboard navigation):
@@ -37,16 +36,13 @@ Dark and Light mode supported, including tag colors:
 ![tagtypes](https://user-images.githubusercontent.com/34448969/195177127-f63949f8-271d-4767-bccd-f1b5e818a7f8.png)
 ![tagtypes_light](https://user-images.githubusercontent.com/34448969/195180061-ceebcc25-9e4c-424f-b0c9-ba8e8f4f17f4.png)
 
-
 ## Installation
-Simply put `tagAutocomplete.js` into the **`javascript`** folder of your web UI installation (**NOT** the `scripts` folder where most other scripts are installed). It will run automatically the next time the web UI is started.
-For the script to work, you also need to download the `tags` folder from this repo and paste it and its contents into the web UI root, or create them there manually.
-
-The folder structure should look similar to this at the end:
-
-![image](https://user-images.githubusercontent.com/34448969/195697260-526a1ab8-4a63-4b8b-a9bf-ae0f3eef780f.png)
+Simply copy the `javascript`, `scripts` and `tags` folder into your web UI installation root. It will run automatically the next time the web UI is started.
 
 The tags folder contains `config.json` and the tag data the script uses for autocompletion. By default, Danbooru and e621 tags are included.
+After scanning for embeddings and wildcards, the script will also create a `temp` directory here which lists the found files so they can be accessed in the browser side of the script. You can delete the temp folder without consequences as it will be recreated on the next startup.
+### Important:
+The script needs **all three folders** to work properly.
 
 ### Config
 The config contains the following settings and defaults:
@@ -61,7 +57,8 @@ The config contains the following settings and defaults:
 	"maxResults": 5,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
-	"useWildcards": false,
+	"useWildcards": true,
+	"useEmbeddings": true,
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],
@@ -88,10 +85,11 @@ The config contains the following settings and defaults:
 |---------|-------------|
 | tagFile | Specifies the tag file to use. You can provide a custom tag database of your liking, but since the script was developed with Danbooru tags in mind, it might not work properly with other configurations.|
 | activeIn | Allows to selectively (de)activate the script for txt2img, img2img, and the negative prompts for both. |
-| maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. |
+| maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. For embeddings and wildcards it will show all results in a scrollable list. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
 | escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
-| useWildcards | Used to toggle the recently added wildcard completion functionality. Also needs `wildcardNames.txt` to contain proper file names for your wildcard files. |
+| useWildcards | Used to toggle the wildcard completion functionality. |
+| useEmbeddings | Used to toggle the embedding completion functionality. |
 | colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
 
 ### CSV tag data
