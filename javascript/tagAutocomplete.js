@@ -312,7 +312,6 @@ function addResultsToList(textArea, results, tagword) {
             // Default to danbooru scheme if no matching one is found
             if (colorGroup === undefined) colorGroup = tagColors["danbooru"];
 
-            console.log(colorGroup[tagType][mode]);
             li.style = `color: ${colorGroup[tagType][mode]};`;
         }
 
@@ -497,10 +496,12 @@ onUiUpdate(function () {
     // Load wildcards
     if (wildcardFiles.length === 0 && acConfig.useWildcards) {
         try {
-            wildcardFiles = readFile("file/tags/temp/wc.txt").split("\n");
+            wildcardFiles = readFile("file/tags/temp/wc.txt").split("\n")
+                .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
+
             wildcardFiles.forEach(fName => {
                 try {
-                    wildcards[fName.trim()] = readFile(`file/scripts/wildcards/${fName}`).split("\n")
+                    wildcards[fName] = readFile(`file/scripts/wildcards/${fName}.txt`).split("\n")
                         .filter(x => x.trim().length > 0); // Remove empty lines
                 } catch (e) {
                     console.log(`Could not load wildcards for ${fName}`);
@@ -514,7 +515,7 @@ onUiUpdate(function () {
     if (embeddings.length === 0 && acConfig.useEmbeddings) {
         try {
             embeddings = readFile("file/tags/temp/emb.txt").split("\n")
-                .map(x => x.split(".")[0]); // Remove file extensions
+                .map(x => x.replace(".bin", "").replace(".pt", "")); // Remove file extensions
         } catch (e) {
             console.error("Error loading embeddings.txt: " + e);
         }
