@@ -420,7 +420,17 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         genericResults = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
         results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
     } else {
-        results = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
+        if (acConfig.searchByTranslation) {
+            results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
+            // if search by [a~z],first list the translations, and then search English if it is not enough
+            // if only show translation,it is unnecessary to list English results
+            if (results.length < acConfig.maxResults && !acConfig.onlyShowTranslation) {
+                allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)).map(x => results.push(x));
+            }
+            results = results.slice(0, acConfig.maxResults);
+        } else {
+            results = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
+        }
     }
     resultCount = results.length;
 
@@ -488,6 +498,9 @@ onUiUpdate(function () {
     if (acConfig === null) {
         try {
             acConfig = JSON.parse(readFile("file/tags/config.json"));
+            if (acConfig.onlyShowTranslation) {
+                acConfig.searchByTranslation = true; // if only show translation, enable search by translation is necessary
+            }
         } catch (e) {
             console.error("Error loading config.json: " + e);
             return;
