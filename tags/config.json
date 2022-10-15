@@ -10,6 +10,8 @@
 	"escapeParentheses": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
+	"onlyShowTranslation": false,
+	"searchByTranslation": true,
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],
