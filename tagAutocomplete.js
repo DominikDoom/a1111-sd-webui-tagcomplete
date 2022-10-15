@@ -1,4 +1,5 @@
 var acConfig = null;
+var acActive = true;
 
 // Style for new elements. Gets appended to the Gradio root.
 let autocompleteCSS_dark = `
@@ -164,6 +165,25 @@ function createResultsDiv(textArea) {
     return resultsDiv;
 }
 
+// Create the checkbox to enable/disable autocomplete
+function createCheckbox() {
+    let label = document.createElement("label");
+    let input = document.createElement("input");
+    let span = document.createElement("span");
+
+    label.setAttribute('id', 'acActiveCheckbox');
+    label.setAttribute('class', '"flex items-center text-gray-700 text-sm rounded-lg cursor-pointer dark:bg-transparent');
+    input.setAttribute('type', 'checkbox');
+    input.setAttribute('class', 'gr-check-radio gr-checkbox')
+    span.setAttribute('class', 'ml-2');
+    
+    span.textContent = "Enable Autocomplete";
+
+    label.appendChild(input);
+    label.appendChild(span);
+    return label;
+}
+
 // The selected tag index. Needs to be up here so hide can access it.
 var selectedTag = null;
 var previousTags = [];
@@ -321,6 +341,9 @@ results = [];
 tagword = "";
 resultCount = 0;
 function autocomplete(textArea, prompt, fixedTag = null) {
+    // Return if the function is deactivated in the UI
+    if (!acActive) return;
+    
     // Guard for empty prompt
     if (prompt.length === 0) {
         hideResults(textArea);
@@ -385,6 +408,9 @@ function autocomplete(textArea, prompt, fixedTag = null) {
 }
 
 function navigateInList(textArea, event) {
+    // Return if the function is deactivated in the UI
+    if (!acActive) return;
+
     validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Escape"];
 
     if (!validKeys.includes(event.key)) return;
@@ -474,6 +500,8 @@ onUiUpdate(function () {
     let negativeTextAreas = Array.from(gradioApp().querySelectorAll('#negative_prompt > label > textarea'));
     let textAreas = [txt2imgTextArea, img2imgTextArea, negativeTextAreas[0], negativeTextAreas[1]];
 
+    let quicksettings = gradioApp().querySelector('#quicksettings');
+
     // Not found, we're on a page without prompt textareas
     if (textAreas.every(v => v === null || v === undefined)) return;
     // Already added?
@@ -516,6 +544,16 @@ onUiUpdate(function () {
             area.classList.add('autocomplete');
         }
     });
+
+    if (gradioApp().querySelector("#acActiveCheckbox") === null) {
+        // Add toggle switch
+        let cb = createCheckbox();
+        cb.querySelector("input").checked = acActive;
+        cb.querySelector("input").addEventListener("change", (e) => {
+            acActive = e.target.checked;
+        });
+        quicksettings.parentNode.insertBefore(cb, quicksettings.nextSibling);
+    }
 
     if (styleAdded) return;
 
