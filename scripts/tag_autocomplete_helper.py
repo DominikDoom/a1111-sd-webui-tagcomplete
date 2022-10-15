@@ -23,7 +23,7 @@ def get_embeddings():
 
 def write_to_temp_file(name, data):
     """Writes the given data to a temporary file"""
-    with open(os.path.join(TEMP_PATH, name), 'w') as f:
+    with open(os.path.join(TEMP_PATH, name), 'w', encoding="utf-8") as f:
         f.write(('\n'.join(data)))
 
 
