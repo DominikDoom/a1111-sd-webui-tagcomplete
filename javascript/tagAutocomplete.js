@@ -234,10 +234,10 @@ function insertTextAtCursor(textArea, result, tagword) {
 
     if (acConfig.escapeParentheses) {
         sanitizedText = sanitizedText
-        .replaceAll("(", "\\(")
-        .replaceAll(")", "\\)")
-        .replaceAll("[", "\\[")
-        .replaceAll("]", "\\]");
+            .replaceAll("(", "\\(")
+            .replaceAll(")", "\\)")
+            .replaceAll("[", "\\[")
+            .replaceAll("]", "\\]");
     }
 
     var prompt = textArea.value;
