@@ -302,9 +302,15 @@ function addResultsToList(textArea, results, tagword) {
     for (let i = 0; i < results.length; i++) {
         let result = results[i];
         let li = document.createElement("li");
-        li.textContent = result[0];
+
+        //suppost only show the translation to result
         if (result[2]) {
-            li.textContent += " >> " + result[2];
+            li.textContent = result[2];
+            if (!acConfig.onlyShowTranslation) {
+                li.textContent += " >> " + result[0];
+            }
+        } else {
+            li.textContent = result[0];
         }
 
         // Wildcards & Embeds have no tag type
