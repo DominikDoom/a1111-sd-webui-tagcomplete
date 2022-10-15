@@ -26,6 +26,10 @@ def write_to_temp_file(name, data):
 # Check if the temp path exists and create it if not
 if not os.path.exists(TEMP_PATH):
     os.makedirs(TEMP_PATH)
+    # Set up files to ensure the script doesn't fail to load them
+    # even if no wildcards or embeddings are found
+    write_to_temp_file('wc.txt', [])
+    write_to_temp_file('emb.txt', [])
 
 # Write wildcards to wc.txt if found
 if os.path.exists(WILDCARD_PATH):
