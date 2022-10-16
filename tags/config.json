@@ -5,7 +5,7 @@
 		"img2img": true,
 		"negativePrompts": true
 	},
-	"maxResults": 8,
+	"maxResults": 5,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,
