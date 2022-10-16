@@ -10,10 +10,11 @@
 	"escapeParentheses": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
-	"showAllResults": true,
+	"showAllResults": false,
 	"translation": {
 		"searchByTranslation": true,
 		"onlyShowTranslation": false,
+		"simpleExtraTranslationFile": false,
 		"extraTranslationFile": ""
 	},
 	"colors": {
