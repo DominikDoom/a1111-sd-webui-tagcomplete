@@ -523,15 +523,23 @@ onUiUpdate(function () {
         if (acConfig.translation.extraTranslationFile) {
             try {
                 allTranslations = loadCSV(`file/tags/${acConfig.translation.extraTranslationFile}`);
-                allTranslations.map(x => {
-                    if (x[2]) {
-                        for (let i = 0; i < allTags.length; i++) {
-                            if (x[0] === allTags[i][0] && x[1] === allTags[i][1]) {
-                                allTags[i][2] = x[2];
-                            }
+                if (acConfig.simpleExtraTranslationFile) {
+                    for (let i = 0; i < allTranslations.length; i++) {
+                        if (allTranslations[i][0]) {
+                            allTags[i][2] = allTranslations[i][0];
                         }
                     }
-                });
+                } else {
+                    allTranslations.map(x => {
+                        if (x[2]) {
+                            for (let i = 0; i < allTags.length; i++) {
+                                if (x[0] === allTags[i][0] && x[1] === allTags[i][1]) {
+                                    allTags[i][2] = x[2];
+                                }
+                            }
+                        }
+                    });
+                }
             } catch (e) {
                 console.error("Error loading extra translation file: " + e);
                 return;
