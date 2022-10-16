@@ -98,6 +98,7 @@ function readFile(filePath) {
     return request.responseText;
 }
 
+// Load CSV
 function loadCSV(path) {
     let text = readFile(path);
     return parseCSV(text);
@@ -130,6 +131,7 @@ function difference(a, b) {
         a.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map())
     )].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
 }
+
 // Get the identifier for the text area to differentiate between positive and negative
 function getTextAreaIdentifier(textArea) {
     let txt2img_n = gradioApp().querySelector('#negative_prompt > label > textarea');
@@ -213,6 +215,7 @@ function escapeRegExp(string) {
 }
 
 let hideBlocked = false;
+
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 function insertTextAtCursor(textArea, result, tagword) {
     let text = result[0];
@@ -241,7 +244,6 @@ function insertTextAtCursor(textArea, result, tagword) {
     }
 
     var prompt = textArea.value;
-
 
     // Edit prompt text
     let editStart = Math.max(cursorPos - tagword.length, 0);
@@ -521,11 +523,15 @@ onUiUpdate(function () {
         if (acConfig.translation.extraTranslationFile) {
             try {
                 allTranslations = loadCSV(`file/tags/${acConfig.translation.extraTranslationFile}`);
-                for (let i = 0; i < allTranslations.length; i++) {
-                    if (allTranslations[i][0]) {
-                        allTags[i][2] = allTranslations[i][0];
+                allTranslations.map(x => {
+                    if (x[2]) {
+                        for (let i = 0; i < allTags.length; i++) {
+                            if (x[0] === allTags[i][0] && x[1] === allTags[i][1]) {
+                                allTags[i][2] = x[2];
+                            }
+                        }
                     }
-                }
+                });
             } catch (e) {
                 console.error("Error loading extra translation file: " + e);
                 return;
