@@ -98,8 +98,8 @@ function readFile(filePath) {
     return request.responseText;
 }
 
-function loadCSV() {
-    let text = readFile(`file/tags/${acConfig.tagFile}`);
+function loadCSV(path) {
+    let text = readFile(path);
     return parseCSV(text);
 }
 
@@ -306,7 +306,7 @@ function addResultsToList(textArea, results, tagword) {
         //suppost only show the translation to result
         if (result[2]) {
             li.textContent = result[2];
-            if (!acConfig.onlyShowTranslation) {
+            if (!acConfig.translation.onlyShowTranslation) {
                 li.textContent += " >> " + result[0];
             }
         } else {
@@ -420,11 +420,11 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         genericResults = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
         results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
     } else {
-        if (acConfig.searchByTranslation) {
+        if (acConfig.translation.searchByTranslation) {
             results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
             // if search by [a~z],first list the translations, and then search English if it is not enough
             // if only show translation,it is unnecessary to list English results
-            if (results.length < acConfig.maxResults && !acConfig.onlyShowTranslation) {
+            if (results.length < acConfig.maxResults && !acConfig.translation.onlyShowTranslation) {
                 allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)).map(x => results.push(x));
             }
             results = results.slice(0, acConfig.maxResults);
@@ -498,21 +498,34 @@ onUiUpdate(function () {
     if (acConfig === null) {
         try {
             acConfig = JSON.parse(readFile("file/tags/config.json"));
-            if (acConfig.onlyShowTranslation) {
-                acConfig.searchByTranslation = true; // if only show translation, enable search by translation is necessary
+            if (acConfig.translation.onlyShowTranslation) {
+                acConfig.translation.searchByTranslation = true; // if only show translation, enable search by translation is necessary
             }
         } catch (e) {
             console.error("Error loading config.json: " + e);
             return;
         }
     }
-    // Load main tags
+    // Load main tags and translations
     if (allTags.length === 0) {
         try {
-            allTags = loadCSV();
+            allTags = loadCSV(`file/tags/${acConfig.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
+        }
+        if (acConfig.translation.extraTranslationFile) {
+            try {
+                allTranslations = loadCSV(`file/tags/${acConfig.translation.extraTranslationFile}`);
+                for (let i = 0; i < allTranslations.length; i++) {
+                    if (allTranslations[i][0]) {
+                        allTags[i][2] = allTranslations[i][0];
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading extra translation file: " + e);
+                return;
+            }
         }
     }
     // Load wildcards

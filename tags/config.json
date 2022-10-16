@@ -5,13 +5,16 @@
 		"img2img": true,
 		"negativePrompts": true
 	},
-	"maxResults": 5,
+	"maxResults": 8,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
-	"onlyShowTranslation": false,
-	"searchByTranslation": true,
+	"translation": {
+		"searchByTranslation": true,
+		"onlyShowTranslation": false,
+		"extraTranslationFile": ""
+	},
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],
