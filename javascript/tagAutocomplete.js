@@ -392,13 +392,30 @@ function autocomplete(textArea, prompt, fixedTag = null) {
 
     tagword = tagword.toLowerCase();
 
+    // add normal Tags to results
+    if (acConfig.translation.searchByTranslation) {
+        results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
+        // if search by [a~z],first list the translations, and then search English if it is not enough
+        // if only show translation,it is unnecessary to list English results
+        if (results.length < acConfig.maxResults && !acConfig.translation.onlyShowTranslation) {
+            results = results.concat(allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)));
+        }
+    } else {
+        results = allTags.filter(x => x[0].toLowerCase().includes(tagword));
+    }
+    // it's good to show all results
+    if (!acConfig.showAllResults) {
+        results = results.slice(0, acConfig.maxResults);
+    }
+
+    // add special Tags to results
     if (acConfig.useWildcards && [...tagword.matchAll(/\b__([^,_ ]+)__([^, ]*)\b/g)].length > 0) {
         // Show wildcards from a file with that name
         wcMatch = [...tagword.matchAll(/\b__([^,_ ]+)__([^, ]*)\b/g)]
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
         results = wildcards[wcFile].filter(x => (wcWord !== null) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
-            .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
+        .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
     } else if (acConfig.useWildcards && (tagword.startsWith("__") && !tagword.endsWith("__") || tagword === "__")) {
         // Show available wildcard files
         let tempResults = [];
@@ -407,31 +424,17 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         } else {
             tempResults = wildcardFiles;
         }
-        results = tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"]); // Mark as wildcard
+        results = results.concat(tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"])); // Mark as wildcard
     } else if (acConfig.useEmbeddings && tagword.match(/<[^,> ]*>?/g)) {
         // Show embeddings
-        let tempResults = [];
         if (tagword !== "<") {
             tempResults = embeddings.filter(x => x.toLowerCase().includes(tagword.replace("<", ""))) // Filter by tagword
         } else {
             tempResults = embeddings;
         }
-        // Since some tags are kaomoji, we have to still get the normal results first.
-        genericResults = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
-        results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
-    } else {
-        if (acConfig.translation.searchByTranslation) {
-            results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
-            // if search by [a~z],first list the translations, and then search English if it is not enough
-            // if only show translation,it is unnecessary to list English results
-            if (results.length < acConfig.maxResults && !acConfig.translation.onlyShowTranslation) {
-                allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)).map(x => results.push(x));
-            }
-            results = results.slice(0, acConfig.maxResults);
-        } else {
-            results = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
-        }
+        results = results.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
     }
+
     resultCount = results.length;
 
     // Guard for empty results
