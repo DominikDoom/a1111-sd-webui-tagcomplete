@@ -13,9 +13,11 @@
 	"showAllResults": false,
 	"translation": {
 		"searchByTranslation": true,
-		"onlyShowTranslation": false,
-		"simpleExtraTranslationFile": false,
-		"extraTranslationFile": ""
+		"onlyShowTranslation": false
+	},
+	"extra": {
+		"extraFile": "",
+		"onlyTranslationExtraFile": false
 	},
 	"colors": {
 		"danbooru": {

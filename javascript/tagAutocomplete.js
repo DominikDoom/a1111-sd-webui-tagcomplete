@@ -520,10 +520,10 @@ onUiUpdate(function () {
             console.error("Error loading tags file: " + e);
             return;
         }
-        if (acConfig.translation.extraTranslationFile) {
+        if (acConfig.extra.extraFile) {
             try {
-                allTranslations = loadCSV(`file/tags/${acConfig.translation.extraTranslationFile}`);
-                if (acConfig.simpleExtraTranslationFile) {
+                allTranslations = loadCSV(`file/tags/${acConfig.extra.extraFile}`);
+                if (acConfig.onlyTranslationExtraFile) {
                     for (let i = 0; i < allTranslations.length; i++) {
                         if (allTranslations[i][0]) {
                             allTags[i][2] = allTranslations[i][0];
@@ -531,16 +531,14 @@ onUiUpdate(function () {
                     }
                 } else {
                     allTranslations.map(x => {
-                        if (x[2]) {
-                            let i = 0
-                            for (; i < allTags.length; i++) {
-                                if (x[0] === allTags[i][0] && x[1] === allTags[i][1]) {
-                                    allTags[i][2] = x[2];
-                                }
+                        let i = 0
+                        for (; i < allTags.length; i++) {
+                            if (x[2] && x[0] === allTags[i][0] && x[1] === allTags[i][1]) {
+                                allTags[i][2] = x[2];
                             }
-                            if (i === allTags.length) {
-                                allTags.push(x);
-                            }
+                        }
+                        if (i === allTags.length) {
+                            allTags.push(x);
                         }
                     });
                 }
