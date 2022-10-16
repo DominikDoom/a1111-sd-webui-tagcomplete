@@ -532,10 +532,14 @@ onUiUpdate(function () {
                 } else {
                     allTranslations.map(x => {
                         if (x[2]) {
-                            for (let i = 0; i < allTags.length; i++) {
+                            let i = 0
+                            for (; i < allTags.length; i++) {
                                 if (x[0] === allTags[i][0] && x[1] === allTags[i][1]) {
                                     allTags[i][2] = x[2];
                                 }
+                            }
+                            if (i === allTags.length) {
+                                allTags.push(x);
                             }
                         }
                     });
