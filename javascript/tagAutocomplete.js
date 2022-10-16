@@ -424,14 +424,18 @@ function autocomplete(textArea, prompt, fixedTag = null) {
             results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
             // if search by [a~z],first list the translations, and then search English if it is not enough
             // if only show translation,it is unnecessary to list English results
-            if (results.length < acConfig.maxResults && !acConfig.translation.onlyShowTranslation) {
-                allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)).map(x => results.push(x));
+            if (!acConfig.translation.onlyShowTranslation) {
+                results = results.concat(allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)));
             }
-            results = results.slice(0, acConfig.maxResults);
         } else {
-            results = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
+            results = allTags.filter(x => x[0].toLowerCase().includes(tagword));
+        }
+        // it's good to show all results
+        if (!acConfig.showAllResults) {
+            results = results.slice(0, acConfig.maxResults);
         }
     }
+
     resultCount = results.length;
 
     // Guard for empty results

@@ -10,6 +10,7 @@
 	"escapeParentheses": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
+	"showAllResults": false,
 	"translation": {
 		"searchByTranslation": true,
 		"onlyShowTranslation": false,
