@@ -397,7 +397,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
         // if search by [a~z],first list the translations, and then search English if it is not enough
         // if only show translation,it is unnecessary to list English results
-        if (results.length < acConfig.maxResults && !acConfig.translation.onlyShowTranslation) {
+        if (!acConfig.translation.onlyShowTranslation) {
             results = results.concat(allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)));
         }
     } else {
@@ -424,7 +424,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         } else {
             tempResults = wildcardFiles;
         }
-        results = results.concat(tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"])); // Mark as wildcard
+        results = tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"]).concat(results); // Mark as wildcard
     } else if (acConfig.useEmbeddings && tagword.match(/<[^,> ]*>?/g)) {
         // Show embeddings
         if (tagword !== "<") {
@@ -432,7 +432,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         } else {
             tempResults = embeddings;
         }
-        results = results.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
+        results = tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"]).concat(result); // Mark as embedding
     }
 
     resultCount = results.length;
