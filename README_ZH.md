@@ -57,11 +57,11 @@ https://user-images.githubusercontent.com/34448969/195632461-49d226ae-d393-453d-
 		"negativePrompts": true
 	},
 	"maxResults": 5,
+	"showAllResults": false,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
-	"showAllResults": false,
 	"translation": {
 		"searchByTranslation": true,
 		"onlyShowTranslation": false
@@ -94,14 +94,42 @@ https://user-images.githubusercontent.com/34448969/195632461-49d226ae-d393-453d-
 ```
 | 设置	| 描述 |
 |---------|-------------|
-| tagFile | 指定要使用的标记文件。您可以提供您喜欢的自定义标签数据库，但由于该脚本是使用 Danbooru 标签开发的，因此它可能无法与其他配置一起正常工作。|
-| activeIn | 允许有选择地（取消）激活 txt2img、img2img 和两者的否定提示的脚本。 |
+| tagFile | 指定要使用的标记文件。您可以提供您喜欢的自定义标签数据库，但由于该脚本是在考虑 Danbooru 标签的情况下开发的，因此它可能无法与其他配置一起正常工作。|
+| activeIn | 允许有选择地（取消）激活 txt2img、img2img 和两者的否定提示的脚本。|
 | maxResults | 最多显示多少个结果。对于默认标记集，结果按出现次数排序。对于嵌入和通配符，它​​将在可滚动列表中显示所有结果。 |
-| replaceUnderscores | 如果为 true，则在单击标签时将取消划线替换为空格。对于某些型号可能会更好。 |
+| showAllResults | 如果为真，将忽略 maxResults 并在可滚动列表中显示所有结果。 **警告：**对于长列表，您的浏览器可能会滞后。 |
+| replaceUnderscores | 如果为 true，则在单击标签时将取消划线替换为空格。对于某些型号可能会更好。|
 | escapeParentheses | 如果为 true，则转义包含 () 的标签，因此它们不会对 Web UI 的提示权重功能做出贡献。 |
 | useWildcards | 用于切换通配符完成功能。 |
 | useEmbeddings | 用于切换嵌入完成功能。 |
+| translation | 用于翻译标签的选项。更多信息在下面的部分。 |
+| extras | 附加标签文件/翻译的选项。更多信息在下面的部分。|
 | colors | 包含标签类型的可自定义颜色，您可以在此处为自定义标签文件添加新颜色（与文件名相同，不带 .csv）。第一个值是暗模式，第二个值是亮模式。颜色名称和十六进制代码都应该有效。|
+
+## 翻译&新增Tag
+通过最近的更新，现在可以为标签添加翻译。这些将根据 `config.json` 中的设置可搜索/显示：
+- `searchByTranslation` - 是同时搜索翻译词还是仅搜索英文标签。
+- `onlyShowTranslation` - 如果有英文标签，则用其翻译替换它。仅用于显示，最后插入的文本仍然是英文标签。
+
+完整和部分中文标签集的示例：
+
+![translation](https://user-images.githubusercontent.com/34448969/196175839-8aaacb26-5c90-48e3-be65-647a0b444ead.png)
+![translation_mixed](https://user-images.githubusercontent.com/34448969/196176233-76d4cb5f-16cf-4800-a69b-adb64a79ca8b.png)
+
+可以通过多种方式添加翻译，这就是额外文件发挥作用的地方。
+1. 直接在主标签文件中。只需添加第三个值，用逗号分隔，包含该行中标签的翻译。
+2. 作为仅包含已翻译标签行的额外文件（因此仍包括英文标签名称和标签类型）。将根据名称和类型与主文件中的英文标签匹配，因此对于大型翻译文件可能会很慢。
+3. 作为 `onlyTranslationExtraFile` 为 true 的额外文件。使用此配置，额外文件必须包含*仅*翻译本身。这意味着它完全基于索引，将翻译分配给主要标签非常快，但也需要匹配行（包括空行）。如果主文件中的顺序或数量发生变化，则翻译可能不再匹配。
+
+因此，对于每种方法，您的 CSV 值将如下所示：
+|            |          1          |       2            |       3       |
+|------------|---------------------|--------------------|---------------|
+| Main file  | `tag,0,translation` | `tag,0`            | `tag,0`       |
+| Extra file | -                   | `tag,0,translation`| `translation` |
+
+方法 1 和 2 也可以混合使用，在这种情况下，如果它们翻译相同的标签，额外文件中的翻译将优先于主文件中的翻译。
+如果 `onlyTranslationExtraFile` 为 false，额外文件也可用于添加未包含在主集中的新/自定义标签。
+如果额外的标签与任何现有标签都不匹配，它将作为新标签添加到列表中。
 
 ### CSV tag data
 本脚本的Tag文件格式如下，你可以安装这个格式制作自己的Tag文件:
