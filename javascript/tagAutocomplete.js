@@ -522,23 +522,23 @@ onUiUpdate(function () {
         }
         if (acConfig.extra.extraFile) {
             try {
-                allTranslations = loadCSV(`file/tags/${acConfig.extra.extraFile}`);
-                if (acConfig.onlyTranslationExtraFile) {
-                    for (let i = 0; i < allTranslations.length; i++) {
-                        if (allTranslations[i][0]) {
-                            allTags[i][2] = allTranslations[i][0];
+                extras = loadCSV(`file/tags/${acConfig.extra.extraFile}`);
+                if (acConfig.extra.onlyTranslationExtraFile) {
+                    // This works purely on index, so it's not very robust. But a lot faster.
+                    for (let i = 0, n = extras.length; i < n; i++) {
+                        if (extras[i][0]) {
+                            allTags[i][2] = extras[i][0];
                         }
                     }
                 } else {
-                    allTranslations.map(x => {
-                        let i = 0
-                        for (; i < allTags.length; i++) {
-                            if (x[2] && x[0] === allTags[i][0] && x[1] === allTags[i][1]) {
-                                allTags[i][2] = x[2];
-                            }
-                        }
-                        if (i === allTags.length) {
-                            allTags.push(x);
+                    extras.forEach(e => {
+                        // Check if a tag in allTags has the same name as the extra tag
+                        if (tag = allTags.find(t => t[0] === e[0])) {
+                            if (e[2]) // If the extra tag has a translation, add it to the tag
+                                tag[2] = e[2];
+                        } else {
+                            // If the tag doesn't exist, add it to allTags
+                            allTags.push(e);
                         }
                     });
                 }
