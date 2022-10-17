@@ -6,11 +6,11 @@
 		"negativePrompts": true
 	},
 	"maxResults": 5,
+	"showAllResults": false,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
-	"showAllResults": false,
 	"translation": {
 		"searchByTranslation": true,
 		"onlyShowTranslation": false
