@@ -10,6 +10,10 @@
 这个脚本的创建是为了减少因复制Tag在Web UI和 booru网站的反复切换。
 你可以按照[以下方法](#installation)下载或拷贝文件，也可以使用[Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)中打包好的文件。
 
+## 常见问题 & 已知缺陷:
+* 浏览器可能因为缓存无法更新脚本、设置、embedding/wildcard列表，尝试使用`CRTL+F5`清空浏览器缓存并重新加载
+- 当`replaceUnderscores`选项开启时, 脚本只会替换Tag的一部分如果Tag包含多个单词,比如将`atago (azur lane)`修改`atago`为`taihou`并使用自动补全时.会得到 `taihou (azur lane), lane)`的结果, 因为脚本没有把后面的部分认为成同一个Tag。
+
 ## [Wildcard](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) &  Embedding 支持
 自动补全同样适用于 [Wildcard](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py)中所述的通配符文件(后面有演示视频)。这将使你能够插入Wildcard脚本需要的通配符，更进一步的，你还可以插入通配符文件内的某个具体Tag。
 
@@ -17,37 +21,33 @@
 
 当输入`<`字符时，`embeddings`文件夹下的`.pt`和`.bin`文件会列出到自动完成。需要注意的是，一些颜文字也会包含`<`(比如`>_<`),所以它们也会出现在结果中。
 
-现在这项功能默认是启用的，并会自动扫描`/embeddings`和`/scripts/wildcards`文件夹，不再需要使用``
-Both are now enabled by default and scan the `/embeddings` and `/scripts/wildcards` folders automatically.
+现在这项功能默认是启用的，并会自动扫描`/embeddings`和`/scripts/wildcards`文件夹，不再需要使用`tags/wildcardNames.txt`文件了，早期版本的用户可以将它删除。
 
-### Known Issues:
-If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
-For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
-
-## Screenshots
-Demo video (with keyboard navigation):
+## 演示与截图
+演示视频(使用了键盘导航):
 
 https://user-images.githubusercontent.com/34448969/195344430-2b5f9945-b98b-4943-9fbc-82cf633321b1.mp4
 
-Wildcard script support:
+Wildcard支持演示:
 
 https://user-images.githubusercontent.com/34448969/195632461-49d226ae-d393-453d-8f04-1e44b073234c.mp4
 
-Dark and Light mode supported, including tag colors:
+深浅色主题支持,包括Tag的颜色:
 
 ![tagtypes](https://user-images.githubusercontent.com/34448969/195177127-f63949f8-271d-4767-bccd-f1b5e818a7f8.png)
 ![tagtypes_light](https://user-images.githubusercontent.com/34448969/195180061-ceebcc25-9e4c-424f-b0c9-ba8e8f4f17f4.png)
 
-## Installation
-Simply copy the `javascript`, `scripts` and `tags` folder into your web UI installation root. It will run automatically the next time the web UI is started.
+## 安装
+只需要将`javascript``scripts`和`tags`文件夹复制到你的Web UI安装根目录下.下次启动Web UI时它将自动启动。
 
-The tags folder contains `config.json` and the tag data the script uses for autocompletion. By default, Danbooru and e621 tags are included.
-After scanning for embeddings and wildcards, the script will also create a `temp` directory here which lists the found files so they can be accessed in the browser side of the script. You can delete the temp folder without consequences as it will be recreated on the next startup.
-### Important:
-The script needs **all three folders** to work properly.
+`tags`文件夹下包含`config.json`（用于设置）和Tag数据（.csv格式）。默认情况下，Tag数据包括`Danbooru.csv`和`e621.csv`。
 
-### Config
-The config contains the following settings and defaults:
+在扫描过`/embeddings`和`/scripts/wildcards`后，会将列表存放在`tags/temp`文件夹下。删除该文件夹不会有任何影响，下次启动时它会重新创建。
+### 注意:
+本脚本的允许需要**全部的三个文件夹**。
+
+## 配置文件
+配置文件（config.json）的默认值如下：
 ```json
 {
 	"tagFile": "danbooru.csv",
@@ -61,6 +61,15 @@ The config contains the following settings and defaults:
 	"escapeParentheses": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
+	"showAllResults": false,
+	"translation": {
+		"searchByTranslation": true,
+		"onlyShowTranslation": false
+	},
+	"extra": {
+		"extraFile": "",
+		"onlyTranslationExtraFile": false
+	},
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],
@@ -83,28 +92,28 @@ The config contains the following settings and defaults:
 	}
 }
 ```
-| Setting	| Description |
+| 设置	| 描述 |
 |---------|-------------|
-| tagFile | Specifies the tag file to use. You can provide a custom tag database of your liking, but since the script was developed with Danbooru tags in mind, it might not work properly with other configurations.|
-| activeIn | Allows to selectively (de)activate the script for txt2img, img2img, and the negative prompts for both. |
-| maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. For embeddings and wildcards it will show all results in a scrollable list. |
-| replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
-| escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
-| useWildcards | Used to toggle the wildcard completion functionality. |
-| useEmbeddings | Used to toggle the embedding completion functionality. |
-| colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
+| tagFile | 指定要使用的标记文件。您可以提供您喜欢的自定义标签数据库，但由于该脚本是使用 Danbooru 标签开发的，因此它可能无法与其他配置一起正常工作。|
+| activeIn | 允许有选择地（取消）激活 txt2img、img2img 和两者的否定提示的脚本。 |
+| maxResults | 最多显示多少个结果。对于默认标记集，结果按出现次数排序。对于嵌入和通配符，它​​将在可滚动列表中显示所有结果。 |
+| replaceUnderscores | 如果为 true，则在单击标签时将取消划线替换为空格。对于某些型号可能会更好。 |
+| escapeParentheses | 如果为 true，则转义包含 () 的标签，因此它们不会对 Web UI 的提示权重功能做出贡献。 |
+| useWildcards | 用于切换通配符完成功能。 |
+| useEmbeddings | 用于切换嵌入完成功能。 |
+| colors | 包含标签类型的可自定义颜色，您可以在此处为自定义标签文件添加新颜色（与文件名相同，不带 .csv）。第一个值是暗模式，第二个值是亮模式。颜色名称和十六进制代码都应该有效。|
 
 ### CSV tag data
-The script expects a CSV file with tags saved in the following way:
+本脚本的Tag文件格式如下，你可以安装这个格式制作自己的Tag文件:
 ```csv
 1girl,0
 solo,0
 highres,5
 long_hair,0
 ```
-Notably, it does not expect column names in the first row.
-The first value needs to be the tag name, while the second value specifies the tag type.
-The numbering system follows the [tag API docs](https://danbooru.donmai.us/wiki_pages/api%3Atags) of Danbooru:
+值得注意的是，它不希望第一行中有列名。
+第一个值需要是标签名称，而第二个值指定标签类型。
+编号系统遵循 Danbooru 的 [tag API docs](https://danbooru.donmai.us/wiki_pages/api%3Atags):
 | Value	| Description |
 |-------|-------------|
 |0	    | General     |
@@ -126,4 +135,4 @@ or of e621:
 |7	    | Meta        |
 |8	    | Lore        |
 
-The tag type is used for coloring entries in the result list.
+标记类型用于为结果列表中的条目着色.

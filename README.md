@@ -13,16 +13,17 @@ I created this script as a convenience tool since it reduces the need of switchi
 
 You can either clone / download the files manually as described [below](#installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
+## Common Problems & Known Issues:
+- The browser might cache old versions of the script, config, or embedding/wildcard lists. Try hitting `CTRL+F5` to clear the cache.
+- If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
+For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
+
 ### Wildcard & Embedding support
 Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or even replace them with the actual wildcard file content in the same step.
 
 It also scans the embeddings folder and displays completion hints for the names of all .pt and .bin files inside if you start typing `<`. Note that some normal tags also use < in Kaomoji (like ">_<" for example), so the results will contain both.
 
 Both are now enabled by default and scan the `/embeddings` and `/scripts/wildcards` folders automatically.
-
-### Known Issues:
-If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
-For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
 
 ## Screenshots
 Demo video (with keyboard navigation):
