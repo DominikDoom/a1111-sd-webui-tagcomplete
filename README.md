@@ -58,10 +58,19 @@ The config contains the following settings and defaults:
 		"negativePrompts": true
 	},
 	"maxResults": 5,
+	"showAllResults": false,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
+	"translation": {
+		"searchByTranslation": true,
+		"onlyShowTranslation": false
+	},
+	"extra": {
+		"extraFile": "",
+		"onlyTranslationExtraFile": false
+	},
 	"colors": {
 		"danbooru": {
 			"0": ["lightblue", "dodgerblue"],
@@ -89,11 +98,40 @@ The config contains the following settings and defaults:
 | tagFile | Specifies the tag file to use. You can provide a custom tag database of your liking, but since the script was developed with Danbooru tags in mind, it might not work properly with other configurations.|
 | activeIn | Allows to selectively (de)activate the script for txt2img, img2img, and the negative prompts for both. |
 | maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. For embeddings and wildcards it will show all results in a scrollable list. |
+| showAllResults | If true, will ignore maxResults and show all results in a scrollable list. **Warning:** can lag your browser for long lists. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
 | escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
 | useWildcards | Used to toggle the wildcard completion functionality. |
 | useEmbeddings | Used to toggle the embedding completion functionality. |
+| translation | Options for translating tags. More info in the section below. |
+| extras | Options for additional tag files / translations. More info in the section below. |
 | colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
+
+### Translations & Extra tags
+With the recent update it is now possible to add translations to the tags. These will be searchable / shown according to the settings in `config.json`:
+- `searchByTranslation` - Whether to search for the translated term as well or only the English tag.
+- `onlyShowTranslation` - Replaces the English tag with its translation if it has one. Only for displaying, the inserted text at the end is still the English tag.
+
+Example with full and partial chinese tag sets:
+
+![translation](https://user-images.githubusercontent.com/34448969/196175839-8aaacb26-5c90-48e3-be65-647a0b444ead.png)
+![translation_mixed](https://user-images.githubusercontent.com/34448969/196176233-76d4cb5f-16cf-4800-a69b-adb64a79ca8b.png)
+
+Translations can be added in multiple ways, which is where the "Extra" file comes into play.
+1. Directly in the main tag file. Simply add a third value, separated by comma, containing the translation for the tag in that row.
+2. As an extra file containing only the translated tag rows (so still including the english Tag name and tag type). Will be matched to the English tags in the main file based on the name & type, so might be slow for large translation files.
+3. As an extra file with `onlyTranslationExtraFile` true. With this configuration, the extra file has to include *only* the translation itself. That means it is purely index based, assigning the translations to the main tags is really fast but also needs the lines to match (including empty lines). If the order or amount in the main file changes, the translations will potentially not match anymore.
+
+So your CSV values would look like this for each method:
+|            |          1          |       2            |       3       |
+|------------|---------------------|--------------------|---------------|
+| Main file  | `tag,0,translation` | `tag,0`            | `tag,0`       |
+| Extra file | -                   | `tag,0,translation`| `translation` |
+
+Methods 1 & 2 can also be mixed, in which case translations in the extra file will have priority over those in the main file if they translate the same tag.
+
+The extra files can also be used to just add new / custom tags not included in the main set, provided `onlyTranslationExtraFile` is false.
+If an extra tag doesn't match any existing tag, it will be added to the list as a new tag instead.
 
 ### CSV tag data
 The script expects a CSV file with tags saved in the following way:
@@ -104,7 +142,7 @@ highres,5
 long_hair,0
 ```
 Notably, it does not expect column names in the first row.
-The first value needs to be the tag name, while the second value specifies the tag type.
+The first value needs to be the tag name, while the second value specifies the tag type. An optional third value will be interpreted as a translation as described in the section above.
 The numbering system follows the [tag API docs](https://danbooru.donmai.us/wiki_pages/api%3Atags) of Danbooru:
 | Value	| Description |
 |-------|-------------|
