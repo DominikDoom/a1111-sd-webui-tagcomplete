@@ -533,7 +533,7 @@ onUiUpdate(function () {
                 } else {
                     extras.forEach(e => {
                         // Check if a tag in allTags has the same name as the extra tag
-                        if (tag = allTags.find(t => t[0] === e[0])) {
+                        if (tag = allTags.find(t => t[0] === e[0] && t[1] == e[1])) {
                             if (e[2]) // If the extra tag has a translation, add it to the tag
                                 tag[2] = e[2];
                         } else {
