@@ -38,7 +38,7 @@ https://user-images.githubusercontent.com/34448969/195632461-49d226ae-d393-453d-
 ![tagtypes_light](https://user-images.githubusercontent.com/34448969/195180061-ceebcc25-9e4c-424f-b0c9-ba8e8f4f17f4.png)
 
 ## 安装
-只需要将`javascript``scripts`和`tags`文件夹复制到你的Web UI安装根目录下.下次启动Web UI时它将自动启动。
+只需要将`javascript`，`scripts`和`tags`文件夹复制到你的Web UI安装根目录下.下次启动Web UI时它将自动启动。
 
 `tags`文件夹下包含`config.json`（用于设置）和Tag数据（.csv格式）。默认情况下，Tag数据包括`Danbooru.csv`和`e621.csv`。
 
