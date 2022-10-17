@@ -134,10 +134,10 @@ function difference(a, b) {
 
 // Get the identifier for the text area to differentiate between positive and negative
 function getTextAreaIdentifier(textArea) {
-    let txt2img_n = gradioApp().querySelector('#negative_prompt > label > textarea');
+    let txt2img_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
     let img2img = gradioApp().querySelector('#tab_img2img');
     let img2img_p = img2img.querySelector('#img2img_prompt > label > textarea');
-    let img2img_n = img2img.querySelector('#negative_prompt > label > textarea');
+    let img2img_n = img2img.querySelector('#img2img_neg_prompt > label > textarea');
 
     let modifier = "";
     if (textArea === img2img_p || textArea === img2img_n) {
@@ -394,30 +394,13 @@ function autocomplete(textArea, prompt, fixedTag = null) {
 
     tagword = tagword.toLowerCase();
 
-    // add normal Tags to results
-    if (acConfig.translation.searchByTranslation) {
-        results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
-        // if search by [a~z],first list the translations, and then search English if it is not enough
-        // if only show translation,it is unnecessary to list English results
-        if (!acConfig.translation.onlyShowTranslation) {
-            results = results.concat(allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)));
-        }
-    } else {
-        results = allTags.filter(x => x[0].toLowerCase().includes(tagword));
-    }
-    // it's good to show all results
-    if (!acConfig.showAllResults) {
-        results = results.slice(0, acConfig.maxResults);
-    }
-
-    // add special Tags to results
     if (acConfig.useWildcards && [...tagword.matchAll(/\b__([^,_ ]+)__([^, ]*)\b/g)].length > 0) {
         // Show wildcards from a file with that name
         wcMatch = [...tagword.matchAll(/\b__([^,_ ]+)__([^, ]*)\b/g)]
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
         results = wildcards[wcFile].filter(x => (wcWord !== null) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
-        .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
+            .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
     } else if (acConfig.useWildcards && (tagword.startsWith("__") && !tagword.endsWith("__") || tagword === "__")) {
         // Show available wildcard files
         let tempResults = [];
@@ -426,15 +409,33 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         } else {
             tempResults = wildcardFiles;
         }
-        results = tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"]).concat(results); // Mark as wildcard
+        results = tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"]); // Mark as wildcard
     } else if (acConfig.useEmbeddings && tagword.match(/<[^,> ]*>?/g)) {
         // Show embeddings
+        let tempResults = [];
         if (tagword !== "<") {
             tempResults = embeddings.filter(x => x.toLowerCase().includes(tagword.replace("<", ""))) // Filter by tagword
         } else {
             tempResults = embeddings;
         }
-        results = tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"]).concat(results); // Mark as embedding
+        // Since some tags are kaomoji, we have to still get the normal results first.
+        genericResults = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
+        results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
+    } else {
+        if (acConfig.translation.searchByTranslation) {
+            results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
+            // if search by [a~z],first list the translations, and then search English if it is not enough
+            // if only show translation,it is unnecessary to list English results
+            if (!acConfig.translation.onlyShowTranslation) {
+                results = results.concat(allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)));
+            }
+        } else {
+            results = allTags.filter(x => x[0].toLowerCase().includes(tagword));
+        }
+        // it's good to show all results
+        if (!acConfig.showAllResults) {
+            results = results.slice(0, acConfig.maxResults);
+        }
     }
 
     resultCount = results.length;
@@ -457,6 +458,8 @@ function navigateInList(textArea, event) {
 
     if (!validKeys.includes(event.key)) return;
     if (!isVisible(textArea)) return
+    // Return if ctrl key is pressed to not interfere with weight editing shortcut
+    if (event.ctrlKey || event.altKey) return;
 
     switch (event.key) {
         case "ArrowUp":
@@ -580,8 +583,9 @@ onUiUpdate(function () {
     // Find all textareas
     let txt2imgTextArea = gradioApp().querySelector('#txt2img_prompt > label > textarea');
     let img2imgTextArea = gradioApp().querySelector('#img2img_prompt > label > textarea');
-    let negativeTextAreas = Array.from(gradioApp().querySelectorAll('#negative_prompt > label > textarea'));
-    let textAreas = [txt2imgTextArea, img2imgTextArea, negativeTextAreas[0], negativeTextAreas[1]];
+    let txt2imgTextArea_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
+    let img2imgTextArea_n = gradioApp().querySelector('#img2img_neg_prompt > label > textarea');
+    let textAreas = [txt2imgTextArea, img2imgTextArea, txt2imgTextArea_n, img2imgTextArea_n];
 
     let quicksettings = gradioApp().querySelector('#quicksettings');
 
