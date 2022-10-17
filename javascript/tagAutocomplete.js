@@ -98,8 +98,9 @@ function readFile(filePath) {
     return request.responseText;
 }
 
-function loadCSV() {
-    let text = readFile(`file/tags/${acConfig.tagFile}`);
+// Load CSV
+function loadCSV(path) {
+    let text = readFile(path);
     return parseCSV(text);
 }
 
@@ -130,6 +131,7 @@ function difference(a, b) {
         a.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map())
     )].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
 }
+
 // Get the identifier for the text area to differentiate between positive and negative
 function getTextAreaIdentifier(textArea) {
     let txt2img_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
@@ -213,6 +215,7 @@ function escapeRegExp(string) {
 }
 
 let hideBlocked = false;
+
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 function insertTextAtCursor(textArea, result, tagword) {
     let text = result[0];
@@ -241,7 +244,6 @@ function insertTextAtCursor(textArea, result, tagword) {
     }
 
     var prompt = textArea.value;
-
 
     // Edit prompt text
     let editStart = Math.max(cursorPos - tagword.length, 0);
@@ -302,7 +304,16 @@ function addResultsToList(textArea, results, tagword) {
     for (let i = 0; i < results.length; i++) {
         let result = results[i];
         let li = document.createElement("li");
-        li.textContent = result[0];
+
+        //suppost only show the translation to result
+        if (result[2]) {
+            li.textContent = result[2];
+            if (!acConfig.translation.onlyShowTranslation) {
+                li.textContent += " >> " + result[0];
+            }
+        } else {
+            li.textContent = result[0];
+        }
 
         // Wildcards & Embeds have no tag type
         if (!result[1].startsWith("wildcard") && result[1] !== "embedding") {
@@ -411,8 +422,22 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         genericResults = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
         results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
     } else {
-        results = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
+        if (acConfig.translation.searchByTranslation) {
+            results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
+            // if search by [a~z],first list the translations, and then search English if it is not enough
+            // if only show translation,it is unnecessary to list English results
+            if (!acConfig.translation.onlyShowTranslation) {
+                results = results.concat(allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)));
+            }
+        } else {
+            results = allTags.filter(x => x[0].toLowerCase().includes(tagword));
+        }
+        // it's good to show all results
+        if (!acConfig.showAllResults) {
+            results = results.slice(0, acConfig.maxResults);
+        }
     }
+
     resultCount = results.length;
 
     // Guard for empty results
@@ -479,18 +504,48 @@ onUiUpdate(function () {
     if (acConfig === null) {
         try {
             acConfig = JSON.parse(readFile("file/tags/config.json"));
+            if (acConfig.translation.onlyShowTranslation) {
+                acConfig.translation.searchByTranslation = true; // if only show translation, enable search by translation is necessary
+            }
         } catch (e) {
             console.error("Error loading config.json: " + e);
             return;
         }
     }
-    // Load main tags
+    // Load main tags and translations
     if (allTags.length === 0) {
         try {
-            allTags = loadCSV();
+            allTags = loadCSV(`file/tags/${acConfig.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
+        }
+        if (acConfig.extra.extraFile) {
+            try {
+                extras = loadCSV(`file/tags/${acConfig.extra.extraFile}`);
+                if (acConfig.extra.onlyTranslationExtraFile) {
+                    // This works purely on index, so it's not very robust. But a lot faster.
+                    for (let i = 0, n = extras.length; i < n; i++) {
+                        if (extras[i][0]) {
+                            allTags[i][2] = extras[i][0];
+                        }
+                    }
+                } else {
+                    extras.forEach(e => {
+                        // Check if a tag in allTags has the same name as the extra tag
+                        if (tag = allTags.find(t => t[0] === e[0] && t[1] == e[1])) {
+                            if (e[2]) // If the extra tag has a translation, add it to the tag
+                                tag[2] = e[2];
+                        } else {
+                            // If the tag doesn't exist, add it to allTags
+                            allTags.push(e);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading extra translation file: " + e);
+                return;
+            }
         }
     }
     // Load wildcards
