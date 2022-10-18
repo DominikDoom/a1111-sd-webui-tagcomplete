@@ -6,6 +6,7 @@
 		"negativePrompts": true
 	},
 	"maxResults": 5,
+	"resultStepLength": 500,
 	"showAllResults": false,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,

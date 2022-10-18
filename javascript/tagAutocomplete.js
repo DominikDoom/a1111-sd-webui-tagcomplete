@@ -134,19 +134,27 @@ function difference(a, b) {
 
 // Get the identifier for the text area to differentiate between positive and negative
 function getTextAreaIdentifier(textArea) {
+    let txt2img_p = gradioApp().querySelector('#txt2img_prompt > label > textarea');
     let txt2img_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
-    let img2img = gradioApp().querySelector('#tab_img2img');
-    let img2img_p = img2img.querySelector('#img2img_prompt > label > textarea');
-    let img2img_n = img2img.querySelector('#img2img_neg_prompt > label > textarea');
+    let img2img_p = gradioApp().querySelector('#img2img_prompt > label > textarea');
+    let img2img_n = gradioApp().querySelector('#img2img_neg_prompt > label > textarea');
 
     let modifier = "";
-    if (textArea === img2img_p || textArea === img2img_n) {
-        modifier += ".img2img";
-    }
-    if (textArea === txt2img_n || textArea === img2img_n) {
-        modifier += ".n";
-    } else {
-        modifier += ".p";
+    switch (textArea) {
+        case txt2img_p:
+            modifier = ".txt2img.p";
+            break;
+        case txt2img_n:
+            modifier = ".txt2img.n";
+            break;
+        case img2img_p:
+            modifier = ".img2img.p";
+            break;
+        case img2img_n:
+            modifier = ".img2img.n";
+            break;
+        default:
+            break;
     }
     return modifier;
 }
@@ -198,13 +206,11 @@ function isVisible(textArea) {
 }
 function showResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
-
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     resultsDiv.style.display = "block";
 }
 function hideResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
-
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     resultsDiv.style.display = "none";
     selectedTag = null;
@@ -285,23 +291,26 @@ function insertTextAtCursor(textArea, result, tagword) {
     }
 }
 
-function addResultsToList(textArea, results, tagword) {
+function addResultsToList(textArea, results, tagword, resetList) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     let resultsList = resultDiv.querySelector('ul');
 
     // Reset list, selection and scrollTop since the list changed
-    resultsList.innerHTML = "";
-    selectedTag = null;
-    resultDiv.scrollTop = 0;
+    if (resetList) {
+        resultsList.innerHTML = "";
+        selectedTag = null;
+        resultDiv.scrollTop = 0;
+        resultCount = 0;
+    }
 
     // Find right colors from config
     let tagFileName = acConfig.tagFile.split(".")[0];
     let tagColors = acConfig.colors;
-
     let mode = gradioApp().querySelector('.dark') ? 0 : 1;
+    let nextLength = Math.min(results.length, resultCount + acConfig.resultStepLength);
 
-    for (let i = 0; i < results.length; i++) {
+    for (let i = resultCount; i < nextLength; i++) {
         let result = results[i];
         let li = document.createElement("li");
 
@@ -331,34 +340,38 @@ function addResultsToList(textArea, results, tagword) {
         // Add element to list
         resultsList.appendChild(li);
     }
+    resultCount = nextLength;
 }
 
-function updateSelectionStyle(textArea, num) {
+function updateSelectionStyle(textArea, newIndex, oldIndex) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     let resultsList = resultDiv.querySelector('ul');
     let items = resultsList.getElementsByTagName('li');
 
-    for (let i = 0; i < items.length; i++) {
-        items[i].classList.remove('selected');
+    if (oldIndex != null) {
+        items[oldIndex].classList.remove('selected');
     }
 
-    items[num].classList.add('selected');
+    // make it safer
+    if (newIndex !== null) {
+        items[newIndex].classList.add('selected');
+    }
 
     // Set scrolltop to selected item if we are showing more than max results
     if (items.length > acConfig.maxResults) {
-        let selected = items[num];
+        let selected = items[newIndex];
         resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
     }
 }
 
-wildcardFiles = [];
-wildcards = {};
-embeddings = [];
-allTags = [];
-results = [];
-tagword = "";
-resultCount = 0;
+var wildcardFiles = [];
+var wildcards = {};
+var embeddings = [];
+var allTags = [];
+var results = [];
+var tagword = "";
+var resultCount = 0;
 function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
     if (!acActive) return;
@@ -438,16 +451,14 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         }
     }
 
-    resultCount = results.length;
-
     // Guard for empty results
-    if (resultCount === 0) {
+    if (!results.length) {
         hideResults(textArea);
         return;
     }
 
     showResults(textArea);
-    addResultsToList(textArea, results, tagword);
+    addResultsToList(textArea, results, tagword, true);
 }
 
 function navigateInList(textArea, event) {
@@ -460,6 +471,8 @@ function navigateInList(textArea, event) {
     if (!isVisible(textArea)) return
     // Return if ctrl key is pressed to not interfere with weight editing shortcut
     if (event.ctrlKey || event.altKey) return;
+
+    oldSelectedTag = selectedTag;
 
     switch (event.key) {
         case "ArrowUp":
@@ -491,16 +504,20 @@ function navigateInList(textArea, event) {
             hideResults(textArea);
             break;
     }
+    if (selectedTag == resultCount - 1
+        && (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        addResultsToList(textArea, results, tagword, false);
+    }
     // Update highlighting
     if (selectedTag !== null)
-        updateSelectionStyle(textArea, selectedTag);
+        updateSelectionStyle(textArea, selectedTag, oldSelectedTag);
 
     // Prevent default behavior
     event.preventDefault();
     event.stopPropagation();
 }
 
-styleAdded = false;
+var styleAdded = false;
 onUiUpdate(function () {
     // Load config
     if (acConfig === null) {
@@ -591,25 +608,23 @@ onUiUpdate(function () {
 
     // Not found, we're on a page without prompt textareas
     if (textAreas.every(v => v === null || v === undefined)) return;
-    // Already added?
-    if (gradioApp().querySelector('.autocompleteResults.p') !== null
-        && (gradioApp().querySelector('.autocompleteResults.n') === null
-            && !acConfig.activeIn.negativePrompts)) {
+    // Already added or unnecessary to add
+    if (gradioApp().querySelector('.autocompleteResults.p')) {
+        if (gradioApp().querySelector('.autocompleteResults.n') || !acConfig.activeIn.negativePrompts) {
+            return;
+        }
+    } else if (!acConfig.activeIn.txt2img && !acConfig.activeIn.img2img) {
         return;
     }
 
     textAreas.forEach(area => {
-        // Skip directly if not found on the page
-        if (area === null || area === undefined) return;
 
         // Return if autocomplete is disabled for the current area type in config
         let textAreaId = getTextAreaIdentifier(area);
-        if (textAreaId.includes("p") || (textAreaId.includes("n") && acConfig.activeIn.negativePrompts)) {
-            if (textAreaId.includes("img2img")) {
-                if (!acConfig.activeIn.img2img) return;
-            } else {
-                if (!acConfig.activeIn.txt2img) return;
-            }
+        if ((!acConfig.activeIn.img2img && textAreaId.includes("img2img"))
+            || (!acConfig.activeIn.txt2img && textAreaId.includes("txt2img"))
+            || (!acConfig.activeIn.negativePrompts && textAreaId.includes("n"))) {
+            return;
         }
 
         // Only add listeners once
