@@ -291,23 +291,26 @@ function insertTextAtCursor(textArea, result, tagword) {
     }
 }
 
-function addResultsToList(textArea, results, tagword) {
+function addResultsToList(textArea, results, tagword, resetList) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     let resultsList = resultDiv.querySelector('ul');
 
     // Reset list, selection and scrollTop since the list changed
-    resultsList.innerHTML = "";
-    selectedTag = null;
-    resultDiv.scrollTop = 0;
+    if (resetList) {
+        resultsList.innerHTML = "";
+        selectedTag = null;
+        resultDiv.scrollTop = 0;
+        resultCount = 0;
+    }
 
     // Find right colors from config
     let tagFileName = acConfig.tagFile.split(".")[0];
     let tagColors = acConfig.colors;
-
     let mode = gradioApp().querySelector('.dark') ? 0 : 1;
+    let nextLength = results.length < resultCount + acConfig.resultStepLength ? results.length : resultCount + acConfig.resultStepLength;
 
-    for (let i = 0; i < results.length; i++) {
+    for (let i = resultCount; i < nextLength; i++) {
         let result = results[i];
         let li = document.createElement("li");
 
@@ -337,6 +340,7 @@ function addResultsToList(textArea, results, tagword) {
         // Add element to list
         resultsList.appendChild(li);
     }
+    resultCount = nextLength;
 }
 
 function updateSelectionStyle(textArea, newIndex, oldIndex) {
@@ -447,16 +451,14 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         }
     }
 
-    resultCount = results.length;
-
     // Guard for empty results
-    if (resultCount === 0) {
+    if (!results.length) {
         hideResults(textArea);
         return;
     }
 
     showResults(textArea);
-    addResultsToList(textArea, results, tagword);
+    addResultsToList(textArea, results, tagword, true);
 }
 
 function navigateInList(textArea, event) {
@@ -487,12 +489,12 @@ function navigateInList(textArea, event) {
                 selectedTag = (selectedTag + 1) % resultCount;
             }
             break;
-            case "ArrowLeft":
-                selectedTag = 0;
-                break;
-            case "ArrowRight":
-                selectedTag = resultCount - 1;
-                break;
+        case "ArrowLeft":
+            selectedTag = 0;
+            break;
+        case "ArrowRight":
+            selectedTag = resultCount - 1;
+            break;
         case "Enter":
             if (selectedTag !== null) {
                 insertTextAtCursor(textArea, results[selectedTag], tagword);
@@ -501,6 +503,10 @@ function navigateInList(textArea, event) {
         case "Escape":
             hideResults(textArea);
             break;
+    }
+    if (selectedTag == resultCount - 1
+        && (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        addResultsToList(textArea, results, tagword, false);
     }
     // Update highlighting
     if (selectedTag !== null)
