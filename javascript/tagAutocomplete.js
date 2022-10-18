@@ -308,7 +308,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
     let tagFileName = acConfig.tagFile.split(".")[0];
     let tagColors = acConfig.colors;
     let mode = gradioApp().querySelector('.dark') ? 0 : 1;
-    let nextLength = results.length < resultCount + acConfig.resultStepLength ? results.length : resultCount + acConfig.resultStepLength;
+    let nextLength = Math.min(results.length, resultCount + acConfig.resultStepLength);
 
     for (let i = resultCount; i < nextLength; i++) {
         let result = results[i];
