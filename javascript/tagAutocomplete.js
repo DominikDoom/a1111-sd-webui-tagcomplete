@@ -618,7 +618,6 @@ onUiUpdate(function () {
     }
 
     textAreas.forEach(area => {
-        //if (area === null || area === undefined) return;
 
         // Return if autocomplete is disabled for the current area type in config
         let textAreaId = getTextAreaIdentifier(area);
