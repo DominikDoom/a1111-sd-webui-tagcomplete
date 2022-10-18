@@ -59,6 +59,7 @@ The config contains the following settings and defaults:
 	},
 	"maxResults": 5,
 	"showAllResults": false,
+	"resultStepLength": 500,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,
@@ -98,6 +99,7 @@ The config contains the following settings and defaults:
 | tagFile | Specifies the tag file to use. You can provide a custom tag database of your liking, but since the script was developed with Danbooru tags in mind, it might not work properly with other configurations.|
 | activeIn | Allows to selectively (de)activate the script for txt2img, img2img, and the negative prompts for both. |
 | maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. For embeddings and wildcards it will show all results in a scrollable list. |
+| resultStepLength | Allows to load results in smaller batches of the specified size for better performance in long lists or if showAllResults is true. |
 | showAllResults | If true, will ignore maxResults and show all results in a scrollable list. **Warning:** can lag your browser for long lists. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
 | escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
