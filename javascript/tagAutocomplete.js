@@ -618,8 +618,6 @@ onUiUpdate(function () {
     }
 
     textAreas.forEach(area => {
-        // repeat with line 610
-        // Skip directly if not found on the page
         //if (area === null || area === undefined) return;
 
         // Return if autocomplete is disabled for the current area type in config
