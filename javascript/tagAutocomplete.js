@@ -134,19 +134,27 @@ function difference(a, b) {
 
 // Get the identifier for the text area to differentiate between positive and negative
 function getTextAreaIdentifier(textArea) {
+    let txt2img_p = gradioApp().querySelector('#txt2img_prompt > label > textarea');
     let txt2img_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
-    let img2img = gradioApp().querySelector('#tab_img2img');
-    let img2img_p = img2img.querySelector('#img2img_prompt > label > textarea');
-    let img2img_n = img2img.querySelector('#img2img_neg_prompt > label > textarea');
+    let img2img_p = gradioApp().querySelector('#img2img_prompt > label > textarea');
+    let img2img_n = gradioApp().querySelector('#img2img_neg_prompt > label > textarea');
 
     let modifier = "";
-    if (textArea === img2img_p || textArea === img2img_n) {
-        modifier += ".img2img";
-    }
-    if (textArea === txt2img_n || textArea === img2img_n) {
-        modifier += ".n";
-    } else {
-        modifier += ".p";
+    switch (textArea) {
+        case txt2img_p:
+            modifier = ".txt2img.p";
+            break;
+        case txt2img_n:
+            modifier = ".txt2img.n";
+            break;
+        case img2img_p:
+            modifier = ".img2img.p";
+            break;
+        case img2img_n:
+            modifier = ".img2img.n";
+            break;
+        default:
+            break;
     }
     return modifier;
 }
@@ -591,25 +599,26 @@ onUiUpdate(function () {
 
     // Not found, we're on a page without prompt textareas
     if (textAreas.every(v => v === null || v === undefined)) return;
-    // Already added?
-    if (gradioApp().querySelector('.autocompleteResults.p') !== null
-        && (gradioApp().querySelector('.autocompleteResults.n') === null
-            && !acConfig.activeIn.negativePrompts)) {
+    // Already added or unnecessary to add
+    if (gradioApp().querySelector('.autocompleteResults.p')) {
+        if (gradioApp().querySelector('.autocompleteResults.n') || !acConfig.activeIn.negativePrompts) {
+            return;
+        }
+    } else if (!acConfig.activeIn.txt2img && !acConfig.activeIn.img2img) {
         return;
     }
 
     textAreas.forEach(area => {
+        // repeat with line 601
         // Skip directly if not found on the page
-        if (area === null || area === undefined) return;
+        //if (area === null || area === undefined) return;
 
         // Return if autocomplete is disabled for the current area type in config
         let textAreaId = getTextAreaIdentifier(area);
-        if (textAreaId.includes("p") || (textAreaId.includes("n") && acConfig.activeIn.negativePrompts)) {
-            if (textAreaId.includes("img2img")) {
-                if (!acConfig.activeIn.img2img) return;
-            } else {
-                if (!acConfig.activeIn.txt2img) return;
-            }
+        if ((!acConfig.activeIn.img2img && textAreaId.includes("img2img"))
+            || (!acConfig.activeIn.txt2img && textAreaId.includes("txt2img"))
+            || (!acConfig.activeIn.negativePrompts && textAreaId.includes("n"))) {
+            return;
         }
 
         // Only add listeners once
