@@ -206,13 +206,11 @@ function isVisible(textArea) {
 }
 function showResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
-
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     resultsDiv.style.display = "block";
 }
 function hideResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
-
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     resultsDiv.style.display = "none";
     selectedTag = null;
@@ -341,21 +339,24 @@ function addResultsToList(textArea, results, tagword) {
     }
 }
 
-function updateSelectionStyle(textArea, num) {
+function updateSelectionStyle(textArea, newIndex, oldIndex) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     let resultsList = resultDiv.querySelector('ul');
     let items = resultsList.getElementsByTagName('li');
 
-    for (let i = 0; i < items.length; i++) {
-        items[i].classList.remove('selected');
+    if (oldIndex != null) {
+        items[oldIndex].classList.remove('selected');
     }
 
-    items[num].classList.add('selected');
+    // make it safer
+    if (newIndex !== null) {
+        items[newIndex].classList.add('selected');
+    }
 
     // Set scrolltop to selected item if we are showing more than max results
     if (items.length > acConfig.maxResults) {
-        let selected = items[num];
+        let selected = items[newIndex];
         resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
     }
 }
@@ -469,6 +470,8 @@ function navigateInList(textArea, event) {
     // Return if ctrl key is pressed to not interfere with weight editing shortcut
     if (event.ctrlKey || event.altKey) return;
 
+    oldSelectedTag = selectedTag;
+
     switch (event.key) {
         case "ArrowUp":
             if (selectedTag === null) {
@@ -484,12 +487,12 @@ function navigateInList(textArea, event) {
                 selectedTag = (selectedTag + 1) % resultCount;
             }
             break;
-        case "ArrowLeft":
-            selectedTag = 0;
-            break;
-        case "ArrowRight":
-            selectedTag = resultCount - 1;
-            break;
+            case "ArrowLeft":
+                selectedTag = 0;
+                break;
+            case "ArrowRight":
+                selectedTag = resultCount - 1;
+                break;
         case "Enter":
             if (selectedTag !== null) {
                 insertTextAtCursor(textArea, results[selectedTag], tagword);
@@ -501,7 +504,7 @@ function navigateInList(textArea, event) {
     }
     // Update highlighting
     if (selectedTag !== null)
-        updateSelectionStyle(textArea, selectedTag);
+        updateSelectionStyle(textArea, selectedTag, oldSelectedTag);
 
     // Prevent default behavior
     event.preventDefault();
