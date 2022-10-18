@@ -361,13 +361,13 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
     }
 }
 
-wildcardFiles = [];
-wildcards = {};
-embeddings = [];
-allTags = [];
-results = [];
-tagword = "";
-resultCount = 0;
+var wildcardFiles = [];
+var wildcards = {};
+var embeddings = [];
+var allTags = [];
+var results = [];
+var tagword = "";
+var resultCount = 0;
 function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
     if (!acActive) return;
@@ -511,7 +511,7 @@ function navigateInList(textArea, event) {
     event.stopPropagation();
 }
 
-styleAdded = false;
+var styleAdded = false;
 onUiUpdate(function () {
     // Load config
     if (acConfig === null) {
