@@ -10,9 +10,8 @@
 这个脚本的创建是为了减少因复制Tag在Web UI和 booru网站的反复切换。
 你可以按照[以下方法](#installation)下载或拷贝文件，也可以使用[Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)中打包好的文件。
 
-## 常见问题 & 已知缺陷:
+## 常见问题:
 * 浏览器可能因为缓存无法更新脚本、设置、embedding/wildcard列表，尝试使用`CRTL+F5`清空浏览器缓存并重新加载
-- 当`replaceUnderscores`选项开启时, 脚本只会替换Tag的一部分如果Tag包含多个单词,比如将`atago (azur lane)`修改`atago`为`taihou`并使用自动补全时.会得到 `taihou (azur lane), lane)`的结果, 因为脚本没有把后面的部分认为成同一个Tag。
 
 ## [Wildcard](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) &  Embedding 支持
 自动补全同样适用于 [Wildcard](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py)中所述的通配符文件(后面有演示视频)。这将使你能够插入Wildcard脚本需要的通配符，更进一步的，你还可以插入通配符文件内的某个具体Tag。
@@ -58,6 +57,7 @@ https://user-images.githubusercontent.com/34448969/195632461-49d226ae-d393-453d-
 	},
 	"maxResults": 5,
 	"showAllResults": false,
+	"resultStepLength": 500,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,
@@ -97,6 +97,7 @@ https://user-images.githubusercontent.com/34448969/195632461-49d226ae-d393-453d-
 | tagFile | 指定要使用的标记文件。您可以提供您喜欢的自定义标签数据库，但由于该脚本是在考虑 Danbooru 标签的情况下开发的，因此它可能无法与其他配置一起正常工作。|
 | activeIn | 允许有选择地（取消）激活 txt2img、img2img 和两者的否定提示的脚本。|
 | maxResults | 最多显示多少个结果。对于默认标记集，结果按出现次数排序。对于嵌入和通配符，它​​将在可滚动列表中显示所有结果。 |
+| resultStepLength | 允许以指定大小的较小批次加载结果，以便在长列表中或 showAllResults 为 true 时获得更好的性能。|
 | showAllResults | 如果为真，将忽略 maxResults 并在可滚动列表中显示所有结果。 **警告：**对于长列表，您的浏览器可能会滞后。 |
 | replaceUnderscores | 如果为 true，则在单击标签时将取消划线替换为空格。对于某些型号可能会更好。|
 | escapeParentheses | 如果为 true，则转义包含 () 的标签，因此它们不会对 Web UI 的提示权重功能做出贡献。 |
