@@ -118,18 +118,22 @@ const debounce = (func, wait = 300) => {
     }
 }
 
-// Difference function to fix duplicates not being seen as changes in normal filter
-function difference(a, b) {
-    if (a.length == 0) {
-        return b;
+function findEditStart(text, cursorPos) {
+    for (var i = cursorPos - 1; i > 0; i--) {
+        if (text[i] === ',') {
+            break;
+        }
     }
-    if (b.length == 0) {
-        return a;
-    }
+    return i;
+}
 
-    return [...b.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) - 1),
-        a.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map())
-    )].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
+function findEditEnd(text, cursorPos) {
+    for (var i = cursorPos, length = text.length; i < length; i++) {
+        if (text[i] === ',') {
+            break;
+        }
+    }
+    return i;
 }
 
 // Get the identifier for the text area to differentiate between positive and negative
@@ -196,7 +200,6 @@ function createCheckbox() {
 
 // The selected tag index. Needs to be up here so hide can access it.
 var selectedTag = null;
-var previousTags = [];
 
 // Show or hide the results div
 function isVisible(textArea) {
@@ -223,11 +226,9 @@ function escapeRegExp(string) {
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
-function insertTextAtCursor(textArea, result, tagword) {
+function insertTextAtCursor(textArea, result) {
     let text = result[0];
     let tagType = result[1];
-
-    let cursorPos = textArea.selectionStart;
     var sanitizedText = text
 
     // Replace differently depending on if it's a tag or wildcard
@@ -249,36 +250,24 @@ function insertTextAtCursor(textArea, result, tagword) {
             .replaceAll("]", "\\]");
     }
 
-    var prompt = textArea.value;
-
     // Edit prompt text
-    let editStart = Math.max(cursorPos - tagword.length, 0);
-    let editEnd = Math.min(cursorPos + tagword.length, prompt.length);
-    let surrounding = prompt.substring(editStart, editEnd);
-    let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`)));
-    let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
-
-    var optionalComma = "";
-    if (tagType !== "wildcardFile") {
-        optionalComma = surrounding.match(new RegExp(escapeRegExp(`${tagword},`))) !== null ? "" : ", ";
+    var prompt = textArea.value;
+    let cursorPos = textArea.selectionEnd;
+    let editStart = findEditStart(prompt, cursorPos);
+    let editEnd = findEditEnd(prompt, cursorPos);
+    let optionalComma = "";
+    if (editStart !== 0) {
+        optionalComma = ", ";
     }
 
-    // Replace partial tag word with new text, add comma if needed
-    let insert = surrounding.replace(tagword, sanitizedText + optionalComma);
-
     // Add back start
-    var newPrompt = prompt.substring(0, editStart) + insert + prompt.substring(editEnd);
-    textArea.value = newPrompt;
-    textArea.selectionStart = afterInsertCursorPos + optionalComma.length;
-    textArea.selectionEnd = textArea.selectionStart
+    textArea.value = prompt.substring(0, editStart) + optionalComma + sanitizedText + prompt.substring(editEnd);
+    textArea.selectionStart = editStart + sanitizedText.length + optionalComma.length;
+    textArea.selectionEnd = textArea.selectionStart;
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure its
     // internal Svelte data binding remains in sync.
     textArea.dispatchEvent(new Event("input", { bubbles: true }));
-
-    // Update previous tags with the edited prompt to prevent re-searching the same term
-    let tags = newPrompt.match(/[^, ]+/g);
-    previousTags = tags;
 
     // Hide results after inserting
     if (tagType === "wildcardFile") {
@@ -287,7 +276,7 @@ function insertTextAtCursor(textArea, result, tagword) {
         autocomplete(textArea, prompt, sanitizedText);
         setTimeout(() => { hideBlocked = false; }, 100);
     } else {
-        hideResults(textArea);
+        setTimeout(() => { hideResults(textArea); }, 100); // Enable autocomplete
     }
 }
 
@@ -312,16 +301,17 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
     for (let i = resultCount; i < nextLength; i++) {
         let result = results[i];
+        let resultTag = acConfig.replaceUnderscores ? result[0].replaceAll("_", " ") : result[0];
         let li = document.createElement("li");
 
-        //suppost only show the translation to result
+        //support only show the translation to result
         if (result[2]) {
             li.textContent = result[2];
             if (!acConfig.translation.onlyShowTranslation) {
-                li.textContent += " >> " + result[0];
+                li.textContent += " >> " + resultTag;
             }
         } else {
-            li.textContent = result[0];
+            li.textContent = resultTag;
         }
 
         // Wildcards & Embeds have no tag type
@@ -336,7 +326,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         }
 
         // Add listener
-        li.addEventListener("click", function () { insertTextAtCursor(textArea, result, tagword); });
+        li.addEventListener("click", function () { insertTextAtCursor(textArea, result); });
         // Add element to list
         resultsList.appendChild(li);
     }
@@ -383,24 +373,26 @@ function autocomplete(textArea, prompt, fixedTag = null) {
     }
 
     if (fixedTag === null) {
-        // Match tags with RegEx to get the last edited one
-        let tags = prompt.match(/[^, ]+/g);
-        let diff = difference(tags, previousTags)
-        previousTags = tags;
 
-        // Guard for no difference / only whitespace remaining
-        if (diff === null || diff.length === 0) {
-            if (!hideBlocked) hideResults(textArea);
-            return;
+        let cursorPos = textArea.selectionEnd;
+        let editStart = findEditStart(prompt, cursorPos);
+
+        tagword = prompt.substring(editStart, cursorPos);
+        let tagStart = tagword.search(/[^, ]/);
+        if (tagStart !== -1) {
+            tagword = tagword.substring(tagStart);
+        } else {
+            tagword = null;
         }
-
-        tagword = diff[0]
 
         // Guard for empty tagword
         if (tagword === null || tagword.length === 0) {
             hideResults(textArea);
             return;
         }
+
+        acConfig.replaceUnderscores ? tagword.replaceAll(" ", "_") : tagword
+
     } else {
         tagword = fixedTag;
     }
@@ -497,7 +489,7 @@ function navigateInList(textArea, event) {
             break;
         case "Enter":
             if (selectedTag !== null) {
-                insertTextAtCursor(textArea, results[selectedTag], tagword);
+                insertTextAtCursor(textArea, results[selectedTag]);
             }
             break;
         case "Escape":
