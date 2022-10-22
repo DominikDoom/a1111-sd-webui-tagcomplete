@@ -465,7 +465,7 @@ function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI
     if (!acActive) return;
 
-    validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Escape"];
+    validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Tab", "Escape"];
 
     if (!validKeys.includes(event.key)) return;
     if (!isVisible(textArea)) return
@@ -500,11 +500,17 @@ function navigateInList(textArea, event) {
                 insertTextAtCursor(textArea, results[selectedTag], tagword);
             }
             break;
+        case "Tab":
+            if (selectedTag === null) {
+                selectedTag = 0;
+            }
+            insertTextAtCursor(textArea, results[selectedTag], tagword);
+            break;
         case "Escape":
             hideResults(textArea);
             break;
     }
-    if (selectedTag == resultCount - 1
+    if (selectedTag === resultCount - 1
         && (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "ArrowLeft" || event.key === "ArrowRight")) {
         addResultsToList(textArea, results, tagword, false);
     }
