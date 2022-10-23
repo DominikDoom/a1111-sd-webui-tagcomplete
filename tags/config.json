@@ -8,6 +8,7 @@
 	"maxResults": 5,
 	"resultStepLength": 500,
 	"showAllResults": false,
+	"useLeftRightArrowKeys": false,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,

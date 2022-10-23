@@ -465,7 +465,9 @@ function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI
     if (!acActive) return;
 
-    validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Tab", "Escape"];
+    validKeys = ["ArrowUp", "ArrowDown", "Enter", "Tab", "Escape"];
+    if (acConfig.useLeftRightArrowKeys)
+        validKeys.push("ArrowLeft", "ArrowRight");
 
     if (!validKeys.includes(event.key)) return;
     if (!isVisible(textArea)) return
