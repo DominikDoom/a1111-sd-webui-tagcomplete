@@ -366,6 +366,7 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
 }
 
 var wildcardFiles = [];
+var wildcardExtFiles = [];
 var wildcards = {};
 var embeddings = [];
 var allTags = [];
@@ -418,9 +419,11 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         // Show available wildcard files
         let tempResults = [];
         if (tagword !== "__") {
-            tempResults = wildcardFiles.filter(x => x.toLowerCase().includes(tagword.replace("__", ""))) // Filter by tagword
+            let lmb = (x) => x.toLowerCase().includes(tagword.replace("__", ""))
+            tempResults = wildcardFiles.filter(lmb).concat(wildcardExtFiles.filter(lmb)) // Filter by tagword
+            
         } else {
-            tempResults = wildcardFiles;
+            tempResults = wildcardFiles.concat(wildcardExtFiles);
         }
         results = tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"]); // Mark as wildcard
     } else if (acConfig.useEmbeddings && tagword.match(/<[^,> ]*>?/g)) {
@@ -581,6 +584,9 @@ onUiUpdate(function () {
             wildcardFiles = readFile("file/tags/temp/wc.txt").split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
+            wildcardExtFiles = readFile("file/tags/temp/wce.txt").split("\n")
+                .filter(x => x.trim().length > 0) // Remove empty lines
+                .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
 
             wildcardFiles.forEach(fName => {
                 try {
@@ -590,8 +596,16 @@ onUiUpdate(function () {
                     console.log(`Could not load wildcards for ${fName}`);
                 }
             });
+            wildcardExtFiles.forEach(fName => {
+                try {
+                    wildcards[fName] = readFile(`file/extensions/wildcards/wildcards/${fName}.txt`).split("\n")
+                        .filter(x => x.trim().length > 0); // Remove empty lines
+                } catch (e) {
+                    console.log(`Could not load wildcards for ${fName}`);
+                }
+            });
         } catch (e) {
-            console.error("Error loading wildcardNames.txt: " + e);
+            console.error("Error loading wildcards: " + e);
         }
     }
     // Load embeddings
