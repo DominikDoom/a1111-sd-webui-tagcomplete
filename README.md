@@ -58,8 +58,9 @@ The config contains the following settings and defaults:
 		"negativePrompts": true
 	},
 	"maxResults": 5,
-	"showAllResults": false,
 	"resultStepLength": 500,
+	"showAllResults": false,
+	"useLeftRightArrowKeys": false,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
 	"useWildcards": true,
@@ -101,6 +102,7 @@ The config contains the following settings and defaults:
 | maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. For embeddings and wildcards it will show all results in a scrollable list. |
 | resultStepLength | Allows to load results in smaller batches of the specified size for better performance in long lists or if showAllResults is true. |
 | showAllResults | If true, will ignore maxResults and show all results in a scrollable list. **Warning:** can lag your browser for long lists. |
+| useLeftRightArrowKeys | If true, left and right arrows will select the first/last result in the popup instead of moving the cursor in the textbox. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
 | escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
 | useWildcards | Used to toggle the wildcard completion functionality. |
