@@ -413,7 +413,15 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
 
-        let wildcards = readFile(`file/extensions/wildcards/wildcards/${wcFile}.txt`).split("\n")
+        let wcBasePath = "";
+        if (wildcardExtFiles.includes(wcFile))
+            wcBasePath = "extensions/wildcards/wildcards";
+        else if (wildcardFiles.includes(wcFile))
+            wcBasePath = "scripts/wildcards";
+        else
+            throw "No valid wildcard file found";
+
+        let wildcards = readFile(`file/${wcBasePath}/${wcFile}.txt`).split("\n")
                         .filter(x => x.trim().length > 0); // Remove empty lines
 
         results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
