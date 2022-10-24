@@ -468,7 +468,7 @@ function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI
     if (!acActive) return;
 
-    validKeys = ["ArrowUp", "ArrowDown", "Enter", "Tab", "Escape"];
+    validKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Enter", "Tab", "Escape"];
     if (acConfig.useLeftRightArrowKeys)
         validKeys.push("ArrowLeft", "ArrowRight");
 
@@ -493,6 +493,26 @@ function navigateInList(textArea, event) {
             } else {
                 selectedTag = (selectedTag + 1) % resultCount;
             }
+            break;
+        case "PageUp":
+            if (selectedTag === null || selectedTag === 0) {
+                selectedTag = resultCount - 1;
+            } else {
+                selectedTag = (Math.max(selectedTag - 5, 0) + resultCount) % resultCount;
+            }
+            break;
+        case "PageDown":
+            if (selectedTag === null || selectedTag === resultCount - 1) {
+                selectedTag = 0;
+            } else {
+                selectedTag = Math.min(selectedTag + 5, resultCount - 1) % resultCount;
+            }
+            break;
+        case "Home":
+            selectedTag = 0;
+            break;
+        case "End":
+            selectedTag = resultCount - 1;
             break;
         case "ArrowLeft":
             selectedTag = 0;
