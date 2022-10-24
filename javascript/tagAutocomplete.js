@@ -367,7 +367,6 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
 
 var wildcardFiles = [];
 var wildcardExtFiles = [];
-var wildcards = {};
 var embeddings = [];
 var allTags = [];
 var results = [];
@@ -408,12 +407,16 @@ function autocomplete(textArea, prompt, fixedTag = null) {
 
     tagword = tagword.toLowerCase();
 
-    if (acConfig.useWildcards && [...tagword.matchAll(/\b__([^,_ ]+)__([^, ]*)\b/g)].length > 0) {
+    if (acConfig.useWildcards && [...tagword.matchAll(/\b__([^, ]+)__([^, ]*)\b/g)].length > 0) {
         // Show wildcards from a file with that name
-        wcMatch = [...tagword.matchAll(/\b__([^,_ ]+)__([^, ]*)\b/g)]
+        wcMatch = [...tagword.matchAll(/\b__([^, ]+)__([^, ]*)\b/g)]
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
-        results = wildcards[wcFile].filter(x => (wcWord !== null) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
+
+        let wildcards = readFile(`file/extensions/wildcards/wildcards/${wcFile}.txt`).split("\n")
+                        .filter(x => x.trim().length > 0); // Remove empty lines
+
+        results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
             .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
     } else if (acConfig.useWildcards && (tagword.startsWith("__") && !tagword.endsWith("__") || tagword === "__")) {
         // Show available wildcard files
@@ -607,23 +610,6 @@ onUiUpdate(function () {
             wildcardExtFiles = readFile("file/tags/temp/wce.txt").split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
-
-            wildcardFiles.forEach(fName => {
-                try {
-                    wildcards[fName] = readFile(`file/scripts/wildcards/${fName}.txt`).split("\n")
-                        .filter(x => x.trim().length > 0); // Remove empty lines
-                } catch (e) {
-                    console.log(`Could not load wildcards for ${fName}`);
-                }
-            });
-            wildcardExtFiles.forEach(fName => {
-                try {
-                    wildcards[fName] = readFile(`file/extensions/wildcards/wildcards/${fName}.txt`).split("\n")
-                        .filter(x => x.trim().length > 0); // Remove empty lines
-                } catch (e) {
-                    console.log(`Could not load wildcards for ${fName}`);
-                }
-            });
         } catch (e) {
             console.error("Error loading wildcards: " + e);
         }

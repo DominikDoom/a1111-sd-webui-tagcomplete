@@ -15,13 +15,13 @@ TEMP_PATH = FILE_DIR.joinpath('tags/temp')
 def get_wildcards():
     """Returns a list of all wildcards. Works on nested folders."""
     wildcard_files = list(WILDCARD_PATH.rglob("*.txt"))
-    resolved = [str(w.relative_to(WILDCARD_PATH)) for w in wildcard_files if w.name != "put wildcards here.txt"]
+    resolved = [w.relative_to(WILDCARD_PATH).as_posix() for w in wildcard_files if w.name != "put wildcards here.txt"]
     return resolved
 
 def get_ext_wildcards():
     """Returns a list of all extension wildcards. Works on nested folders."""
     wildcard_files = list(WILDCARD_EXT_PATH.rglob("*.txt"))
-    resolved = [str(w.relative_to(WILDCARD_EXT_PATH)) for w in wildcard_files if w.name != "put wildcards here.txt"]
+    resolved = [w.relative_to(WILDCARD_EXT_PATH).as_posix() for w in wildcard_files if w.name != "put wildcards here.txt"]
     return resolved
 
 
