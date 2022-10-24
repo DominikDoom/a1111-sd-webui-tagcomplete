@@ -599,7 +599,7 @@ onUiUpdate(function () {
         try {
             embeddings = readFile("file/tags/temp/emb.txt").split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.replace(".bin", "").replace(".pt", "")); // Remove file extensions
+                .map(x => x.replace(".bin", "").replace(".pt", "").replace(".png", "")); // Remove file extensions
         } catch (e) {
             console.error("Error loading embeddings.txt: " + e);
         }

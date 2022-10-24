@@ -20,7 +20,7 @@ def get_wildcards():
 
 def get_embeddings():
     """Returns a list of all embeddings"""
-    return [str(e.relative_to(EMB_PATH)) for e in EMB_PATH.glob("**/*") if e.suffix in {".bin", ".pt"}]
+    return [str(e.relative_to(EMB_PATH)) for e in EMB_PATH.glob("**/*") if e.suffix in {".bin", ".pt", ".png"}]
 
 
 def write_to_temp_file(name, data):
