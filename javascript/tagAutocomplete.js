@@ -672,7 +672,7 @@ onUiUpdate(function () {
             hideResults(area);
 
             // Add autocomplete event listener
-            area.addEventListener('input', debounce(() => autocomplete(area, area.value), 100));
+            area.addEventListener('input', debounce(() => autocomplete(area, area.value), acConfig.delayTime));
             // Add focusout event listener
             area.addEventListener('focusout', debounce(() => hideResults(area), 400));
             // Add up and down arrow event listener

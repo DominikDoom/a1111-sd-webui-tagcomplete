@@ -7,6 +7,7 @@
 	},
 	"maxResults": 5,
 	"resultStepLength": 500,
+	"delayTime": 100,
 	"showAllResults": false,
 	"useLeftRightArrowKeys": false,
 	"replaceUnderscores": true,
