@@ -24,13 +24,13 @@ TAGS_PATH = get_tags_base_path()
 WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
 EMB_PATH = FILE_DIR.joinpath('embeddings')
 
-def find_ext_wildcard_path():
+def find_ext_wildcard_paths():
     """Returns the path to the extension wildcards folder"""
-    found = list(EXT_PATH.rglob('**/wildcards/'))[0]
+    found = list(EXT_PATH.rglob('**/wildcards/'))
     return found
 
 # The path to the extension wildcards folder
-WILDCARD_EXT_PATH = find_ext_wildcard_path()
+WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
 
 # The path to the temporary files
 TEMP_PATH = TAGS_PATH.joinpath('temp')
@@ -43,9 +43,14 @@ def get_wildcards():
 
 def get_ext_wildcards():
     """Returns a list of all extension wildcards. Works on nested folders."""
-    wildcard_files = list(WILDCARD_EXT_PATH.rglob("*.txt"))
-    resolved = [w.relative_to(WILDCARD_EXT_PATH).as_posix() for w in wildcard_files if w.name != "put wildcards here.txt"]
-    return resolved
+    wildcard_files = []
+
+    for path in WILDCARD_EXT_PATHS:
+        wildcard_files.append(path.relative_to(FILE_DIR).as_posix())
+        wildcard_files.extend(p.relative_to(path).as_posix() for p in path.rglob("*.txt") if p.name != "put wildcards here.txt")
+        wildcard_files.append("-----")
+
+    return wildcard_files
 
 
 def get_embeddings():
@@ -84,8 +89,8 @@ if WILDCARD_PATH.exists():
         write_to_temp_file('wc.txt', wildcards)
 
 # Write extension wildcards to wce.txt if found
-if WILDCARD_EXT_PATH.exists():
-    wildcards_ext = [WILDCARD_EXT_PATH.relative_to(FILE_DIR).as_posix()] + get_ext_wildcards()
+if WILDCARD_EXT_PATHS is not None:
+    wildcards_ext = get_ext_wildcards()
     if wildcards_ext:
         write_to_temp_file('wce.txt', wildcards_ext)
 

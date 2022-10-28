@@ -255,16 +255,16 @@ function insertTextAtCursor(textArea, result, tagword) {
     let editStart = Math.max(cursorPos - tagword.length, 0);
     let editEnd = Math.min(cursorPos + tagword.length, prompt.length);
     let surrounding = prompt.substring(editStart, editEnd);
-    let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`)));
+    let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`), "i"));
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
     var optionalComma = "";
     if (tagType !== "wildcardFile") {
-        optionalComma = surrounding.match(new RegExp(escapeRegExp(`${tagword},`))) !== null ? "" : ", ";
+        optionalComma = surrounding.match(new RegExp(escapeRegExp(`${tagword},`), "i")) !== null ? "" : ", ";
     }
 
     // Replace partial tag word with new text, add comma if needed
-    let insert = surrounding.replace(tagword, sanitizedText + optionalComma);
+    let insert = surrounding.replace(match, sanitizedText + optionalComma);
 
     // Add back start
     var newPrompt = prompt.substring(0, editStart) + insert + prompt.substring(editEnd);
@@ -365,8 +365,6 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
     }
 }
 
-var wcBasePath = "";
-var wcExtBasePath = "";
 var wildcardFiles = [];
 var wildcardExtFiles = [];
 var embeddings = [];
@@ -415,15 +413,15 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
 
-        var basePath = "";
-        if (wildcardExtFiles.includes(wcFile))
-            basePath = wcExtBasePath;
-        else if (wildcardFiles.includes(wcFile))
-            basePath = wcBasePath;
-        else
-            throw "No valid wildcard file found";
+        var wcPair;
 
-        let wildcards = readFile(`file/${basePath}/${wcFile}.txt`).split("\n")
+        // Look in normal wildcard files
+        if (wcFound = wildcardFiles.find(x => x[1].toLowerCase() === wcFile))
+            wcPair = wcFound;
+        else // Look in extensions wildcard files
+            wcPair = wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
+
+        let wildcards = readFile(`file/${wcPair[0]}/${wcPair[1]}.txt`).split("\n")
                         .filter(x => x.trim().length > 0); // Remove empty lines
 
         results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
@@ -432,12 +430,12 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         // Show available wildcard files
         let tempResults = [];
         if (tagword !== "__") {
-            let lmb = (x) => x.toLowerCase().includes(tagword.replace("__", ""))
+            let lmb = (x) => x[1].toLowerCase().includes(tagword.replace("__", ""))
             tempResults = wildcardFiles.filter(lmb).concat(wildcardExtFiles.filter(lmb)) // Filter by tagword
         } else {
             tempResults = wildcardFiles.concat(wildcardExtFiles);
         }
-        results = tempResults.map(x => ["Wildcards: " + x.trim(), "wildcardFile"]); // Mark as wildcard
+        results = tempResults.map(x => ["Wildcards: " + x[1].trim(), "wildcardFile"]); // Mark as wildcard
     } else if (acConfig.useEmbeddings && tagword.match(/<[^,> ]*>?/g)) {
         // Show embeddings
         let tempResults = [];
@@ -618,16 +616,34 @@ onUiUpdate(function () {
     if (wildcardFiles.length === 0 && acConfig.useWildcards) {
         try {
             let wcFileArr = readFile(`file/${tagBasePath}/temp/wc.txt`).split("\n");
-            wcBasePath = wcFileArr[0]; // First line should be the base path
+            let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
             wildcardFiles = wcFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
+                .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
             
+            // To support multiple sources, we need to separate them using the provided "-----" strings
             let wcExtFileArr = readFile(`file/${tagBasePath}/temp/wce.txt`).split("\n");
-            wcExtBasePath = wcExtFileArr[0]; // First line should be the base path
-            wildcardExtFiles = wcExtFileArr.slice(1)
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
+            let splitIndices = [];
+            for (let index = 0; index < wcExtFileArr.length; index++) {
+                if (wcExtFileArr[index].trim() === "-----") {
+                    splitIndices.push(index);
+                }
+            }
+            // For each group, add them to the wildcardFiles array with the base path as the first element
+            for (let i = 0; i < splitIndices.length; i++) {
+                let start = splitIndices[i - 1] || 0;
+                if (i > 0) start++; // Skip the "-----" line
+                let end = splitIndices[i];
+
+                let wcExtFile = wcExtFileArr.slice(start, end);
+                let base = wcExtFile[0].trim() + "/";
+                wcExtFile = wcExtFile.slice(1)
+                    .filter(x => x.trim().length > 0) // Remove empty lines
+                    .map(x => x.trim().replace(base, "").replace(".txt", "")); // Remove file extension & newlines;
+                
+                wcExtFile = wcExtFile.map(x => [base, x]);
+                wildcardExtFiles.push(...wcExtFile);
+            }
         } catch (e) {
             console.error("Error loading wildcards: " + e);
         }
