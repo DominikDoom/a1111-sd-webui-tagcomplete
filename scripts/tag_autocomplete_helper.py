@@ -2,23 +2,38 @@
 # to a temporary file to expose it to the javascript side
 
 from pathlib import Path
+from modules import scripts
+
+# Webui root path
+FILE_DIR = Path().absolute()
+
+# The extension base path
+EXT_PATH = FILE_DIR.joinpath('extensions')
+
+# Tags base path
+def get_tags_base_path():
+    script_path = Path(scripts.basedir())
+    if (script_path.is_relative_to(EXT_PATH)):
+        return script_path.joinpath('tags')
+    else:
+        return FILE_DIR.joinpath('tags')
+
+TAGS_PATH = get_tags_base_path()
 
 # The path to the folder containing the wildcards and embeddings
-FILE_DIR = Path().absolute()
 WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
 EMB_PATH = FILE_DIR.joinpath('embeddings')
-
-EXT_PATH = FILE_DIR.joinpath('extensions')
 
 def find_ext_wildcard_path():
     """Returns the path to the extension wildcards folder"""
     found = list(EXT_PATH.rglob('**/wildcards/'))[0]
     return found
 
+# The path to the extension wildcards folder
 WILDCARD_EXT_PATH = find_ext_wildcard_path()
 
-# The path to the temporary file
-TEMP_PATH = FILE_DIR.joinpath('tags/temp')
+# The path to the temporary files
+TEMP_PATH = TAGS_PATH.joinpath('temp')
 
 def get_wildcards():
     """Returns a list of all wildcards. Works on nested folders."""
@@ -37,12 +52,20 @@ def get_embeddings():
     """Returns a list of all embeddings"""
     return [str(e.relative_to(EMB_PATH)) for e in EMB_PATH.glob("**/*") if e.suffix in {".bin", ".pt", ".png"}]
 
+def write_tag_base_path():
+    """Writes the tag base path to a fixed location temporary file"""
+    with open(FILE_DIR.joinpath('tmp/tagAutocompletePath.txt'), 'w', encoding="utf-8") as f:
+        f.write(TAGS_PATH.relative_to(FILE_DIR).as_posix())
 
 def write_to_temp_file(name, data):
     """Writes the given data to a temporary file"""
     with open(TEMP_PATH.joinpath(name), 'w', encoding="utf-8") as f:
         f.write(('\n'.join(data)))
 
+
+# Write the tag base path to a fixed location temporary file
+# to enable the javascript side to find our files regardless of extension folder name
+write_tag_base_path()
 
 # Check if the temp path exists and create it if not
 if not TEMP_PATH.exists():

@@ -476,6 +476,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
     addResultsToList(textArea, results, tagword, true);
 }
 
+var oldSelectedTag = null;
 function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI
     if (!acActive) return;
@@ -562,10 +563,13 @@ function navigateInList(textArea, event) {
 
 var styleAdded = false;
 onUiUpdate(function () {
+    // Get our tag base path from the temp file
+    let tagBasePath = readFile("file/tmp/tagAutocompletePath.txt");
+
     // Load config
     if (acConfig === null) {
         try {
-            acConfig = JSON.parse(readFile("file/tags/config.json"));
+            acConfig = JSON.parse(readFile(`file/${tagBasePath}/config.json`));
             if (acConfig.translation.onlyShowTranslation) {
                 acConfig.translation.searchByTranslation = true; // if only show translation, enable search by translation is necessary
             }
@@ -577,14 +581,14 @@ onUiUpdate(function () {
     // Load main tags and translations
     if (allTags.length === 0) {
         try {
-            allTags = loadCSV(`file/tags/${acConfig.tagFile}`);
+            allTags = loadCSV(`file/${tagBasePath}/${acConfig.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
         }
         if (acConfig.extra.extraFile) {
             try {
-                extras = loadCSV(`file/tags/${acConfig.extra.extraFile}`);
+                extras = loadCSV(`file/${tagBasePath}/${acConfig.extra.extraFile}`);
                 if (acConfig.extra.onlyTranslationExtraFile) {
                     // This works purely on index, so it's not very robust. But a lot faster.
                     for (let i = 0, n = extras.length; i < n; i++) {
@@ -613,13 +617,13 @@ onUiUpdate(function () {
     // Load wildcards
     if (wildcardFiles.length === 0 && acConfig.useWildcards) {
         try {
-            let wcFileArr = readFile("file/tags/temp/wc.txt").split("\n");
+            let wcFileArr = readFile(`file/${tagBasePath}/temp/wc.txt`).split("\n");
             wcBasePath = wcFileArr[0]; // First line should be the base path
             wildcardFiles = wcFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
             
-            let wcExtFileArr = readFile("file/tags/temp/wce.txt").split("\n");
+            let wcExtFileArr = readFile(`file/${tagBasePath}/temp/wce.txt`).split("\n");
             wcExtBasePath = wcExtFileArr[0]; // First line should be the base path
             wildcardExtFiles = wcExtFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
@@ -631,7 +635,7 @@ onUiUpdate(function () {
     // Load embeddings
     if (embeddings.length === 0 && acConfig.useEmbeddings) {
         try {
-            embeddings = readFile("file/tags/temp/emb.txt").split("\n")
+            embeddings = readFile(`file/${tagBasePath}/temp/emb.txt`).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.replace(".bin", "").replace(".pt", "").replace(".png", "")); // Remove file extensions
         } catch (e) {
