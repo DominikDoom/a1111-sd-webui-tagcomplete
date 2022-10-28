@@ -365,6 +365,8 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
     }
 }
 
+var wcBasePath = "";
+var wcExtBasePath = "";
 var wildcardFiles = [];
 var wildcardExtFiles = [];
 var embeddings = [];
@@ -413,15 +415,15 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
 
-        let wcBasePath = "";
+        var basePath = "";
         if (wildcardExtFiles.includes(wcFile))
-            wcBasePath = "extensions/wildcards/wildcards";
+            basePath = wcExtBasePath;
         else if (wildcardFiles.includes(wcFile))
-            wcBasePath = "scripts/wildcards";
+            basePath = wcBasePath;
         else
             throw "No valid wildcard file found";
 
-        let wildcards = readFile(`file/${wcBasePath}/${wcFile}.txt`).split("\n")
+        let wildcards = readFile(`file/${basePath}/${wcFile}.txt`).split("\n")
                         .filter(x => x.trim().length > 0); // Remove empty lines
 
         results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
@@ -432,7 +434,6 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         if (tagword !== "__") {
             let lmb = (x) => x.toLowerCase().includes(tagword.replace("__", ""))
             tempResults = wildcardFiles.filter(lmb).concat(wildcardExtFiles.filter(lmb)) // Filter by tagword
-            
         } else {
             tempResults = wildcardFiles.concat(wildcardExtFiles);
         }
@@ -612,10 +613,15 @@ onUiUpdate(function () {
     // Load wildcards
     if (wildcardFiles.length === 0 && acConfig.useWildcards) {
         try {
-            wildcardFiles = readFile("file/tags/temp/wc.txt").split("\n")
+            let wcFileArr = readFile("file/tags/temp/wc.txt").split("\n");
+            wcBasePath = wcFileArr[0]; // First line should be the base path
+            wildcardFiles = wcFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
-            wildcardExtFiles = readFile("file/tags/temp/wce.txt").split("\n")
+            
+            let wcExtFileArr = readFile("file/tags/temp/wce.txt").split("\n");
+            wcExtBasePath = wcExtFileArr[0]; // First line should be the base path
+            wildcardExtFiles = wcExtFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.trim().replace(".txt", "")); // Remove file extension & newlines
         } catch (e) {
