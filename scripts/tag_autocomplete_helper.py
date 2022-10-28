@@ -15,9 +15,10 @@ EXT_PATH = FILE_DIR.joinpath('extensions')
 
 def get_tags_base_path():
     script_path = Path(scripts.basedir())
-    if (script_path.is_relative_to(EXT_PATH)):
+    try:
+        script_path.relative_to(EXT_PATH) # should raise ValueError if not in extensions
         return script_path.joinpath('tags')
-    else:
+    except ValueError:
         return FILE_DIR.joinpath('tags')
 
 
