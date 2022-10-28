@@ -422,7 +422,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
             wcPair = wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
 
         let wildcards = readFile(`file/${wcPair[0]}/${wcPair[1]}.txt`).split("\n")
-                        .filter(x => x.trim().length > 0); // Remove empty lines
+            .filter(x => x.trim().length > 0); // Remove empty lines
 
         results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
             .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
@@ -620,7 +620,7 @@ onUiUpdate(function () {
             wildcardFiles = wcFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
-            
+
             // To support multiple sources, we need to separate them using the provided "-----" strings
             let wcExtFileArr = readFile(`file/${tagBasePath}/temp/wce.txt`).split("\n");
             let splitIndices = [];
@@ -640,7 +640,7 @@ onUiUpdate(function () {
                 wcExtFile = wcExtFile.slice(1)
                     .filter(x => x.trim().length > 0) // Remove empty lines
                     .map(x => x.trim().replace(base, "").replace(".txt", "")); // Remove file extension & newlines;
-                
+
                 wcExtFile = wcExtFile.map(x => [base, x]);
                 wildcardExtFiles.push(...wcExtFile);
             }
