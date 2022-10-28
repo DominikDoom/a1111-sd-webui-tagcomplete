@@ -19,11 +19,9 @@ You can either clone / download the files manually as described [below](#install
 For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
 
 ### Wildcard & Embedding support
-Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or even replace them with the actual wildcard file content in the same step.
+Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or even replace them with the actual wildcard file content in the same step. Wildcards are searched for in every extension folder as well as the `scripts/wildcards` folder to support legacy versions. This means that you can combine wildcards from multiple extensions. Nested folders are also supported if you have grouped your wildcards in that way.
 
 It also scans the embeddings folder and displays completion hints for the names of all .pt and .bin files inside if you start typing `<`. Note that some normal tags also use < in Kaomoji (like ">_<" for example), so the results will contain both.
-
-Both are now enabled by default and scan the `/embeddings` and `/scripts/wildcards` folders automatically.
 
 ## Screenshots
 Demo video (with keyboard navigation):
@@ -40,14 +38,27 @@ Dark and Light mode supported, including tag colors:
 ![tagtypes_light](https://user-images.githubusercontent.com/34448969/195180061-ceebcc25-9e4c-424f-b0c9-ba8e8f4f17f4.png)
 
 ## Installation
-Simply copy the `javascript`, `scripts` and `tags` folder into your web UI installation root. It will run automatically the next time the web UI is started.
+### As an extension (recommended)
+Either clone the repo into your extensions folder:
+```bash
+git clone "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git" extensions/tag-autocomplete
+```
+(The second argument specifies the name of the folder, you can choose whatever you like).
 
-The tags folder contains `config.json` and the tag data the script uses for autocompletion. By default, Danbooru and e621 tags are included.
+Or create a folder there manually and place the `javascript`, `scripts` and `tags` folders in it.
+
+### In the root folder (old)
+Copy the `javascript`, `scripts` and `tags` folder into your web UI installation root. It will run automatically the next time the web UI is started.
+
+---
+
+In both configurations, the tags folder contains `config.json` and the tag data the script uses for autocompletion. By default, Danbooru and e621 tags are included.
 After scanning for embeddings and wildcards, the script will also create a `temp` directory here which lists the found files so they can be accessed in the browser side of the script. You can delete the temp folder without consequences as it will be recreated on the next startup.
+
 ### Important:
 The script needs **all three folders** to work properly.
 
-### Config
+## Config
 The config contains the following settings and defaults:
 ```json
 {
@@ -137,7 +148,7 @@ Methods 1 & 2 can also be mixed, in which case translations in the extra file wi
 The extra files can also be used to just add new / custom tags not included in the main set, provided `onlyTranslationExtraFile` is false.
 If an extra tag doesn't match any existing tag, it will be added to the list as a new tag instead.
 
-### CSV tag data
+## CSV tag data
 The script expects a CSV file with tags saved in the following way:
 ```csv
 1girl,0
