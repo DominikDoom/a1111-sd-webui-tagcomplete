@@ -277,7 +277,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     textArea.dispatchEvent(new Event("input", { bubbles: true }));
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
-    let tags = newPrompt.match(/[^, ]+/g);
+    let tags = newPrompt.match(/[^,\n\r ]+/g);
     previousTags = tags;
 
     // Hide results after inserting
@@ -384,7 +384,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
 
     if (fixedTag === null) {
         // Match tags with RegEx to get the last edited one
-        let tags = prompt.match(/[^, ]+/g);
+        let tags = prompt.match(/[^,\n\r ]+/g);
         let diff = difference(tags, previousTags)
         previousTags = tags;
 
@@ -405,7 +405,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         tagword = fixedTag;
     }
 
-    tagword = tagword.toLowerCase();
+    tagword = tagword.toLowerCase().trim();
 
     if (acConfig.useWildcards && [...tagword.matchAll(/\b__([^, ]+)__([^, ]*)\b/g)].length > 0) {
         // Show wildcards from a file with that name
