@@ -38,7 +38,8 @@ def find_ext_wildcard_paths():
 WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
 
 # The path to the temporary files
-TEMP_PATH = TAGS_PATH.joinpath('temp')
+STATIC_TEMP_PATH = FILE_DIR.joinpath('tmp') # In the webui root, on windows it exists by default, on linux it doesn't
+TEMP_PATH = TAGS_PATH.joinpath('temp') # Extension specific temp files
 
 
 def get_wildcards():
@@ -69,7 +70,7 @@ def get_embeddings():
 
 def write_tag_base_path():
     """Writes the tag base path to a fixed location temporary file"""
-    with open(FILE_DIR.joinpath('tmp/tagAutocompletePath.txt'), 'w', encoding="utf-8") as f:
+    with open(STATIC_TEMP_PATH.joinpath('tagAutocompletePath.txt'), 'w', encoding="utf-8") as f:
         f.write(TAGS_PATH.relative_to(FILE_DIR).as_posix())
 
 
@@ -81,6 +82,9 @@ def write_to_temp_file(name, data):
 
 # Write the tag base path to a fixed location temporary file
 # to enable the javascript side to find our files regardless of extension folder name
+if not STATIC_TEMP_PATH.exists():
+    STATIC_TEMP_PATH.mkdir(exist_ok=True)
+
 write_tag_base_path()
 
 # Check if the temp path exists and create it if not
