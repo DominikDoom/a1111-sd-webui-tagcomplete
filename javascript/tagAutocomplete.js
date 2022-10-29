@@ -92,15 +92,24 @@ function parseCSV(str) {
 
 // Load file
 function readFile(filePath) {
-    let request = new XMLHttpRequest();
-    request.open("GET", filePath, false);
-    request.send(null);
-    return request.responseText;
+    return new Promise(function (resolve, reject) {
+        let request = new XMLHttpRequest();
+        request.open("GET", filePath, true);
+        request.onload = function () {
+            var status = request.status;
+            if (status == 200) {
+                resolve(request.responseText);
+            } else {
+                reject(status);
+            }
+        };
+        request.send(null);
+    });
 }
 
 // Load CSV
-function loadCSV(path) {
-    let text = readFile(path);
+async function loadCSV(path) {
+    let text = await readFile(path);
     return parseCSV(text);
 }
 
@@ -220,7 +229,7 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-const TAG_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]|(\b[^,|\n\r ]+?\b)/g
+const TAG_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]|((?:\b|<)[^,|\n\r ]*(?:>|\b)?)/g
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -279,7 +288,8 @@ function insertTextAtCursor(textArea, result, tagword) {
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
     let tags = [...newPrompt.matchAll(TAG_REGEX)]
-            .flatMap(x => x[1] || x[2])
+        .filter(x => x[2] !== null && x[2].length > 0)
+        .flatMap(x => x[1] || x[2])
     previousTags = tags;
 
     // Hide results after inserting
@@ -374,7 +384,7 @@ var allTags = [];
 var results = [];
 var tagword = "";
 var resultCount = 0;
-function autocomplete(textArea, prompt, fixedTag = null) {
+async function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
     if (!acActive) return;
 
@@ -388,6 +398,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         // Match tags with RegEx to get the last edited one
         // We also match for the weighting format (e.g. "tag:1.0") here, and flatMap it to just the tag part if it exists
         let tags = [...prompt.matchAll(TAG_REGEX)]
+            .filter(x => x[2] !== null && x[2].length > 0)
             .flatMap(x => x[1] || x[2])
         let diff = difference(tags, previousTags)
         previousTags = tags;
@@ -425,7 +436,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         else // Look in extensions wildcard files
             wcPair = wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
 
-        let wildcards = readFile(`file/${wcPair[0]}/${wcPair[1]}.txt`).split("\n")
+        let wildcards = (await readFile(`file/${wcPair[0]}/${wcPair[1]}.txt`)).split("\n")
             .filter(x => x.trim().length > 0); // Remove empty lines
 
         results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
@@ -564,14 +575,14 @@ function navigateInList(textArea, event) {
 }
 
 var styleAdded = false;
-onUiUpdate(function () {
+onUiUpdate(async function () {
     // Get our tag base path from the temp file
-    let tagBasePath = readFile("file/tmp/tagAutocompletePath.txt");
+    let tagBasePath = await readFile("file/tmp/tagAutocompletePath.txt");
 
     // Load config
     if (acConfig === null) {
         try {
-            acConfig = JSON.parse(readFile(`file/${tagBasePath}/config.json`));
+            acConfig = JSON.parse(await readFile(`file/${tagBasePath}/config.json`));
             if (acConfig.translation.onlyShowTranslation) {
                 acConfig.translation.searchByTranslation = true; // if only show translation, enable search by translation is necessary
             }
@@ -583,14 +594,14 @@ onUiUpdate(function () {
     // Load main tags and translations
     if (allTags.length === 0) {
         try {
-            allTags = loadCSV(`file/${tagBasePath}/${acConfig.tagFile}`);
+            allTags = await loadCSV(`file/${tagBasePath}/${acConfig.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
         }
         if (acConfig.extra.extraFile) {
             try {
-                extras = loadCSV(`file/${tagBasePath}/${acConfig.extra.extraFile}`);
+                extras = await loadCSV(`file/${tagBasePath}/${acConfig.extra.extraFile}`);
                 if (acConfig.extra.onlyTranslationExtraFile) {
                     // This works purely on index, so it's not very robust. But a lot faster.
                     for (let i = 0, n = extras.length; i < n; i++) {
@@ -619,14 +630,14 @@ onUiUpdate(function () {
     // Load wildcards
     if (wildcardFiles.length === 0 && acConfig.useWildcards) {
         try {
-            let wcFileArr = readFile(`file/${tagBasePath}/temp/wc.txt`).split("\n");
+            let wcFileArr = (await readFile(`file/${tagBasePath}/temp/wc.txt`)).split("\n");
             let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
             wildcardFiles = wcFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
 
             // To support multiple sources, we need to separate them using the provided "-----" strings
-            let wcExtFileArr = readFile(`file/${tagBasePath}/temp/wce.txt`).split("\n");
+            let wcExtFileArr = (await readFile(`file/${tagBasePath}/temp/wce.txt`)).split("\n");
             let splitIndices = [];
             for (let index = 0; index < wcExtFileArr.length; index++) {
                 if (wcExtFileArr[index].trim() === "-----") {
@@ -655,7 +666,7 @@ onUiUpdate(function () {
     // Load embeddings
     if (embeddings.length === 0 && acConfig.useEmbeddings) {
         try {
-            embeddings = readFile(`file/${tagBasePath}/temp/emb.txt`).split("\n")
+            embeddings = (await readFile(`file/${tagBasePath}/temp/emb.txt`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.replace(".bin", "").replace(".pt", "").replace(".png", "")); // Remove file extensions
         } catch (e) {
