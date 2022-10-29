@@ -220,6 +220,7 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
+const TAG_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]|(\b[^,|\n\r ]+?\b)/g
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -260,7 +261,7 @@ function insertTextAtCursor(textArea, result, tagword) {
 
     var optionalComma = "";
     if (tagType !== "wildcardFile") {
-        optionalComma = surrounding.match(new RegExp(escapeRegExp(`${tagword},`), "i")) !== null ? "" : ", ";
+        optionalComma = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ", ";
     }
 
     // Replace partial tag word with new text, add comma if needed
@@ -277,7 +278,8 @@ function insertTextAtCursor(textArea, result, tagword) {
     textArea.dispatchEvent(new Event("input", { bubbles: true }));
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
-    let tags = newPrompt.match(/[^,\n\r ]+/g);
+    let tags = [...newPrompt.matchAll(TAG_REGEX)]
+            .flatMap(x => x[1] || x[2])
     previousTags = tags;
 
     // Hide results after inserting
@@ -384,7 +386,9 @@ function autocomplete(textArea, prompt, fixedTag = null) {
 
     if (fixedTag === null) {
         // Match tags with RegEx to get the last edited one
-        let tags = prompt.match(/[^,\n\r ]+/g);
+        // We also match for the weighting format (e.g. "tag:1.0") here, and flatMap it to just the tag part if it exists
+        let tags = [...prompt.matchAll(TAG_REGEX)]
+            .flatMap(x => x[1] || x[2])
         let diff = difference(tags, previousTags)
         previousTags = tags;
 
@@ -405,7 +409,7 @@ function autocomplete(textArea, prompt, fixedTag = null) {
         tagword = fixedTag;
     }
 
-    tagword = tagword.toLowerCase().trim();
+    tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
 
     if (acConfig.useWildcards && [...tagword.matchAll(/\b__([^, ]+)__([^, ]*)\b/g)].length > 0) {
         // Show wildcards from a file with that name
