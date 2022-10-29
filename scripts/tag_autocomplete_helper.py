@@ -30,7 +30,7 @@ EMB_PATH = FILE_DIR.joinpath('embeddings')
 
 def find_ext_wildcard_paths():
     """Returns the path to the extension wildcards folder"""
-    found = list(EXT_PATH.rglob('**/wildcards/'))
+    found = list(EXT_PATH.glob('*/wildcards/'))
     return found
 
 
@@ -56,8 +56,7 @@ def get_ext_wildcards():
 
     for path in WILDCARD_EXT_PATHS:
         wildcard_files.append(path.relative_to(FILE_DIR).as_posix())
-        wildcard_files.extend(p.relative_to(path).as_posix() for p in path.rglob(
-            "*.txt") if p.name != "put wildcards here.txt")
+        wildcard_files.extend(p.relative_to(path).as_posix() for p in path.rglob("*.txt") if p.name != "put wildcards here.txt")
         wildcard_files.append("-----")
 
     return wildcard_files
@@ -99,8 +98,7 @@ write_to_temp_file('emb.txt', [])
 
 # Write wildcards to wc.txt if found
 if WILDCARD_PATH.exists():
-    wildcards = [WILDCARD_PATH.relative_to(
-        FILE_DIR).as_posix()] + get_wildcards()
+    wildcards = [WILDCARD_PATH.relative_to(FILE_DIR).as_posix()] + get_wildcards()
     if wildcards:
         write_to_temp_file('wc.txt', wildcards)
 
