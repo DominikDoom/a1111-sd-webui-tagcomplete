@@ -288,7 +288,7 @@ function insertTextAtCursor(textArea, result, tagword) {
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
     let tags = [...newPrompt.matchAll(TAG_REGEX)]
-        .filter(x => x[2] ? x[2].length > 0 : x)
+        .filter(x => x[2] !== undefined ? x[2].length > 0 : x)
         .flatMap(x => x[1] || x[2])
     previousTags = tags;
 
@@ -398,7 +398,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Match tags with RegEx to get the last edited one
         // We also match for the weighting format (e.g. "tag:1.0") here, and flatMap it to just the tag part if it exists
         let tags = [...prompt.matchAll(TAG_REGEX)]
-            .filter(x => x[2] ? x[2].length > 0 : x)
+            .filter(x => x[2] !== undefined ? x[2].length > 0 : x)
             .flatMap(x => x[1] || x[2])
         let diff = difference(tags, previousTags)
         previousTags = tags;
