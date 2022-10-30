@@ -447,7 +447,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             wcPair = wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
 
         let wildcards = (await readFile(`file/${wcPair[0]}/${wcPair[1]}.txt`)).split("\n")
-            .filter(x => x.trim().length > 0); // Remove empty lines
+            .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
 
         results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
             .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
