@@ -1,5 +1,6 @@
 var acConfig = null;
 var acActive = true;
+var acAppendComma = false;
 
 // Style for new elements. Gets appended to the Gradio root.
 let autocompleteCSS_dark = `
@@ -185,7 +186,7 @@ function createResultsDiv(textArea) {
 }
 
 // Create the checkbox to enable/disable autocomplete
-function createCheckbox() {
+function createCheckbox(text) {
     let label = document.createElement("label");
     let input = document.createElement("input");
     let span = document.createElement("span");
@@ -196,7 +197,7 @@ function createCheckbox() {
     input.setAttribute('class', 'gr-check-radio gr-checkbox')
     span.setAttribute('class', 'ml-2');
 
-    span.textContent = "Enable Autocomplete";
+    span.textContent = text;
 
     label.appendChild(input);
     label.appendChild(span);
@@ -270,7 +271,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
     var optionalComma = "";
-    if (tagType !== "wildcardFile") {
+    if (acAppendComma && tagType !== "wildcardFile") {
         optionalComma = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ", ";
     }
 
@@ -733,14 +734,41 @@ onUiUpdate(async function () {
         }
     });
 
-    if (gradioApp().querySelector("#acActiveCheckbox") === null) {
+    // Add our custom options elements
+    if (gradioApp().querySelector("#tagAutocompleteOptions") === null) {
+        let optionsDiv = document.createElement("div");
+        optionsDiv.id = "tagAutocompleteOptions";
+        optionsDiv.classList.add("flex", "flex-col", "p-1", "px-1", "relative",  "text-sm");
+
+        let optionsInner = document.createElement("div");
+        optionsInner.classList.add("flex", "flex-row", "p-1", "gap-4", "text-gray-700");
+
+        // Add label
+        let title = document.createElement("p");
+        title.textContent = "Autocomplete options";
+        optionsDiv.appendChild(title);
+
         // Add toggle switch
-        let cb = createCheckbox();
-        cb.querySelector("input").checked = acActive;
-        cb.querySelector("input").addEventListener("change", (e) => {
+        let cbActive = createCheckbox("Enable Autocomplete");
+        cbActive.querySelector("input").checked = acActive;
+        cbActive.querySelector("input").addEventListener("change", (e) => {
             acActive = e.target.checked;
         });
-        quicksettings.parentNode.insertBefore(cb, quicksettings.nextSibling);
+        // Add comma switch
+        let cbComma = createCheckbox("Append commas");
+        acAppendComma = acConfig.appendComma;
+        cbComma.querySelector("input").checked = acAppendComma;
+        cbComma.querySelector("input").addEventListener("change", (e) => {
+            acAppendComma = e.target.checked;
+        });
+
+        // Add options to optionsDiv
+        optionsInner.appendChild(cbActive);
+        optionsInner.appendChild(cbComma);
+        optionsDiv.appendChild(optionsInner);
+
+        // Add options div to DOM
+        quicksettings.parentNode.insertBefore(optionsDiv, quicksettings.nextSibling);
     }
 
     if (styleAdded) return;

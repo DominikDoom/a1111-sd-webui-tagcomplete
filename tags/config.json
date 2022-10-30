@@ -12,6 +12,7 @@
 	"useLeftRightArrowKeys": false,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
+	"appendComma": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
 	"translation": {
