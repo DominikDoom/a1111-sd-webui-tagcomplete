@@ -229,7 +229,8 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-const TAG_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]|((?:\b|<)[^,|\n\r ]*(?:>|\b)?)/g
+const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
+const TAG_REGEX = /([^\s,|]+)/g
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -287,9 +288,12 @@ function insertTextAtCursor(textArea, result, tagword) {
     textArea.dispatchEvent(new Event("input", { bubbles: true }));
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
-    let tags = [...newPrompt.matchAll(TAG_REGEX)]
-        .filter(x => x[2] !== undefined ? x[2].length > 0 : x)
-        .flatMap(x => x[1] || x[2])
+    let weightedTags = newPrompt.match(WEIGHT_REGEX)
+    let tags = newPrompt.match(TAG_REGEX)
+    if (weightedTags !== null) {
+        tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted)))
+            .concat(weightedTags);
+    }
     previousTags = tags;
 
     // Hide results after inserting
@@ -396,11 +400,13 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
     if (fixedTag === null) {
         // Match tags with RegEx to get the last edited one
-        // We also match for the weighting format (e.g. "tag:1.0") here, and flatMap it to just the tag part if it exists
-        let tags = [...prompt.matchAll(TAG_REGEX)]
-            .filter(x => x[2] !== undefined ? x[2].length > 0 : x)
-            .flatMap(x => x[1] || x[2])
-        let diff = difference(tags, previousTags)
+        // We also match for the weighting format (e.g. "tag:1.0") here, and combine the two to get the full tag word set
+        let weightedTags = prompt.match(WEIGHT_REGEX)
+        let tags = prompt.match(TAG_REGEX)
+        if (weightedTags !== null) {
+            tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted)))
+                .concat(weightedTags);
+        }
         previousTags = tags;
 
         // Guard for no difference / only whitespace remaining
