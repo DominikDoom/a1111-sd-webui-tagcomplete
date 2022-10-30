@@ -407,10 +407,13 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted)))
                 .concat(weightedTags);
         }
+
+        let tagCountChange = tags.length - previousTags.length;
+        let diff = difference(tags, previousTags);
         previousTags = tags;
 
-        // Guard for no difference / only whitespace remaining
-        if (diff === null || diff.length === 0) {
+        // Guard for no difference / only whitespace remaining / last edited tag was fully removed
+        if (diff === null || diff.length === 0 || (diff.length === 1 && tagCountChange < 0)) {
             if (!hideBlocked) hideResults(textArea);
             return;
         }
