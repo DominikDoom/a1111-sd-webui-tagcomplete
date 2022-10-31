@@ -11,17 +11,7 @@ FILE_DIR = Path().absolute()
 EXT_PATH = FILE_DIR.joinpath('extensions')
 
 # Tags base path
-
-
-def get_tags_base_path():
-    script_path = Path(scripts.basedir())
-    if (script_path.is_relative_to(EXT_PATH)):
-        return script_path.joinpath('tags')
-    else:
-        return FILE_DIR.joinpath('tags')
-
-
-TAGS_PATH = get_tags_base_path()
+TAGS_PATH = Path(scripts.basedir()).joinpath('tags')
 
 # The path to the folder containing the wildcards and embeddings
 WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
