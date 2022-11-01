@@ -289,7 +289,8 @@ function insertTextAtCursor(textArea, result, tagword) {
     textArea.dispatchEvent(new Event("input", { bubbles: true }));
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
-    let weightedTags = newPrompt.match(WEIGHT_REGEX)
+    let weightedTags = [...newPrompt.matchAll(WEIGHT_REGEX)]
+            .map(match => match[1]);
     let tags = newPrompt.match(TAG_REGEX)
     if (weightedTags !== null) {
         tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted)))
@@ -402,7 +403,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     if (fixedTag === null) {
         // Match tags with RegEx to get the last edited one
         // We also match for the weighting format (e.g. "tag:1.0") here, and combine the two to get the full tag word set
-        let weightedTags = prompt.match(WEIGHT_REGEX)
+        let weightedTags = [...prompt.matchAll(WEIGHT_REGEX)]
+            .map(match => match[1]);
         let tags = prompt.match(TAG_REGEX)
         if (weightedTags !== null) {
             tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted)))
