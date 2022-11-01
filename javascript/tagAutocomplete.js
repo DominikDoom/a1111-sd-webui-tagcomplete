@@ -736,8 +736,9 @@ onUiUpdate(async function () {
         }
     });
 
+    acAppendComma = acConfig.appendComma;
     // Add our custom options elements
-    if (gradioApp().querySelector("#tagAutocompleteOptions") === null) {
+    if (!acConfig.hideUIOptions && gradioApp().querySelector("#tagAutocompleteOptions") === null) {
         let optionsDiv = document.createElement("div");
         optionsDiv.id = "tagAutocompleteOptions";
         optionsDiv.classList.add("flex", "flex-col", "p-1", "px-1", "relative",  "text-sm");
@@ -758,7 +759,6 @@ onUiUpdate(async function () {
         });
         // Add comma switch
         let cbComma = createCheckbox("Append commas");
-        acAppendComma = acConfig.appendComma;
         cbComma.querySelector("input").checked = acAppendComma;
         cbComma.querySelector("input").addEventListener("change", (e) => {
             acAppendComma = e.target.checked;

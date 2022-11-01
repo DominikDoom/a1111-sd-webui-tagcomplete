@@ -5,6 +5,7 @@
 		"img2img": true,
 		"negativePrompts": true
 	},
+	"hideUIOptions": false,
 	"maxResults": 5,
 	"resultStepLength": 500,
 	"delayTime": 100,
