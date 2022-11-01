@@ -448,7 +448,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         else // Look in extensions wildcard files
             wcPair = wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
 
-        let wildcards = (await readFile(`file/${wcPair[0]}/${wcPair[1]}.txt`)).split("\n")
+        let wildcards = (await readFile(`file/${wcPair[0]}/${wcPair[1]}.txt?${new Date().getTime()}`)).split("\n")
             .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
 
         results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
@@ -589,12 +589,12 @@ function navigateInList(textArea, event) {
 // One-time setup
 document.addEventListener("DOMContentLoaded", async () => {
     // Get our tag base path from the temp file
-    let tagBasePath = await readFile("file/tmp/tagAutocompletePath.txt");
+    let tagBasePath = await readFile(`file/tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
 
     // Load config
     if (acConfig === null) {
         try {
-            acConfig = JSON.parse(await readFile(`file/${tagBasePath}/config.json`));
+            acConfig = JSON.parse(await readFile(`file/${tagBasePath}/config.json?${new Date().getTime()}`));
             if (acConfig.translation.onlyShowTranslation) {
                 acConfig.translation.searchByTranslation = true; // if only show translation, enable search by translation is necessary
             }
@@ -606,7 +606,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load main tags and translations
     if (allTags.length === 0) {
         try {
-            allTags = await loadCSV(`file/${tagBasePath}/${acConfig.tagFile}`);
+            allTags = await loadCSV(`file/${tagBasePath}/${acConfig.tagFile}?${new Date().getTime()}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
@@ -642,14 +642,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load wildcards
     if (acConfig.useWildcards && wildcardFiles.length === 0) {
         try {
-            let wcFileArr = (await readFile(`file/${tagBasePath}/temp/wc.txt`)).split("\n");
+            let wcFileArr = (await readFile(`file/${tagBasePath}/temp/wc.txt?${new Date().getTime()}`)).split("\n");
             let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
             wildcardFiles = wcFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
 
             // To support multiple sources, we need to separate them using the provided "-----" strings
-            let wcExtFileArr = (await readFile(`file/${tagBasePath}/temp/wce.txt`)).split("\n");
+            let wcExtFileArr = (await readFile(`file/${tagBasePath}/temp/wce.txt?${new Date().getTime()}`)).split("\n");
             let splitIndices = [];
             for (let index = 0; index < wcExtFileArr.length; index++) {
                 if (wcExtFileArr[index].trim() === "-----") {
@@ -678,7 +678,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load embeddings
     if (acConfig.useEmbeddings && embeddings.length === 0) {
         try {
-            embeddings = (await readFile(`file/${tagBasePath}/temp/emb.txt`)).split("\n")
+            embeddings = (await readFile(`file/${tagBasePath}/temp/emb.txt?${new Date().getTime()}`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.replace(".bin", "").replace(".pt", "").replace(".png", "")); // Remove file extensions
         } catch (e) {
