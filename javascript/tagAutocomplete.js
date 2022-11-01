@@ -586,8 +586,8 @@ function navigateInList(textArea, event) {
     event.stopPropagation();
 }
 
-var styleAdded = false;
-onUiUpdate(async function () {
+// One-time setup
+document.addEventListener("DOMContentLoaded", async () => {
     // Get our tag base path from the temp file
     let tagBasePath = await readFile("file/tmp/tagAutocompletePath.txt");
 
@@ -640,7 +640,7 @@ onUiUpdate(async function () {
         }
     }
     // Load wildcards
-    if (wildcardFiles.length === 0 && acConfig.useWildcards) {
+    if (acConfig.useWildcards && wildcardFiles.length === 0) {
         try {
             let wcFileArr = (await readFile(`file/${tagBasePath}/temp/wc.txt`)).split("\n");
             let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
@@ -676,7 +676,7 @@ onUiUpdate(async function () {
         }
     }
     // Load embeddings
-    if (embeddings.length === 0 && acConfig.useEmbeddings) {
+    if (acConfig.useEmbeddings && embeddings.length === 0) {
         try {
             embeddings = (await readFile(`file/${tagBasePath}/temp/emb.txt`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
@@ -707,7 +707,6 @@ onUiUpdate(async function () {
     }
 
     textAreas.forEach(area => {
-
         // Return if autocomplete is disabled for the current area type in config
         let textAreaId = getTextAreaIdentifier(area);
         if ((!acConfig.activeIn.img2img && textAreaId.includes("img2img"))
@@ -772,8 +771,6 @@ onUiUpdate(async function () {
         // Add options div to DOM
         quicksettings.parentNode.insertBefore(optionsDiv, quicksettings.nextSibling);
     }
-
-    if (styleAdded) return;
 
     // Add style to dom
     let acStyle = document.createElement('style');
