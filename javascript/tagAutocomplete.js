@@ -27,6 +27,22 @@ let autocompleteCSS_dark = `
     .autocompleteResultsList > li.selected {
         background-color: #374151;
     }
+    .resultsFlexContainer {
+        display: flex;
+    }
+    .acListItem {
+        max-width: 400px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    .acPostCount {
+        position: relative;
+        text-align: end;
+        padding: 0 0 0 15px;
+        flex-grow: 1;
+        color: #6b6f7b;
+    }
 `;
 let autocompleteCSS_light = `
     .autocompleteResults {
@@ -51,6 +67,22 @@ let autocompleteCSS_light = `
     }
     .autocompleteResultsList > li.selected {
         background-color: #e5e7eb;
+    }
+    .resultsFlexContainer {
+        display: flex;
+    }
+    .acListItem {
+        max-width: 400px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    .acPostCount {
+        position: relative;
+        text-align: end;
+        padding: 0 0 0 15px;
+        flex-grow: 1;
+        color: #a2a9b4;
     }
 `;
 
@@ -229,6 +261,11 @@ function hideResults(textArea) {
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
+function escapeHTML(unsafeText) {
+    let div = document.createElement('div');
+    div.textContent = unsafeText;
+    return div.innerHTML;
+}
 
 const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const TAG_REGEX = /([^\s,|]+)/g
@@ -332,25 +369,64 @@ function addResultsToList(textArea, results, tagword, resetList) {
         let result = results[i];
         let li = document.createElement("li");
 
-        //suppost only show the translation to result
-        if (result[2]) {
-            li.textContent = result[2];
-            if (!acConfig.translation.onlyShowTranslation) {
-                li.textContent += " >> " + result[0];
-            }
-        } else {
-            li.textContent = result[0];
-        }
+        let flexDiv = document.createElement("div");
+        flexDiv.classList.add("resultsFlexContainer");
+        li.appendChild(flexDiv);
 
+        let itemText = document.createElement("div");
+        itemText.classList.add("acListItem");
+        flexDiv.appendChild(itemText);
+
+        let displayText = "";
+         // If the tag matches the tagword, we don't need to display the alias
+        if (result[3] && !result[0].includes(tagword)) { // Alias
+            let splitAliases = result[3].split(",");
+            let bestAlias = splitAliases.find(a => a.toLowerCase().includes(tagword));
+
+            displayText = escapeHTML(bestAlias);
+            if (!acConfig.alias.onlyShowAlias) {
+                displayText += " ➝ " + result[0];
+            }
+        } else { // No alias
+            displayText = escapeHTML(result[0]);
+        }
+        // Print search term bolded in result
+        itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
+
+        // Add post count & color if it's a tag
         // Wildcards & Embeds have no tag type
         if (!result[1].startsWith("wildcard") && result[1] !== "embedding") {
             // Set the color of the tag
             let tagType = result[1];
             let colorGroup = tagColors[tagFileName];
             // Default to danbooru scheme if no matching one is found
-            if (colorGroup === undefined) colorGroup = tagColors["danbooru"];
+            if (!colorGroup)
+                colorGroup = tagColors["danbooru"];
 
-            li.style = `color: ${colorGroup[tagType][mode]};`;
+            // Set tag type to invalid if not found
+            if (!colorGroup[tagType])
+                tagType = "-1";
+
+            itemText.style = `color: ${colorGroup[tagType][mode]};`;
+
+            // Post count
+            if (result[2] && !isNaN(result[2])) {
+                let postCount = result[2];
+                let formatter;
+
+                // Danbooru formats numbers with a padded fraction for 1M or 1k, but not for 10/100k
+                if (postCount >= 1000000 || (postCount >= 1000 && postCount < 10000))
+                    formatter = Intl.NumberFormat("en", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+                else
+                    formatter = Intl.NumberFormat("en", {notation: "compact"});
+    
+                let formattedCount = formatter.format(postCount);
+    
+                let countDiv = document.createElement("div");
+                countDiv.textContent = formattedCount;
+                countDiv.classList.add("acPostCount");
+                flexDiv.appendChild(countDiv);
+            }
         }
 
         // Add listener
@@ -475,17 +551,19 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         genericResults = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
         results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
     } else {
-        if (acConfig.translation.searchByTranslation) {
-            results = allTags.filter(x => x[2] && x[2].toLowerCase().includes(tagword)); // check have translation
-            // if search by [a~z],first list the translations, and then search English if it is not enough
-            // if only show translation,it is unnecessary to list English results
-            if (!acConfig.translation.onlyShowTranslation) {
-                results = results.concat(allTags.filter(x => x[0].toLowerCase().includes(tagword) && !results.includes(x)));
-            }
+        // If onlyShowAlias is enabled, we don't need to include normal results
+        if (acConfig.alias.onlyShowAlias) {
+            results = allTags.filter(x => x[3] && x[3].toLowerCase().includes(tagword));
         } else {
-            results = allTags.filter(x => x[0].toLowerCase().includes(tagword));
+            // Else both normal tags and aliases/translations are included depending on the config
+            let fil;
+            if (acConfig.alias.searchByAlias) 
+                fil = x => x[0].toLowerCase().includes(tagword) || (x[3] && x[3].toLowerCase().includes(tagword));
+            else
+                fil = x => x[0].toLowerCase().includes(tagword);
+            results = allTags.filter(fil);
         }
-        // it's good to show all results
+        // Slice if the user has set a max result count
         if (!acConfig.showAllResults) {
             results = results.slice(0, acConfig.maxResults);
         }
@@ -595,15 +673,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (acConfig === null) {
         try {
             acConfig = JSON.parse(await readFile(`file/${tagBasePath}/config.json?${new Date().getTime()}`));
-            if (acConfig.translation.onlyShowTranslation) {
-                acConfig.translation.searchByTranslation = true; // if only show translation, enable search by translation is necessary
+            if (acConfig.alias.onlyShowAlias) {
+                acConfig.alias.searchByAlias = true; // if only show translation, enable search by translation is necessary
             }
         } catch (e) {
             console.error("Error loading config.json: " + e);
             return;
         }
     }
-    // Load main tags and translations
+    // Load main tags and aliases/translations
     if (allTags.length === 0) {
         try {
             allTags = await loadCSV(`file/${tagBasePath}/${acConfig.tagFile}?${new Date().getTime()}`);
@@ -613,28 +691,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         if (acConfig.extra.extraFile) {
             try {
-                extras = await loadCSV(`file/${tagBasePath}/${acConfig.extra.extraFile}`);
-                if (acConfig.extra.onlyTranslationExtraFile) {
+                extras = await loadCSV(`file/${tagBasePath}/${acConfig.extra.extraFile}?${new Date().getTime()}`);
+                if (acConfig.extra.onlyAliasExtraFile) {
                     // This works purely on index, so it's not very robust. But a lot faster.
                     for (let i = 0, n = extras.length; i < n; i++) {
                         if (extras[i][0]) {
-                            allTags[i][2] = extras[i][0];
+                            let aliasStr = allTags[i][3] || "";
+                            let optComma = aliasStr.length > 0 ? "," : "";
+                            allTags[i][3] = aliasStr + optComma + extras[i][0];
                         }
                     }
                 } else {
                     extras.forEach(e => {
-                        // Check if a tag in allTags has the same name as the extra tag
+                        let hasCount = e[2] && e[3] || (!isNaN(e[2]) && !e[3]);
+                        // Check if a tag in allTags has the same name & category as the extra tag
                         if (tag = allTags.find(t => t[0] === e[0] && t[1] == e[1])) {
-                            if (e[2]) // If the extra tag has a translation, add it to the tag
-                                tag[2] = e[2];
+                            if (hasCount && e[3] || isNaN(e[2])) { // If the extra tag has a translation / alias, add it to the normal tag
+                                let aliasStr = tag[3] || "";
+                                let optComma = aliasStr.length > 0 ? "," : "";
+                                let alias = hasCount && e[3] || isNaN(e[2]) ? e[2] : e[3];
+                                tag[3] = aliasStr + optComma + alias;
+                            }
                         } else {
+                            let count = hasCount ? e[2] : null;
+                            let aliases = hasCount && e[3] ? e[3] : e[2];
                             // If the tag doesn't exist, add it to allTags
-                            allTags.push(e);
+                            let newTag = [e[0], e[1], count, aliases];
+                            allTags.push(newTag);
                         }
                     });
                 }
             } catch (e) {
-                console.error("Error loading extra translation file: " + e);
+                console.error("Error loading extra file: " + e);
                 return;
             }
         }
@@ -729,6 +817,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             area.addEventListener('focusout', debounce(() => hideResults(area), 400));
             // Add up and down arrow event listener
             area.addEventListener('keydown', (e) => navigateInList(area, e));
+            // CompositionEnd fires after the user has finished IME composing
+            // We need to block hide here to prevent the enter key from insta-closing the results
+            area.addEventListener('compositionend', () => {
+                hideBlocked = true;
+                setTimeout(() => { hideBlocked = false; }, 100);
+            });
 
             // Add class so we know we've already added the listeners
             area.classList.add('autocomplete');

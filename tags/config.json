@@ -16,16 +16,17 @@
 	"appendComma": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
-	"translation": {
-		"searchByTranslation": true,
-		"onlyShowTranslation": false
+	"alias": {
+		"searchByAlias": true,
+		"onlyShowAlias": false
 	},
 	"extra": {
 		"extraFile": "",
-		"onlyTranslationExtraFile": false
+		"onlyAliasExtraFile": false
 	},
 	"colors": {
 		"danbooru": {
+			"-1": ["red", "maroon"],
 			"0": ["lightblue", "dodgerblue"],
 			"1": ["indianred", "firebrick"],
 			"3": ["violet", "darkorchid"],
