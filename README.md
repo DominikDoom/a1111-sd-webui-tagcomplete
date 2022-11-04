@@ -14,14 +14,9 @@ I created this script as a convenience tool since it reduces the need of switchi
 You can either clone / download the files manually as described [below](#installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
 ## Common Problems & Known Issues:
-- The browser might cache old versions of the script, config, or embedding/wildcard lists. Try hitting `CTRL+F5` to clear the cache.
-- If `replaceUnderscores` is active, the script will currently only partly replace edited tags containing multiple words in brackets.
+- The browser might cache old versions of the script, config, or embedding/wildcard lists. Try hitting `CTRL+F5` to clear the cache if you have issues.
+- If `replaceUnderscores` is active, the script will currently only partially replace edited tags containing multiple words in brackets.
 For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
-
-### Wildcard & Embedding support
-Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name (demo video further down). This enables you to either insert categories to be replaced by the script, or even replace them with the actual wildcard file content in the same step. Wildcards are searched for in every extension folder as well as the `scripts/wildcards` folder to support legacy versions. This means that you can combine wildcards from multiple extensions. Nested folders are also supported if you have grouped your wildcards in that way.
-
-It also scans the embeddings folder and displays completion hints for the names of all .pt and .bin files inside if you start typing `<`. Note that some normal tags also use < in Kaomoji (like ">_<" for example), so the results will contain both.
 
 ## Screenshots
 Demo video (with keyboard navigation):
@@ -58,6 +53,11 @@ After scanning for embeddings and wildcards, the script will also create a `temp
 ### Important:
 The script needs **all three folders** to work properly.
 
+## Wildcard & Embedding support
+Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name or other similar scripts/extensions. This enables you to either insert categories to be replaced by the script, or even replace them with the actual wildcard file content in the same step. Wildcards are searched for in every extension folder as well as the `scripts/wildcards` folder to support legacy versions. This means that you can combine wildcards from multiple extensions. Nested folders are also supported if you have grouped your wildcards in that way.
+
+It also scans the embeddings folder and displays completion hints for the names of all .pt and .bin files inside if you start typing `<`. Note that some normal tags also use < in Kaomoji (like ">_<" for example), so the results will contain both.
+
 ## Config
 The config contains the following settings and defaults:
 ```json
@@ -68,24 +68,28 @@ The config contains the following settings and defaults:
 		"img2img": true,
 		"negativePrompts": true
 	},
+	"hideUIOptions": false,
 	"maxResults": 5,
 	"resultStepLength": 500,
+	"delayTime": 100,
 	"showAllResults": false,
 	"useLeftRightArrowKeys": false,
 	"replaceUnderscores": true,
 	"escapeParentheses": true,
+	"appendComma": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
-	"translation": {
-		"searchByTranslation": true,
-		"onlyShowTranslation": false
+	"alias": {
+		"searchByAlias": true,
+		"onlyShowAlias": false
 	},
 	"extra": {
 		"extraFile": "",
-		"onlyTranslationExtraFile": false
+		"onlyAliasExtraFile": false
 	},
 	"colors": {
 		"danbooru": {
+			"-1": ["red", "maroon"],
 			"0": ["lightblue", "dodgerblue"],
 			"1": ["indianred", "firebrick"],
 			"3": ["violet", "darkorchid"],
@@ -110,39 +114,44 @@ The config contains the following settings and defaults:
 |---------|-------------|
 | tagFile | Specifies the tag file to use. You can provide a custom tag database of your liking, but since the script was developed with Danbooru tags in mind, it might not work properly with other configurations.|
 | activeIn | Allows to selectively (de)activate the script for txt2img, img2img, and the negative prompts for both. |
+| hideUIOptions | Allows to hide the added GUI options at the top of the page to adjust active and comma settings without restarting. |
 | maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. For embeddings and wildcards it will show all results in a scrollable list. |
 | resultStepLength | Allows to load results in smaller batches of the specified size for better performance in long lists or if showAllResults is true. |
+| delayTime | Specifies how much to wait in milliseconds before triggering autocomplete. Helps prevent too frequent updates while typing. |
 | showAllResults | If true, will ignore maxResults and show all results in a scrollable list. **Warning:** can lag your browser for long lists. |
 | useLeftRightArrowKeys | If true, left and right arrows will select the first/last result in the popup instead of moving the cursor in the textbox. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
 | escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
+| appendComma | Specifies the starting value of the "Append commas" UI switch. If UI options are disabled, this will always be used. |
 | useWildcards | Used to toggle the wildcard completion functionality. |
 | useEmbeddings | Used to toggle the embedding completion functionality. |
-| translation | Options for translating tags. More info in the section below. |
-| extras | Options for additional tag files / translations. More info in the section below. |
+| alias | Options for aliases and translating tags. More info in the section below. |
+| extras | Options for additional tag files / aliases / translations. More info in the section below. |
 | colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
 
-### Translations & Extra tags
-With the recent update it is now possible to add translations to the tags. These will be searchable / shown according to the settings in `config.json`:
-- `searchByTranslation` - Whether to search for the translated term as well or only the English tag.
-- `onlyShowTranslation` - Replaces the English tag with its translation if it has one. Only for displaying, the inserted text at the end is still the English tag.
+### Aliases, Translations & Extra tags
+Like on Booru sites, tags can have one or multiple aliases which redirect to the actual value on completion. These will be searchable / shown according to the settings in `config.json`:
+- `searchByAlias` - Whether to search for the alias or only the actual tag.
+- `onlyShowAlias` - Shows only the alias instead of `alias -> actual`. Only for displaying, the inserted text at the end is still the actual tag.
 
+The alias feature can also be used for translation, since translating just adds another alias for the respective tag.
 Example with full and partial chinese tag sets:
 
 ![translation](https://user-images.githubusercontent.com/34448969/196175839-8aaacb26-5c90-48e3-be65-647a0b444ead.png)
 ![translation_mixed](https://user-images.githubusercontent.com/34448969/196176233-76d4cb5f-16cf-4800-a69b-adb64a79ca8b.png)
 
-Translations can be added in multiple ways, which is where the "Extra" file comes into play.
-1. Directly in the main tag file. Simply add a third value, separated by comma, containing the translation for the tag in that row.
+Aliases and translations can be added in multiple ways, which is where the "Extra" file comes into play.
+1. Directly in the main tag file. Simply add a fourth value, separated by comma, containing the translation for the tag in that row.
 2. As an extra file containing only the translated tag rows (so still including the english Tag name and tag type). Will be matched to the English tags in the main file based on the name & type, so might be slow for large translation files.
 3. As an extra file with `onlyTranslationExtraFile` true. With this configuration, the extra file has to include *only* the translation itself. That means it is purely index based, assigning the translations to the main tags is really fast but also needs the lines to match (including empty lines). If the order or amount in the main file changes, the translations will potentially not match anymore.
 
 So your CSV values would look like this for each method:
-|            |          1          |       2            |       3       |
-|------------|---------------------|--------------------|---------------|
-| Main file  | `tag,0,translation` | `tag,0`            | `tag,0`       |
-| Extra file | -                   | `tag,0,translation`| `translation` |
+|            |          1             |       2                  |       3            |
+|------------|------------------------|--------------------------|--------------------|
+| Main file  | `tag,type,count,alias` | `tag,type,count`         | `tag,type,count`   |
+| Extra file | -                      | `tag,type,(count),alias` | `alias`            |
 
+Count in the extra file is optional, since there isn't always a post count for custom tag sets.
 Methods 1 & 2 can also be mixed, in which case translations in the extra file will have priority over those in the main file if they translate the same tag.
 
 The extra files can also be used to just add new / custom tags not included in the main set, provided `onlyTranslationExtraFile` is false.
@@ -151,13 +160,19 @@ If an extra tag doesn't match any existing tag, it will be added to the list as 
 ## CSV tag data
 The script expects a CSV file with tags saved in the following way:
 ```csv
-1girl,0
-solo,0
-highres,5
-long_hair,0
+<name>,<type>,<postCount>,"<aliases>"
 ```
-Notably, it does not expect column names in the first row.
-The first value needs to be the tag name, while the second value specifies the tag type. An optional third value will be interpreted as a translation as described in the section above.
+Example:
+```csv
+1girl,0,4114588,"1girls,sole_female"
+solo,0,3426446,"female_solo,solo_female"
+highres,5,3008413,"high_res,high_resolution,hires"
+long_hair,0,2898315,longhair
+commentary_request,5,2610959,
+```
+Notably, it does not expect column names in the first row and both count and aliases are technically optional,
+although count is always included in the default data.
+
 The numbering system follows the [tag API docs](https://danbooru.donmai.us/wiki_pages/api%3Atags) of Danbooru:
 | Value	| Description |
 |-------|-------------|
