@@ -9,8 +9,6 @@ This custom script serves as a drop-in extension for the popular [AUTOMATIC1111 
 It displays autocompletion hints for recognized tags from "image booru" boards such as Danbooru, which are primarily used for browsing Anime-style illustrations.
 Since some Stable Diffusion models were trained using this information, for example [Waifu Diffusion](https://github.com/harubaru/waifu-diffusion), using exact tags in prompts can often improve composition and help to achieve a wanted look.
 
-I created this script as a convenience tool since it reduces the need of switching back and forth between the web UI and a booru site to copy-paste tags.
-
 You can either clone / download the files manually as described [below](#installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
 ## Common Problems & Known Issues:
@@ -79,9 +77,14 @@ The config contains the following settings and defaults:
 	"appendComma": true,
 	"useWildcards": true,
 	"useEmbeddings": true,
-	"alias": {
+		"alias": {
 		"searchByAlias": true,
 		"onlyShowAlias": false
+	},
+	"translation": {
+		"translationFile": "",
+		"oldFormat": false,
+		"searchByTranslation": true
 	},
 	"extra": {
 		"extraFile": "",
@@ -125,37 +128,44 @@ The config contains the following settings and defaults:
 | appendComma | Specifies the starting value of the "Append commas" UI switch. If UI options are disabled, this will always be used. |
 | useWildcards | Used to toggle the wildcard completion functionality. |
 | useEmbeddings | Used to toggle the embedding completion functionality. |
-| alias | Options for aliases and translating tags. More info in the section below. |
+| alias | Options for aliases. More info in the section below. |
+| translation | Options for translations. More info in the section below.  |
 | extras | Options for additional tag files / aliases / translations. More info in the section below. |
 | colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
 
 ### Aliases, Translations & Extra tags
+#### Aliases
 Like on Booru sites, tags can have one or multiple aliases which redirect to the actual value on completion. These will be searchable / shown according to the settings in `config.json`:
-- `searchByAlias` - Whether to search for the alias or only the actual tag.
+- `searchByAlias` - Whether to also search for the alias or only the actual tag.
 - `onlyShowAlias` - Shows only the alias instead of `alias -> actual`. Only for displaying, the inserted text at the end is still the actual tag.
 
-The alias feature can also be used for translation, since translating just adds another alias for the respective tag.
-Example with full and partial chinese tag sets:
+#### Translations
+An additional file can be added in the translation section, which will be used to translate both tags and aliases and also enables searching by translation.
+This file needs to be a CSV in the format `<English tag/alias>,<Translation>`, but for backwards compatibility with older extra files that used a three column format, you can turn on `oldFormat` to use that instead.
 
-![translation](https://user-images.githubusercontent.com/34448969/196175839-8aaacb26-5c90-48e3-be65-647a0b444ead.png)
-![translation_mixed](https://user-images.githubusercontent.com/34448969/196176233-76d4cb5f-16cf-4800-a69b-adb64a79ca8b.png)
+Example with chinese translation:
 
-Aliases and translations can be added in multiple ways, which is where the "Extra" file comes into play.
-1. Directly in the main tag file. Simply add a fourth value, separated by comma, containing the translation for the tag in that row.
-2. As an extra file containing only the translated tag rows (so still including the english Tag name and tag type). Will be matched to the English tags in the main file based on the name & type, so might be slow for large translation files.
-3. As an extra file with `onlyTranslationExtraFile` true. With this configuration, the extra file has to include *only* the translation itself. That means it is purely index based, assigning the translations to the main tags is really fast but also needs the lines to match (including empty lines). If the order or amount in the main file changes, the translations will potentially not match anymore.
+![IME-input](https://user-images.githubusercontent.com/34448969/200126551-2264e9cc-abb2-4450-9afa-43f362a77ab0.png)
+![english-input](https://user-images.githubusercontent.com/34448969/200126513-bf6b3940-6e22-41b0-a369-f2b4640f87d6.png)
+
+**Important**
+As of a recent update, translations added in the old Extra file way will only work as an alias and not be visible anymore if typing the English tag for that translation.
+
+#### Extra file
+Aliases can be added in multiple ways, which is where the "Extra" file comes into play.
+1. As an extra file containing tag, category, optional count and the new alias. Will be matched to the English tags in the main file based on the name & type, so might be slow for large files.
+2. As an extra file with `onlyAliasExtraFile` true. With this configuration, the extra file has to include *only* the alias itself. That means it is purely index based, assigning the aliases to the main tags is really fast but also needs the lines to match (including empty lines). If the order or amount in the main file changes, the translations will potentially not match anymore. Not recommended.
 
 So your CSV values would look like this for each method:
-|            |          1             |       2                  |       3            |
-|------------|------------------------|--------------------------|--------------------|
-| Main file  | `tag,type,count,alias` | `tag,type,count`         | `tag,type,count`   |
-| Extra file | -                      | `tag,type,(count),alias` | `alias`            |
+|            |       1                  |       2                  |
+|------------|--------------------------|--------------------------|
+| Main file  | `tag,type,count,(alias)` | `tag,type,count,(alias)` |
+| Extra file | `tag,type,(count),alias` | `alias`                  |
 
 Count in the extra file is optional, since there isn't always a post count for custom tag sets.
-Methods 1 & 2 can also be mixed, in which case translations in the extra file will have priority over those in the main file if they translate the same tag.
 
-The extra files can also be used to just add new / custom tags not included in the main set, provided `onlyTranslationExtraFile` is false.
-If an extra tag doesn't match any existing tag, it will be added to the list as a new tag instead.
+The extra files can also be used to just add new / custom tags not included in the main set, provided `onlyAliasExtraFile` is false.
+If an extra tag doesn't match any existing tag, it will be added to the list as a new tag instead. For this, it will need to include the post count and alias columns even if they don't contain anything, so it could be in the form of `tag,type,,`.
 
 ## CSV tag data
 The script expects a CSV file with tags saved in the following way:
@@ -171,28 +181,28 @@ long_hair,0,2898315,longhair
 commentary_request,5,2610959,
 ```
 Notably, it does not expect column names in the first row and both count and aliases are technically optional,
-although count is always included in the default data.
+although count is always included in the default data. Multiple aliases need to be comma separated as well, but encased in string quotes to not break the CSV parsing.
 
 The numbering system follows the [tag API docs](https://danbooru.donmai.us/wiki_pages/api%3Atags) of Danbooru:
 | Value	| Description |
 |-------|-------------|
-|0	    | General     |
-|1	    | Artist      |
-|3	    | Copyright   |
-|4	    | Character   |
-|5	    | Meta        |
+|0	| General     |
+|1	| Artist      |
+|3	| Copyright   |
+|4	| Character   |
+|5	| Meta        |
 
 or of e621:
 | Value	| Description |
 |-------|-------------|
-|-1	    | Invalid     |
-|0	    | General     |
-|1	    | Artist      |
-|3	    | Copyright   |
-|4	    | Character   |
-|5	    | Species     |
-|6	    | Invalid     |
-|7	    | Meta        |
-|8	    | Lore        |
+|-1	| Invalid     |
+|0	| General     |
+|1	| Artist      |
+|3	| Copyright   |
+|4	| Character   |
+|5	| Species     |
+|6	| Invalid     |
+|7	| Meta        |
+|8	| Lore        |
 
 The tag type is used for coloring entries in the result list.
