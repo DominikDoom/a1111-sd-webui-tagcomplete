@@ -20,6 +20,11 @@
 		"searchByAlias": true,
 		"onlyShowAlias": false
 	},
+	"translation": {
+		"translationFile": "",
+		"oldFormat": false,
+		"searchByTranslation": true
+	},
 	"extra": {
 		"extraFile": "",
 		"onlyAliasExtraFile": false

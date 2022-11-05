@@ -378,18 +378,33 @@ function addResultsToList(textArea, results, tagword, resetList) {
         flexDiv.appendChild(itemText);
 
         let displayText = "";
-         // If the tag matches the tagword, we don't need to display the alias
+        // If the tag matches the tagword, we don't need to display the alias
         if (result[3] && !result[0].includes(tagword)) { // Alias
             let splitAliases = result[3].split(",");
             let bestAlias = splitAliases.find(a => a.toLowerCase().includes(tagword));
 
-            displayText = escapeHTML(bestAlias);
-            if (!acConfig.alias.onlyShowAlias) {
-                displayText += " ➝ " + result[0];
+            // search in translations if no alias matches
+            if (!bestAlias) {
+                var translationKey = [...translations].find(pair => pair[0] === result[0] && pair[1].includes(tagword))[0];
+                bestAlias = translationKey// ? translations.get(translationKey) : null;
             }
+
+            displayText = escapeHTML(bestAlias);
+
+            // Append translation for alias if it exists and is not what the user typed
+            if (translations.has(bestAlias) && translations.get(bestAlias) !== bestAlias && bestAlias !== result[0])
+                displayText += `[${translations.get(bestAlias)}]`;
+
+            if (!acConfig.alias.onlyShowAlias && result[0] !== bestAlias)
+                displayText += " ➝ " + result[0];
         } else { // No alias
             displayText = escapeHTML(result[0]);
         }
+
+        // Append translation for result if it exists
+        if (translations.has(result[0]))
+            displayText += `[${translations.get(result[0])}]`;
+
         // Print search term bolded in result
         itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
 
@@ -463,6 +478,7 @@ var wildcardFiles = [];
 var wildcardExtFiles = [];
 var embeddings = [];
 var allTags = [];
+var translations = new Map();
 var results = [];
 var tagword = "";
 var resultCount = 0;
@@ -556,11 +572,21 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             results = allTags.filter(x => x[3] && x[3].toLowerCase().includes(tagword));
         } else {
             // Else both normal tags and aliases/translations are included depending on the config
+            let baseFilter = (x) => x[0].toLowerCase().includes(tagword);
+            let aliasFilter = (x) => x[3] && x[3].toLowerCase().includes(tagword);
+            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().includes(tagword))
+                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().includes(tagword));
+            
             let fil;
-            if (acConfig.alias.searchByAlias) 
-                fil = x => x[0].toLowerCase().includes(tagword) || (x[3] && x[3].toLowerCase().includes(tagword));
+            if (acConfig.alias.searchByAlias && acConfig.translation.searchByTranslation)
+                fil = (x) => baseFilter(x) || aliasFilter(x) || translationFilter(x);
+            else if (acConfig.alias.searchByAlias && !acConfig.translation.searchByTranslation)
+                fil = (x) => baseFilter(x) || aliasFilter(x);
+            else if (acConfig.translation.searchByTranslation && !acConfig.alias.searchByAlias)
+                fil = (x) => baseFilter(x) || translationFilter(x);
             else
-                fil = x => x[0].toLowerCase().includes(tagword);
+                fil = (x) => baseFilter(x);
+
             results = allTags.filter(fil);
         }
         // Slice if the user has set a max result count
@@ -681,7 +707,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
     }
-    // Load main tags and aliases/translations
+    // Load main tags and aliases
     if (allTags.length === 0) {
         try {
             allTags = await loadCSV(`file/${tagBasePath}/${acConfig.tagFile}?${new Date().getTime()}`);
@@ -725,6 +751,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.error("Error loading extra file: " + e);
                 return;
             }
+        }
+    }
+    // Load translations
+    if (acConfig.translation.translationFile) {
+        try {
+            let tArray = await loadCSV(`file/${tagBasePath}/${acConfig.translation.translationFile}?${new Date().getTime()}`);
+            tArray.forEach(t => {
+                if (acConfig.translation.oldFormat)
+                    translations.set(t[0], t[2]);
+                else
+                    translations.set(t[0], t[1]);
+            });
+        } catch (e) {
+            console.error("Error loading translations file: " + e);
+            return;
         }
     }
     // Load wildcards
