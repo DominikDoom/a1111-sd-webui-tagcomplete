@@ -31,7 +31,6 @@ let autocompleteCSS_dark = `
         display: flex;
     }
     .acListItem {
-        max-width: 400px;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
@@ -72,7 +71,6 @@ let autocompleteCSS_light = `
         display: flex;
     }
     .acListItem {
-        max-width: 400px;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
