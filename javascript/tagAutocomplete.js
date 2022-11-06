@@ -383,7 +383,8 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
             // search in translations if no alias matches
             if (!bestAlias) {
-                var translationKey = [...translations].find(pair => pair[0] === result[0] && pair[1].includes(tagword))[0];
+                let tagOrAlias = pair => pair[0] === result[0] || result[3].split(",").includes(pair[0]);
+                var translationKey = [...translations].find(pair => tagOrAlias(pair) && pair[1].includes(tagword))[0];
                 bestAlias = translationKey// ? translations.get(translationKey) : null;
             }
 
