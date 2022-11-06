@@ -12,6 +12,7 @@ let autocompleteCSS_dark = `
         border: 1px solid #4b5563 !important;
         border-radius: 12px !important;
         overflow-y: auto;
+        scrollbar-gutter: stable;
     }
     .autocompleteResultsList > li:nth-child(odd) {
         background-color: #111827;
@@ -33,7 +34,6 @@ let autocompleteCSS_dark = `
     .acListItem {
         overflow: hidden;
         white-space: nowrap;
-        text-overflow: ellipsis;
     }
     .acPostCount {
         position: relative;
@@ -52,6 +52,7 @@ let autocompleteCSS_light = `
         border: 1.5px solid #e5e7eb !important;
         border-radius: 12px !important;
         overflow-y: auto;
+        scrollbar-gutter: stable;
     }
     .autocompleteResultsList > li:nth-child(odd) {
         background-color: #f9fafb;
@@ -73,7 +74,6 @@ let autocompleteCSS_light = `
     .acListItem {
         overflow: hidden;
         white-space: nowrap;
-        text-overflow: ellipsis;
     }
     .acPostCount {
         position: relative;
