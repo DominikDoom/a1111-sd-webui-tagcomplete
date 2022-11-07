@@ -2,20 +2,35 @@ var acConfig = null;
 var acActive = true;
 var acAppendComma = false;
 
+const styleColors = {
+    "--results-bg": ["#0b0f19", "#ffffff"],
+    "--results-border-color": ["#4b5563", "#e5e7eb"],
+    "--results-border-width": ["1px", "1.5px"],
+    "--results-bg-odd": ["#111827", "#f9fafb"],
+    "--results-hover": ["#1f2937", "#f5f6f8"],
+    "--results-selected": ["#374151", "#e5e7eb"],
+    "--post-count-color": ["#6b6f7b", "#a2a9b4"]
+}
+const browserVars = {
+    "--results-overflow-y": {
+        "firefox": "scroll",
+        "other": "auto"
+    }
+}
 // Style for new elements. Gets appended to the Gradio root.
-let autocompleteCSS_dark = `
+let autocompleteCSS = `
     .autocompleteResults {
         position: absolute;
         z-index: 999;
         margin: 5px 0 0 0;
-        background-color: #0b0f19 !important;
-        border: 1px solid #4b5563 !important;
+        background-color: var(--results-bg) !important;
+        border: var(--results-border-width) solid var(--results-border-color) !important;
         border-radius: 12px !important;
-        overflow-y: auto;
-        scrollbar-gutter: stable;
+        overflow-y: var(--results-overflow-y);
+        overflow-x: hidden;
     }
     .autocompleteResultsList > li:nth-child(odd) {
-        background-color: #111827;
+        background-color: var(--results-bg-odd);
     }
     .autocompleteResultsList > li {
         list-style-type: none;
@@ -23,10 +38,10 @@ let autocompleteCSS_dark = `
         cursor: pointer;
     }
     .autocompleteResultsList > li:hover {
-        background-color: #1f2937;
+        background-color: var(--results-hover);
     }
     .autocompleteResultsList > li.selected {
-        background-color: #374151;
+        background-color: var(--results-selected);
     }
     .resultsFlexContainer {
         display: flex;
@@ -40,47 +55,7 @@ let autocompleteCSS_dark = `
         text-align: end;
         padding: 0 0 0 15px;
         flex-grow: 1;
-        color: #6b6f7b;
-    }
-`;
-let autocompleteCSS_light = `
-    .autocompleteResults {
-        position: absolute;
-        z-index: 999;
-        margin: 5px 0 0 0;
-        background-color: #ffffff !important;
-        border: 1.5px solid #e5e7eb !important;
-        border-radius: 12px !important;
-        overflow-y: auto;
-        scrollbar-gutter: stable;
-    }
-    .autocompleteResultsList > li:nth-child(odd) {
-        background-color: #f9fafb;
-    }
-    .autocompleteResultsList > li {
-        list-style-type: none;
-        padding: 10px;
-        cursor: pointer;
-    }
-    .autocompleteResultsList > li:hover {
-        background-color: #f5f6f8;
-    }
-    .autocompleteResultsList > li.selected {
-        background-color: #e5e7eb;
-    }
-    .resultsFlexContainer {
-        display: flex;
-    }
-    .acListItem {
-        overflow: hidden;
-        white-space: nowrap;
-    }
-    .acPostCount {
-        position: relative;
-        text-align: end;
-        padding: 0 0 0 15px;
-        flex-grow: 1;
-        color: #a2a9b4;
+        color: var(--post-count-color);
     }
 `;
 
@@ -912,12 +887,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Add style to dom
     let acStyle = document.createElement('style');
-    let css = gradioApp().querySelector('.dark') ? autocompleteCSS_dark : autocompleteCSS_light;
+    //let css = gradioApp().querySelector('.dark') ? autocompleteCSS_dark : autocompleteCSS_light;
+    let mode = gradioApp().querySelector('.dark') ? 0 : 1;
+    // Check if we are on webkit
+    let browser = navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? "firefox" : "other";
+    
+    let css = autocompleteCSS;
+    // Replace vars with actual values (can't use actual css vars because of the way we inject the css)
+    Object.keys(styleColors).forEach((key) => {
+        css = css.replace(`var(${key})`, styleColors[key][mode]);
+    })
+    Object.keys(browserVars).forEach((key) => {
+        css = css.replace(`var(${key})`, browserVars[key][browser]);
+    })
+    
     if (acStyle.styleSheet) {
         acStyle.styleSheet.cssText = css;
     } else {
         acStyle.appendChild(document.createTextNode(css));
     }
     gradioApp().appendChild(acStyle);
-    styleAdded = true;
 });
