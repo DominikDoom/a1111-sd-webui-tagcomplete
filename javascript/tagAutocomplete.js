@@ -550,10 +550,10 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) >- 1);
         } else {
             // Else both normal tags and aliases/translations are included depending on the config
-            let baseFilter = (x) => x[0].toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1;
-            let aliasFilter = (x) => x[3] && x[3].toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1;
-            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1)
-                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1);
+            let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) >- 1;
+            let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) >- 1;
+            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) >- 1)
+                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) >- 1);
             
             let fil;
             if (acConfig.alias.searchByAlias && acConfig.translation.searchByTranslation)
