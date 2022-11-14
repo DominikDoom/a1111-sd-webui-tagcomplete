@@ -542,18 +542,34 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             tempResults = embeddings;
         }
         // Since some tags are kaomoji, we have to still get the normal results first.
-        genericResults = allTags.filter(x => x[0].toLowerCase().includes(tagword)).slice(0, acConfig.maxResults);
+        // Create escaped search regex with support for * as a start placeholder
+        let searchRegex;
+        if (tagword.startsWith("*")) {
+            tagword = tagword.slice(1);
+            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+        } else {
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+        }
+        genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, acConfig.maxResults);
         results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
     } else {
+        // Create escaped search regex with support for * as a start placeholder
+        let searchRegex;
+        if (tagword.startsWith("*")) {
+            tagword = tagword.slice(1);
+            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+        } else {
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+        }    
         // If onlyShowAlias is enabled, we don't need to include normal results
         if (acConfig.alias.onlyShowAlias) {
-            results = allTags.filter(x => x[3] && x[3].toLowerCase().includes(tagword));
+            results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) >- 1);
         } else {
             // Else both normal tags and aliases/translations are included depending on the config
-            let baseFilter = (x) => x[0].toLowerCase().includes(tagword);
-            let aliasFilter = (x) => x[3] && x[3].toLowerCase().includes(tagword);
-            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().includes(tagword))
-                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().includes(tagword));
+            let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) >- 1;
+            let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) >- 1;
+            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) >- 1)
+                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) >- 1);
             
             let fil;
             if (acConfig.alias.searchByAlias && acConfig.translation.searchByTranslation)
