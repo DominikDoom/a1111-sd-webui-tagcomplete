@@ -361,7 +361,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 let tagOrAlias = pair => pair[0] === result[0] || result[3].split(",").includes(pair[0]);
                 var tArray = [...translations];
                 if (tArray) {
-                    var translationKey = [...translations].find(pair => tagOrAlias(pair) && pair[1].search("(^|[^a-zA-Z])" + tagword)>-1);
+                    var translationKey = [...translations].find(pair => tagOrAlias(pair) && pair[1].includes(tagword));
                     if (translationKey)
                         bestAlias = translationKey[0];
                 }
