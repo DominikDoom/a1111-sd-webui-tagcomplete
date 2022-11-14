@@ -547,7 +547,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     } else {
         // If onlyShowAlias is enabled, we don't need to include normal results
         if (acConfig.alias.onlyShowAlias) {
-            results = allTags.filter(x => x[3] && x[3].toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1);
+            results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) >- 1);
         } else {
             // Else both normal tags and aliases/translations are included depending on the config
             let baseFilter = (x) => x[0].toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1;
