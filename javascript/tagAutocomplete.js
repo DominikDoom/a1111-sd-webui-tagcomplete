@@ -542,7 +542,15 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             tempResults = embeddings;
         }
         // Since some tags are kaomoji, we have to still get the normal results first.
-        genericResults = allTags.filter(x => x[0].toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1).slice(0, acConfig.maxResults);
+        // Create escaped search regex with support for * as a start placeholder
+        let searchRegex;
+        if (tagword.startsWith("*")) {
+            tagword = tagword.slice(1);
+            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+        } else {
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+        }
+        genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, acConfig.maxResults);
         results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
     } else {
         // Create escaped search regex with support for * as a start placeholder
