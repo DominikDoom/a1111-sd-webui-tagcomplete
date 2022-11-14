@@ -352,7 +352,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         let displayText = "";
         // If the tag matches the tagword, we don't need to display the alias
-        if (result[3] && !result[0].search("(^|[^a-zA-Z])" + tagword)>-1) { // Alias
+        if (result[3] && !result[0].includes(tagword)) { // Alias
             let splitAliases = result[3].split(",");
             let bestAlias = splitAliases.find(a => a.toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1);
 
