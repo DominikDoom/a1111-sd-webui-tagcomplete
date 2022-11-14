@@ -545,6 +545,14 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         genericResults = allTags.filter(x => x[0].toLowerCase().search("(^|[^a-zA-Z])" + tagword)>-1).slice(0, acConfig.maxResults);
         results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
     } else {
+        // Create escaped search regex with support for * as a start placeholder
+        let searchRegex;
+        if (tagword.startsWith("*")) {
+            tagword = tagword.slice(1);
+            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+        } else {
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+        }    
         // If onlyShowAlias is enabled, we don't need to include normal results
         if (acConfig.alias.onlyShowAlias) {
             results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) >- 1);
