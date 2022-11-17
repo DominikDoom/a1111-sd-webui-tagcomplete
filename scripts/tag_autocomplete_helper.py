@@ -2,7 +2,7 @@
 # to a temporary file to expose it to the javascript side
 
 from pathlib import Path
-from modules import scripts
+from modules import scripts, shared
 
 # Webui root path
 FILE_DIR = Path().absolute()
@@ -15,7 +15,7 @@ TAGS_PATH = Path(scripts.basedir()).joinpath('tags')
 
 # The path to the folder containing the wildcards and embeddings
 WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
-EMB_PATH = FILE_DIR.joinpath('embeddings')
+EMB_PATH = Path(shared.cmd_opts.embeddings_dir)
 
 
 def find_ext_wildcard_paths():
