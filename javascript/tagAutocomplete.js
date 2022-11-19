@@ -97,20 +97,18 @@ function parseCSV(str) {
 }
 
 // Load file
-function readFile(filePath) {
-    return new Promise(function (resolve, reject) {
-        let request = new XMLHttpRequest();
-        request.open("GET", filePath, true);
-        request.onload = function () {
-            var status = request.status;
-            if (status == 200) {
-                resolve(request.responseText);
-            } else {
-                reject(status);
-            }
-        };
-        request.send(null);
-    });
+async function readFile(filePath, json = false) {
+    let response = await fetch(`file=${filePath}`);
+
+    if (response.status != 200) {
+        console.error(`Error loading file "${filePath}": ` + response.status, response.statusText);
+        return null;
+    }
+
+    if (json)
+        return await response.json();
+    else
+        return await response.text();
 }
 
 // Load CSV
@@ -518,7 +516,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         else // Look in extensions wildcard files
             wcPair = wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
 
-        let wildcards = (await readFile(`file/${wcPair[0]}/${wcPair[1]}.txt?${new Date().getTime()}`)).split("\n")
+        let wildcards = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt?${new Date().getTime()}`)).split("\n")
             .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
 
         results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
@@ -687,12 +685,12 @@ function navigateInList(textArea, event) {
 // One-time setup
 document.addEventListener("DOMContentLoaded", async () => {
     // Get our tag base path from the temp file
-    let tagBasePath = await readFile(`file/tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
+    let tagBasePath = await readFile(`tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
 
     // Load config
     if (acConfig === null) {
         try {
-            acConfig = JSON.parse(await readFile(`file/${tagBasePath}/config.json?${new Date().getTime()}`));
+            acConfig = await readFile(`${tagBasePath}/config.json?${new Date().getTime()}`, true);
             if (acConfig.alias.onlyShowAlias) {
                 acConfig.alias.searchByAlias = true; // if only show translation, enable search by translation is necessary
             }
@@ -704,14 +702,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load main tags and aliases
     if (allTags.length === 0) {
         try {
-            allTags = await loadCSV(`file/${tagBasePath}/${acConfig.tagFile}?${new Date().getTime()}`);
+            allTags = await loadCSV(`${tagBasePath}/${acConfig.tagFile}?${new Date().getTime()}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
         }
         if (acConfig.extra.extraFile) {
             try {
-                extras = await loadCSV(`file/${tagBasePath}/${acConfig.extra.extraFile}?${new Date().getTime()}`);
+                extras = await loadCSV(`${tagBasePath}/${acConfig.extra.extraFile}?${new Date().getTime()}`);
                 if (acConfig.extra.onlyAliasExtraFile) {
                     // This works purely on index, so it's not very robust. But a lot faster.
                     for (let i = 0, n = extras.length; i < n; i++) {
@@ -750,7 +748,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load translations
     if (acConfig.translation.translationFile) {
         try {
-            let tArray = await loadCSV(`file/${tagBasePath}/${acConfig.translation.translationFile}?${new Date().getTime()}`);
+            let tArray = await loadCSV(`${tagBasePath}/${acConfig.translation.translationFile}?${new Date().getTime()}`);
             tArray.forEach(t => {
                 if (acConfig.translation.oldFormat)
                     translations.set(t[0], t[2]);
@@ -765,14 +763,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load wildcards
     if (acConfig.useWildcards && wildcardFiles.length === 0) {
         try {
-            let wcFileArr = (await readFile(`file/${tagBasePath}/temp/wc.txt?${new Date().getTime()}`)).split("\n");
+            let wcFileArr = (await readFile(`${tagBasePath}/temp/wc.txt?${new Date().getTime()}`)).split("\n");
             let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
             wildcardFiles = wcFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
 
             // To support multiple sources, we need to separate them using the provided "-----" strings
-            let wcExtFileArr = (await readFile(`file/${tagBasePath}/temp/wce.txt?${new Date().getTime()}`)).split("\n");
+            let wcExtFileArr = (await readFile(`${tagBasePath}/temp/wce.txt?${new Date().getTime()}`)).split("\n");
             let splitIndices = [];
             for (let index = 0; index < wcExtFileArr.length; index++) {
                 if (wcExtFileArr[index].trim() === "-----") {
@@ -801,7 +799,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load embeddings
     if (acConfig.useEmbeddings && embeddings.length === 0) {
         try {
-            embeddings = (await readFile(`file/${tagBasePath}/temp/emb.txt?${new Date().getTime()}`)).split("\n")
+            embeddings = (await readFile(`${tagBasePath}/temp/emb.txt?${new Date().getTime()}`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.replace(".bin", "").replace(".pt", "").replace(".png", "")); // Remove file extensions
         } catch (e) {
