@@ -896,7 +896,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         optionsDiv.appendChild(optionsInner);
 
         // Add options div to DOM
-        quicksettings.parentNode.insertBefore(optionsDiv, quicksettings.nextSibling);
+        //quicksettings.parentNode.insertBefore(optionsDiv, quicksettings.nextSibling);
+        quicksettings.appendChild(optionsDiv);
     }
 
     // Add style to dom
