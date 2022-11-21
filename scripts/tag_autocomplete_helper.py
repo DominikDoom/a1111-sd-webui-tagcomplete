@@ -2,7 +2,7 @@
 # to a temporary file to expose it to the javascript side
 
 from pathlib import Path
-from modules import scripts, shared
+from modules import scripts, script_callbacks, shared
 
 # Webui root path
 FILE_DIR = Path().absolute()
@@ -103,3 +103,38 @@ if EMB_PATH.exists():
     embeddings = get_embeddings()
     if embeddings:
         write_to_temp_file('emb.txt', embeddings)
+
+# Register autocomplete options
+def on_ui_settings():
+    TAC_SECTION = ("tac", "Tag Autocomplete")
+    # Main tag file
+    shared.opts.add_option("tac_tagFile", shared.OptionInfo("danbooru.csv", "Tag file name (Requires restart)", section=TAC_SECTION))
+    # Active in settings
+    shared.opts.add_option("tac_active", shared.OptionInfo(True, "Enable Tag Autocompletion", section=TAC_SECTION))
+    shared.opts.add_option("tac_activeIn.txt2img", shared.OptionInfo(True, "Active in txt2img (Requires restart)", section=TAC_SECTION))
+    shared.opts.add_option("tac_activeIn.img2img", shared.OptionInfo(True, "Active in img2img (Requires restart)", section=TAC_SECTION))
+    shared.opts.add_option("tac_activeIn.negativePrompts", shared.OptionInfo(True, "Active in negative prompts (Requires restart)", section=TAC_SECTION))
+    # Results related settings
+    shared.opts.add_option("tac_maxResults", shared.OptionInfo(5, "Maximum results", section=TAC_SECTION))
+    shared.opts.add_option("tac_showAllResults", shared.OptionInfo(False, "Show all results", section=TAC_SECTION))
+    shared.opts.add_option("tac_resultStepLength", shared.OptionInfo(100, "How many results to load at once", section=TAC_SECTION))
+    shared.opts.add_option("tac_delayTime", shared.OptionInfo(100, "Time in ms to wait before triggering completion again (Requires restart)", section=TAC_SECTION))
+    shared.opts.add_option("tac_useWildcards", shared.OptionInfo(True, "Search for wildcards", section=TAC_SECTION))
+    shared.opts.add_option("tac_useEmbeddings", shared.OptionInfo(True, "Search for embeddings", section=TAC_SECTION))
+    shared.opts.add_option("tac_useLeftRightArrowKeys", shared.OptionInfo(False, "Use left/rigt arrows to jump to the start/end of the list", section=TAC_SECTION))
+    # Insertion related settings
+    shared.opts.add_option("tac_replaceUnderscores", shared.OptionInfo(True, "Replace underscores with spaces on insertion", section=TAC_SECTION))
+    shared.opts.add_option("tac_escapeParentheses", shared.OptionInfo(True, "Escape parentheses on insertion", section=TAC_SECTION))
+    shared.opts.add_option("tac_appendComma", shared.OptionInfo(True, "Append comma on tag autocompletion", section=TAC_SECTION))
+    # Alias settings
+    shared.opts.add_option("tac_alias.searchByAlias", shared.OptionInfo(True, "Search by alias", section=TAC_SECTION))
+    shared.opts.add_option("tac_alias.onlyShowAlias", shared.OptionInfo(False, "Only show alias", section=TAC_SECTION))
+    # Translation settings
+    shared.opts.add_option("tac_translation.translationFile", shared.OptionInfo("", "Translation file name (Requires restart)", section=TAC_SECTION))
+    shared.opts.add_option("tac_translation.oldFormat", shared.OptionInfo(False, "File uses the old 3-column translation format instead of the new 2-column one (Requires restart)", section=TAC_SECTION))
+    shared.opts.add_option("tac_translation.searchByTranslation", shared.OptionInfo(True, "Search by translation", section=TAC_SECTION))
+    # Extra file settings
+    shared.opts.add_option("tac_extra.extraFile", shared.OptionInfo("", "Extra file name (Requires restart)", section=TAC_SECTION))
+    shared.opts.add_option("tac_extra.onlyAliasExtraFile", shared.OptionInfo(False, "Extra file in alias only format (Requires restart)", section=TAC_SECTION))
+
+script_callbacks.on_ui_settings(on_ui_settings)
