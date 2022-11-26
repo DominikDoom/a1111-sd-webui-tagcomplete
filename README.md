@@ -105,7 +105,7 @@ You can also add new ones here for custom tag files (same name as filename, with
 	}
 }
 ```
-The numbers are specifying the tag type, which is dependant on the tag source. For an example, see [CSV tag data](#csv-tag-data).
+The numbers are specifying the tag type, which is dependent on the tag source. For an example, see [CSV tag data](#csv-tag-data).
 
 ### Aliases, Translations & Extra tags
 #### Aliases
@@ -166,7 +166,7 @@ The numbering system follows the [tag API docs](https://danbooru.donmai.us/wiki_
 |4	| Character   |
 |5	| Meta        |
 
-or of e621:
+or similarly for e621:
 | Value	| Description |
 |-------|-------------|
 |-1	| Invalid     |
