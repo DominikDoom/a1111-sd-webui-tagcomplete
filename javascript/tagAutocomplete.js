@@ -1,57 +1,5 @@
 var CFG = null;
 
-function syncOptions() {
-    let newCFG = {
-        // Main tag file
-        tagFile: opts["tac_tagFile"],
-        // Active in settings
-        activeIn: {
-            global: opts["tac_active"],
-            txt2img: opts["tac_activeIn.txt2img"],
-            img2img: opts["tac_activeIn.img2img"],
-            negativePrompts: opts["tac_activeIn.negativePrompts"]
-        },
-        // Results related settings
-        maxResults: opts["tac_maxResults"],
-        showAllResults: opts["tac_showAllResults"],
-        resultStepLength: opts["tac_resultStepLength"],
-        delayTime: opts["tac_delayTime"],
-        useWildcards: opts["tac_useWildcards"],
-        useEmbeddings: opts["tac_useEmbeddings"],
-        useLeftRightArrowKeys: opts["tac_useLeftRightArrowKeys"],
-        // Insertion related settings
-        replaceUnderscores: opts["tac_replaceUnderscores"],
-        escapeParentheses: opts["tac_escapeParentheses"],
-        appendComma: opts["tac_appendComma"],
-        // Alias settings
-        alias: {
-            searchByAlias: opts["tac_alias.searchByAlias"],
-            onlyShowAlias: opts["tac_alias.onlyShowAlias"]
-        },
-        // Translation settings
-        translation: {
-            translationFile: opts["tac_translation.translationFile"],
-            oldFormat: opts["tac_translation.oldFormat"],
-            searchByTranslation: opts["tac_translation.searchByTranslation"],
-        },
-        // Extra file settings
-        extra: {
-            extraFile: opts["tac_extra.extraFile"],
-            onlyAliasExtraFile: opts["tac_extra.onlyAliasExtraFile"]
-        }
-    }
-
-    if (CFG && CFG.colors) {
-        newCFG["colors"] = CFG.colors;
-    }
-    if (newCFG.alias.onlyShowAlias) {
-        newCFG.alias.searchByAlias = true; // if only show translation, enable search by translation is necessary
-    }
-
-    // Apply changes
-    CFG = newCFG;
-}
-
 const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
@@ -173,6 +121,145 @@ async function loadCSV(path) {
     return parseCSV(text);
 }
 
+var tagBasePath = "";
+var allTags = [];
+var translations = new Map();
+
+async function loadTags(c) {
+    // Load main tags and aliases
+    if (allTags.length === 0) {
+        try {
+            allTags = await loadCSV(`${tagBasePath}/${c.tagFile}?${new Date().getTime()}`);
+        } catch (e) {
+            console.error("Error loading tags file: " + e);
+            return;
+        }
+        if (c.extra.extraFile && c.extra.extraFile !== "None") {
+            try {
+                extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}?${new Date().getTime()}`);
+                if (c.extra.onlyAliasExtraFile) {
+                    // This works purely on index, so it's not very robust. But a lot faster.
+                    for (let i = 0, n = extras.length; i < n; i++) {
+                        if (extras[i][0]) {
+                            let aliasStr = allTags[i][3] || "";
+                            let optComma = aliasStr.length > 0 ? "," : "";
+                            allTags[i][3] = aliasStr + optComma + extras[i][0];
+                        }
+                    }
+                } else {
+                    extras.forEach(e => {
+                        let hasCount = e[2] && e[3] || (!isNaN(e[2]) && !e[3]);
+                        // Check if a tag in allTags has the same name & category as the extra tag
+                        if (tag = allTags.find(t => t[0] === e[0] && t[1] == e[1])) {
+                            if (hasCount && e[3] || isNaN(e[2])) { // If the extra tag has a translation / alias, add it to the normal tag
+                                let aliasStr = tag[3] || "";
+                                let optComma = aliasStr.length > 0 ? "," : "";
+                                let alias = hasCount && e[3] || isNaN(e[2]) ? e[2] : e[3];
+                                tag[3] = aliasStr + optComma + alias;
+                            }
+                        } else {
+                            let count = hasCount ? e[2] : null;
+                            let aliases = hasCount && e[3] ? e[3] : e[2];
+                            // If the tag doesn't exist, add it to allTags
+                            let newTag = [e[0], e[1], count, aliases];
+                            allTags.push(newTag);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading extra file: " + e);
+                return;
+            }
+        }
+    }
+}
+
+async function loadTranslations(c) {
+    if (c.translation.translationFile && c.translation.translationFile !== "None") {
+        try {
+            let tArray = await loadCSV(`${tagBasePath}/${c.translation.translationFile}?${new Date().getTime()}`);
+            tArray.forEach(t => {
+                if (c.translation.oldFormat)
+                    translations.set(t[0], t[2]);
+                else
+                    translations.set(t[0], t[1]);
+            });
+        } catch (e) {
+            console.error("Error loading translations file: " + e);
+            return;
+        }
+    }
+}
+
+async function syncOptions() {
+    let newCFG = {
+        // Main tag file
+        tagFile: opts["tac_tagFile"],
+        // Active in settings
+        activeIn: {
+            global: opts["tac_active"],
+            txt2img: opts["tac_activeIn.txt2img"],
+            img2img: opts["tac_activeIn.img2img"],
+            negativePrompts: opts["tac_activeIn.negativePrompts"]
+        },
+        // Results related settings
+        maxResults: opts["tac_maxResults"],
+        showAllResults: opts["tac_showAllResults"],
+        resultStepLength: opts["tac_resultStepLength"],
+        delayTime: opts["tac_delayTime"],
+        useWildcards: opts["tac_useWildcards"],
+        useEmbeddings: opts["tac_useEmbeddings"],
+        // Insertion related settings
+        replaceUnderscores: opts["tac_replaceUnderscores"],
+        escapeParentheses: opts["tac_escapeParentheses"],
+        appendComma: opts["tac_appendComma"],
+        // Alias settings
+        alias: {
+            searchByAlias: opts["tac_alias.searchByAlias"],
+            onlyShowAlias: opts["tac_alias.onlyShowAlias"]
+        },
+        // Translation settings
+        translation: {
+            translationFile: opts["tac_translation.translationFile"],
+            oldFormat: opts["tac_translation.oldFormat"],
+            searchByTranslation: opts["tac_translation.searchByTranslation"],
+        },
+        // Extra file settings
+        extra: {
+            extraFile: opts["tac_extra.extraFile"],
+            onlyAliasExtraFile: opts["tac_extra.onlyAliasExtraFile"]
+        }
+    }
+
+    if (CFG && CFG.colors) {
+        newCFG["colors"] = CFG.colors;
+    }
+    if (newCFG.alias.onlyShowAlias) {
+        newCFG.alias.searchByAlias = true; // if only show translation, enable search by translation is necessary
+    }
+
+    // Reload tags if the tag file changed
+    if (!CFG || newCFG.tagFile !== CFG.tagFile || newCFG.extra.extraFile !== CFG.extra.extraFile) {
+        allTags = [];
+        await loadTags(newCFG);
+    }
+    // Reload translations if the translation file changed
+    if (!CFG || newCFG.translation.translationFile !== CFG.translation.translationFile) {
+        translations.clear();
+        await loadTranslations(newCFG);
+    }
+
+    // Update CSS if maxResults changed
+    if (CFG && newCFG.maxResults !== CFG.maxResults) {
+        gradioApp().querySelectorAll(".autocompleteResults").forEach(r => {
+            r.style.maxHeight = `${newCFG.maxResults * 50}px`;
+        });
+    }
+
+    // Apply changes
+    CFG = newCFG;
+}
+
 // Debounce function to prevent spamming the autocomplete function
 var dbTimeOut;
 const debounce = (func, wait = 300) => {
@@ -236,31 +323,12 @@ function createResultsDiv(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let typeClass = textAreaId.replaceAll(".", " ");
 
-    resultsDiv.style.setProperty("max-height", CFG.maxResults * 50 + "px");
+    resultsDiv.style.maxHeight = `${CFG.maxResults * 50}px`;
     resultsDiv.setAttribute('class', `autocompleteResults ${typeClass}`);
     resultsList.setAttribute('class', 'autocompleteResultsList');
     resultsDiv.appendChild(resultsList);
 
     return resultsDiv;
-}
-
-// Create the checkbox to enable/disable autocomplete
-function createCheckbox(text) {
-    let label = document.createElement("label");
-    let input = document.createElement("input");
-    let span = document.createElement("span");
-
-    label.setAttribute('id', 'acActiveCheckbox');
-    label.setAttribute('class', '"flex items-center text-gray-700 text-sm rounded-lg cursor-pointer dark:bg-transparent');
-    input.setAttribute('type', 'checkbox');
-    input.setAttribute('class', 'gr-check-radio gr-checkbox')
-    span.setAttribute('class', 'ml-2');
-
-    span.textContent = text;
-
-    label.appendChild(input);
-    label.appendChild(span);
-    return label;
 }
 
 // The selected tag index. Needs to be up here so hide can access it.
@@ -509,8 +577,6 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
 var wildcardFiles = [];
 var wildcardExtFiles = [];
 var embeddings = [];
-var allTags = [];
-var translations = new Map();
 var results = [];
 var tagword = "";
 var resultCount = 0;
@@ -659,8 +725,6 @@ function navigateInList(textArea, event) {
     if (!CFG.activeIn.global) return;
 
     validKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Enter", "Tab", "Escape"];
-    if (CFG.useLeftRightArrowKeys)
-        validKeys.push("ArrowLeft", "ArrowRight");
 
     if (!validKeys.includes(event.key)) return;
     if (!isVisible(textArea)) return
@@ -738,85 +802,11 @@ function navigateInList(textArea, event) {
     event.stopPropagation();
 }
 
-onUiUpdate(() => {
-    if (Object.keys(opts).length === 0) return;
-    if (CFG) return;
-
-    syncOptions();
-
-    // Rest of setup
-    setup();
-});
-
-// One-time setup
+// One-time setup, triggered from onUiUpdate
 async function setup() {
-    // Get our tag base path from the temp file
-    let tagBasePath = await readFile(`tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
-
     // Load colors
-    CFG["colors"] = (await readFile(`${tagBasePath}/config.json?${new Date().getTime()}`, true)).colors;
+    CFG["colors"] = (await readFile(`${tagBasePath}/colors.json?${new Date().getTime()}`, true));
 
-    // Load main tags and aliases
-    if (allTags.length === 0) {
-        try {
-            allTags = await loadCSV(`${tagBasePath}/${CFG.tagFile}?${new Date().getTime()}`);
-        } catch (e) {
-            console.error("Error loading tags file: " + e);
-            return;
-        }
-        if (CFG.extra.extraFile) {
-            try {
-                extras = await loadCSV(`${tagBasePath}/${CFG.extra.extraFile}?${new Date().getTime()}`);
-                if (CFG.extra.onlyAliasExtraFile) {
-                    // This works purely on index, so it's not very robust. But a lot faster.
-                    for (let i = 0, n = extras.length; i < n; i++) {
-                        if (extras[i][0]) {
-                            let aliasStr = allTags[i][3] || "";
-                            let optComma = aliasStr.length > 0 ? "," : "";
-                            allTags[i][3] = aliasStr + optComma + extras[i][0];
-                        }
-                    }
-                } else {
-                    extras.forEach(e => {
-                        let hasCount = e[2] && e[3] || (!isNaN(e[2]) && !e[3]);
-                        // Check if a tag in allTags has the same name & category as the extra tag
-                        if (tag = allTags.find(t => t[0] === e[0] && t[1] == e[1])) {
-                            if (hasCount && e[3] || isNaN(e[2])) { // If the extra tag has a translation / alias, add it to the normal tag
-                                let aliasStr = tag[3] || "";
-                                let optComma = aliasStr.length > 0 ? "," : "";
-                                let alias = hasCount && e[3] || isNaN(e[2]) ? e[2] : e[3];
-                                tag[3] = aliasStr + optComma + alias;
-                            }
-                        } else {
-                            let count = hasCount ? e[2] : null;
-                            let aliases = hasCount && e[3] ? e[3] : e[2];
-                            // If the tag doesn't exist, add it to allTags
-                            let newTag = [e[0], e[1], count, aliases];
-                            allTags.push(newTag);
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Error loading extra file: " + e);
-                return;
-            }
-        }
-    }
-    // Load translations
-    if (CFG.translation.translationFile) {
-        try {
-            let tArray = await loadCSV(`${tagBasePath}/${CFG.translation.translationFile}?${new Date().getTime()}`);
-            tArray.forEach(t => {
-                if (CFG.translation.oldFormat)
-                    translations.set(t[0], t[2]);
-                else
-                    translations.set(t[0], t[1]);
-            });
-        } catch (e) {
-            console.error("Error loading translations file: " + e);
-            return;
-        }
-    }
     // Load wildcards
     if (wildcardFiles.length === 0) {
         try {
@@ -876,7 +866,7 @@ async function setup() {
     applySettingsButton.addEventListener("click", () => {
         // Wait 500ms to make sure the settings have been applied to the webui opts object
         setTimeout(async () => { 
-            syncOptions();
+            await syncOptions();
         }, 500);
     });
     // Add change listener to our quicksettings to change our internal config without the apply button for them
@@ -884,7 +874,7 @@ async function setup() {
     quicksettings.querySelectorAll("[id^=setting_tac] > label > input, [id^=setting_tac] > label > textarea").forEach(e => {
         e.addEventListener("change", () => {
             setTimeout(async () => { 
-                syncOptions();
+                await syncOptions();
             }, 500);
         });
     });
@@ -958,3 +948,15 @@ async function setup() {
     }
     gradioApp().appendChild(acStyle);
 }
+
+onUiUpdate(async () => {
+    if (Object.keys(opts).length === 0) return;
+    if (CFG) return;
+
+    // Get our tag base path from the temp file
+    tagBasePath = await readFile(`tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
+    // Load config from webui opts
+    await syncOptions();
+    // Rest of setup
+    setup();
+});
