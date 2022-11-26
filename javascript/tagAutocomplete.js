@@ -23,6 +23,11 @@ const autocompleteCSS = `
         align-self: center;
         margin: 0 5px;
     }
+    [id^=refresh_tac] {
+        max-width: 2.5em;
+        min-width: 2.5em;
+        height: 2.4em;
+    }
     .autocompleteResults {
         position: absolute;
         z-index: 999;
@@ -871,7 +876,8 @@ async function setup() {
     });
     // Add change listener to our quicksettings to change our internal config without the apply button for them
     let quicksettings = gradioApp().querySelector('#quicksettings');
-    quicksettings.querySelectorAll("[id^=setting_tac] > label > input, [id^=setting_tac] > label > textarea").forEach(e => {
+    let commonQueryPart = "[id^=setting_tac] > label >";
+    quicksettings.querySelectorAll(`${commonQueryPart} input, ${commonQueryPart} textarea, ${commonQueryPart} select`).forEach(e => {
         e.addEventListener("change", () => {
             setTimeout(async () => { 
                 await syncOptions();
