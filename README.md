@@ -56,73 +56,20 @@ Autocompletion also works with wildcard files used by [this script](https://gith
 
 It also scans the embeddings folder and displays completion hints for the names of all .pt and .bin files inside if you start typing `<`. Note that some normal tags also use < in Kaomoji (like ">_<" for example), so the results will contain both.
 
-## Config
-The config contains the following settings and defaults:
-```json
-{
-	"tagFile": "danbooru.csv",
-	"activeIn": {
-		"txt2img": true,
-		"img2img": true,
-		"negativePrompts": true
-	},
-	"hideUIOptions": false,
-	"maxResults": 5,
-	"resultStepLength": 500,
-	"delayTime": 100,
-	"showAllResults": false,
-	"useLeftRightArrowKeys": false,
-	"replaceUnderscores": true,
-	"escapeParentheses": true,
-	"appendComma": true,
-	"useWildcards": true,
-	"useEmbeddings": true,
-		"alias": {
-		"searchByAlias": true,
-		"onlyShowAlias": false
-	},
-	"translation": {
-		"translationFile": "",
-		"oldFormat": false,
-		"searchByTranslation": true
-	},
-	"extra": {
-		"extraFile": "",
-		"onlyAliasExtraFile": false
-	},
-	"colors": {
-		"danbooru": {
-			"-1": ["red", "maroon"],
-			"0": ["lightblue", "dodgerblue"],
-			"1": ["indianred", "firebrick"],
-			"3": ["violet", "darkorchid"],
-			"4": ["lightgreen", "darkgreen"],
-			"5": ["orange", "darkorange"]
-		},
-		"e621": {
-			"-1": ["red", "maroon"],
-			"0": ["lightblue", "dodgerblue"],
-			"1": ["gold", "goldenrod"],
-			"3": ["violet", "darkorchid"],
-			"4": ["lightgreen", "darkgreen"],
-			"5": ["tomato", "darksalmon"],
-			"6": ["red", "maroon"],
-			"7": ["whitesmoke", "black"],
-			"8": ["seagreen", "darkseagreen"]
-		}
-	}
-}
-```
+## Settings
+
+The extension has a large amount of configuration & customizability built in:
+
+![image](https://user-images.githubusercontent.com/34448969/204093162-99c6a0e7-8183-4f47-963b-1f172774f527.png)
+
 | Setting	| Description |
 |---------|-------------|
 | tagFile | Specifies the tag file to use. You can provide a custom tag database of your liking, but since the script was developed with Danbooru tags in mind, it might not work properly with other configurations.|
 | activeIn | Allows to selectively (de)activate the script for txt2img, img2img, and the negative prompts for both. |
-| hideUIOptions | Allows to hide the added GUI options at the top of the page to adjust active and comma settings without restarting. |
 | maxResults | How many results to show max. For the default tag set, the results are ordered by occurence count. For embeddings and wildcards it will show all results in a scrollable list. |
 | resultStepLength | Allows to load results in smaller batches of the specified size for better performance in long lists or if showAllResults is true. |
 | delayTime | Specifies how much to wait in milliseconds before triggering autocomplete. Helps prevent too frequent updates while typing. |
 | showAllResults | If true, will ignore maxResults and show all results in a scrollable list. **Warning:** can lag your browser for long lists. |
-| useLeftRightArrowKeys | If true, left and right arrows will select the first/last result in the popup instead of moving the cursor in the textbox. |
 | replaceUnderscores | If true, undescores are replaced with spaces on clicking a tag. Might work better for some models. |
 | escapeParentheses | If true, escapes tags containing () so they don't contribute to the web UI's prompt weighting functionality. |
 | appendComma | Specifies the starting value of the "Append commas" UI switch. If UI options are disabled, this will always be used. |
@@ -131,7 +78,34 @@ The config contains the following settings and defaults:
 | alias | Options for aliases. More info in the section below. |
 | translation | Options for translations. More info in the section below.  |
 | extras | Options for additional tag files / aliases / translations. More info in the section below. |
-| colors | Contains customizable colors for the tag types, you can add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.|
+
+### colors.json
+Additionally, tag type colors can be specified using the separate `colors.json` file in the extension's `tags` folder.
+You can also add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.
+```json
+{
+	"danbooru": {
+		"-1": ["red", "maroon"],
+		"0": ["lightblue", "dodgerblue"],
+		"1": ["indianred", "firebrick"],
+		"3": ["violet", "darkorchid"],
+		"4": ["lightgreen", "darkgreen"],
+		"5": ["orange", "darkorange"]
+	},
+	"e621": {
+		"-1": ["red", "maroon"],
+		"0": ["lightblue", "dodgerblue"],
+		"1": ["gold", "goldenrod"],
+		"3": ["violet", "darkorchid"],
+		"4": ["lightgreen", "darkgreen"],
+		"5": ["tomato", "darksalmon"],
+		"6": ["red", "maroon"],
+		"7": ["whitesmoke", "black"],
+		"8": ["seagreen", "darkseagreen"]
+	}
+}
+```
+The numbers are specifying the tag type, which is dependant on the tag source. For an example, see [CSV tag data](#csv-tag-data).
 
 ### Aliases, Translations & Extra tags
 #### Aliases
