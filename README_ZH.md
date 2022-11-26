@@ -60,64 +60,53 @@ git clone "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git" extens
 现在这项功能默认是启用的，并会自动扫描`/embeddings`和`/scripts/wildcards`文件夹，不再需要使用`tags/wildcardNames.txt`文件了，早期版本的用户可以将它删除。
 
 ## 配置文件
-配置文件（config.json）的默认值如下：
-```json
-{
-	"tagFile": "danbooru.csv",
-	"activeIn": {
-		"txt2img": true,
-		"img2img": true,
-		"negativePrompts": true
-	},
-	"maxResults": 5,
-	"showAllResults": false,
-	"replaceUnderscores": true,
-	"escapeParentheses": true,
-	"useWildcards": true,
-	"useEmbeddings": true,
-	"translation": {
-		"searchByTranslation": true,
-		"onlyShowTranslation": false
-	},
-	"extra": {
-		"extraFile": "",
-		"onlyTranslationExtraFile": false
-	},
-	"colors": {
-		"danbooru": {
-			"0": ["lightblue", "dodgerblue"],
-			"1": ["indianred", "firebrick"],
-			"3": ["violet", "darkorchid"],
-			"4": ["lightgreen", "darkgreen"],
-			"5": ["orange", "darkorange"]
-		},
-		"e621": {
-			"-1": ["red", "maroon"],
-			"0": ["lightblue", "dodgerblue"],
-			"1": ["gold", "goldenrod"],
-			"3": ["violet", "darkorchid"],
-			"4": ["lightgreen", "darkgreen"],
-			"5": ["tomato", "darksalmon"],
-			"6": ["red", "maroon"],
-			"7": ["whitesmoke", "black"],
-			"8": ["seagreen", "darkseagreen"]
-		}
-	}
-}
-```
+该扩展有大量的配置和可定制性的内建：
+
+![image](https://user-images.githubusercontent.com/34448969/204093162-99c6a0e7-8183-4f47-963b-1f172774f527.png)
+
 | 设置	| 描述 |
 |---------|-------------|
 | tagFile | 指定要使用的标记文件。您可以提供您喜欢的自定义标签数据库，但由于该脚本是在考虑 Danbooru 标签的情况下开发的，因此它可能无法与其他配置一起正常工作。|
 | activeIn | 允许有选择地（取消）激活 txt2img、img2img 和两者的否定提示的脚本。|
 | maxResults | 最多显示多少个结果。对于默认标记集，结果按出现次数排序。对于嵌入和通配符，它​​将在可滚动列表中显示所有结果。 |
-| showAllResults | 如果为真，将忽略 maxResults 并在可滚动列表中显示所有结果。 **警告：**对于长列表，您的浏览器可能会滞后。 |
+| showAllResults | 如果为真，将忽略 maxResults 并在可滚动列表中显示所有结果。 **警告：** 对于长列表，您的浏览器可能会滞后。 |
+| resultStepLength | 允许以指定大小的小批次加载结果，以便在长列表中获得更好的性能，或者在showAllResults为真时。 |
+| delayTime | 指定在触发自动完成之前要等待多少毫秒。有助于防止打字时过于频繁的更新。 |
 | replaceUnderscores | 如果为 true，则在单击标签时将取消划线替换为空格。对于某些型号可能会更好。|
 | escapeParentheses | 如果为 true，则转义包含 () 的标签，因此它们不会对 Web UI 的提示权重功能做出贡献。 |
 | useWildcards | 用于切换通配符完成功能。 |
 | useEmbeddings | 用于切换嵌入完成功能。 |
+| alias | 标签别名的选项。更多信息在下面的部分。 |
 | translation | 用于翻译标签的选项。更多信息在下面的部分。 |
 | extras | 附加标签文件/翻译的选项。更多信息在下面的部分。|
-| colors | 包含标签类型的可自定义颜色，您可以在此处为自定义标签文件添加新颜色（与文件名相同，不带 .csv）。第一个值是暗模式，第二个值是亮模式。颜色名称和十六进制代码都应该有效。|
+
+### colors.json (标签颜色)
+此外，标签类型的颜色可以使用扩展的`tags`文件夹中单独的`colors.json`文件来指定。
+你也可以在这里为自定义标签文件添加新的（与文件名相同，不带 .csv）。第一个值是暗模式，第二个值是亮模式。颜色名称和十六进制代码都被支持。
+```json
+{
+	"danbooru": {
+		"-1": ["red", "maroon"],
+		"0": ["lightblue", "dodgerblue"],
+		"1": ["indianred", "firebrick"],
+		"3": ["violet", "darkorchid"],
+		"4": ["lightgreen", "darkgreen"],
+		"5": ["orange", "darkorange"]
+	},
+	"e621": {
+		"-1": ["red", "maroon"],
+		"0": ["lightblue", "dodgerblue"],
+		"1": ["gold", "goldenrod"],
+		"3": ["violet", "darkorchid"],
+		"4": ["lightgreen", "darkgreen"],
+		"5": ["tomato", "darksalmon"],
+		"6": ["red", "maroon"],
+		"7": ["whitesmoke", "black"],
+		"8": ["seagreen", "darkseagreen"]
+	}
+}
+```
+数字是指定标签的类型，这取决于标签的来源。例如，见[CSV tag data](#csv-tag-data)。
 
 ### 别名，翻译&新增Tag
 #### 别名
@@ -170,7 +159,7 @@ commentary_request,5,2610959,
 |4	    | Character   |
 |5	    | Meta        |
 
-or of e621:
+类似的还有e621：
 | Value	| Description |
 |-------|-------------|
 |-1	    | Invalid     |
