@@ -11,7 +11,6 @@
 你可以按照[以下方法](#installation)下载或拷贝文件，也可以使用[Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)中打包好的文件。
 
 ## 常见问题 & 已知缺陷:
-* 浏览器可能因为缓存无法更新脚本、设置、embedding/wildcard列表，尝试使用`CRTL+F5`清空浏览器缓存并重新加载
 - 当`replaceUnderscores`选项开启时, 脚本只会替换Tag的一部分如果Tag包含多个单词,比如将`atago (azur lane)`修改`atago`为`taihou`并使用自动补全时.会得到 `taihou (azur lane), lane)`的结果, 因为脚本没有把后面的部分认为成同一个Tag。
 
 ## 演示与截图
@@ -42,7 +41,7 @@ git clone "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git" extens
 只需要将`javascript`，`scripts`和`tags`文件夹复制到你的Web UI安装根目录下.下次启动Web UI时它将自动启动。
 
 ---
-在这两种配置中，标签文件夹包含`config.json`和脚本用于自动完成的标签数据。
+在这两种配置中，标签文件夹包含`colors.json`和脚本用于自动完成的标签数据。
 默认情况下，Tag数据包括`Danbooru.csv`和`e621.csv`。
 
 在扫描过`/embeddings`和wildcards后，会将列表存放在`tags/temp`文件夹下。删除该文件夹不会有任何影响，下次启动时它会重新创建。
