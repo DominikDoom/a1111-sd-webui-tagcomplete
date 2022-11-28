@@ -9,7 +9,7 @@ This custom script serves as a drop-in extension for the popular [AUTOMATIC1111 
 It displays autocompletion hints for recognized tags from "image booru" boards such as Danbooru, which are primarily used for browsing Anime-style illustrations.
 Since some Stable Diffusion models were trained using this information, for example [Waifu Diffusion](https://github.com/harubaru/waifu-diffusion), using exact tags in prompts can often improve composition and help to achieve a wanted look.
 
-You can either install it as an extension, clone / download the files manually as described [below](#installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
+You can install it using the inbuilt available extensions list, clone the files manually as described [below](#installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
 ## Common Problems & Known Issues:
 - If `replaceUnderscores` is active, the script will currently only partially replace edited tags containing multiple words in brackets.
