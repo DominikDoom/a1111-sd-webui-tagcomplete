@@ -205,7 +205,8 @@ async function syncOptions() {
             global: opts["tac_active"],
             txt2img: opts["tac_activeIn.txt2img"],
             img2img: opts["tac_activeIn.img2img"],
-            negativePrompts: opts["tac_activeIn.negativePrompts"]
+            negativePrompts: opts["tac_activeIn.negativePrompts"],
+            thirdParty: opts["tac_activeIn.thirdParty"]
         },
         // Results related settings
         maxResults: opts["tac_maxResults"],
@@ -291,33 +292,6 @@ function difference(a, b) {
     return [...b.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) - 1),
         a.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map())
     )].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
-}
-
-// Get the identifier for the text area to differentiate between positive and negative
-function getTextAreaIdentifier(textArea) {
-    let txt2img_p = gradioApp().querySelector('#txt2img_prompt > label > textarea');
-    let txt2img_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
-    let img2img_p = gradioApp().querySelector('#img2img_prompt > label > textarea');
-    let img2img_n = gradioApp().querySelector('#img2img_neg_prompt > label > textarea');
-
-    let modifier = "";
-    switch (textArea) {
-        case txt2img_p:
-            modifier = ".txt2img.p";
-            break;
-        case txt2img_n:
-            modifier = ".txt2img.n";
-            break;
-        case img2img_p:
-            modifier = ".img2img.p";
-            break;
-        case img2img_n:
-            modifier = ".img2img.n";
-            break;
-        default:
-            break;
-    }
-    return modifier;
 }
 
 // Create the result list div and necessary styling
@@ -860,11 +834,7 @@ async function setup() {
     }
 
     // Find all textareas
-    let txt2imgTextArea = gradioApp().querySelector('#txt2img_prompt > label > textarea');
-    let img2imgTextArea = gradioApp().querySelector('#img2img_prompt > label > textarea');
-    let txt2imgTextArea_n = gradioApp().querySelector('#txt2img_neg_prompt > label > textarea');
-    let img2imgTextArea_n = gradioApp().querySelector('#img2img_neg_prompt > label > textarea');
-    let textAreas = [txt2imgTextArea, img2imgTextArea, txt2imgTextArea_n, img2imgTextArea_n];
+    let textAreas = getTextAreas();
 
     // Add event listener to apply settings button so we can mirror the changes to our internal config
     let applySettingsButton = gradioApp().querySelector("#tab_settings > div > .gr-button-primary");
@@ -901,7 +871,8 @@ async function setup() {
         let textAreaId = getTextAreaIdentifier(area);
         if ((!CFG.activeIn.img2img && textAreaId.includes("img2img"))
             || (!CFG.activeIn.txt2img && textAreaId.includes("txt2img"))
-            || (!CFG.activeIn.negativePrompts && textAreaId.includes("n"))) {
+            || (!CFG.activeIn.negativePrompts && textAreaId.includes("n"))
+            || (!CFG.activeIn.thirdParty && textAreaId.includes("thirdParty"))) {
             return;
         }
 
