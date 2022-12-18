@@ -1,3 +1,5 @@
+![tag_autocomplete_light_zh](https://user-images.githubusercontent.com/34448969/208307331-430696b4-e854-4458-b9e9-f6a6594f19e1.png)
+
 # Booru tag autocompletion for A1111
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/DominikDoom/a1111-sd-webui-tagcomplete)](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)
