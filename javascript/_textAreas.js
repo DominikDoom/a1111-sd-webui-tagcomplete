@@ -35,8 +35,8 @@ function getTextAreas() {
         } else { // Otherwise, we have to find the text areas by their adjacent labels
             let base = gradioApp().querySelector(entry.base);
 			
-			// Safety check
-			if (!base) continue;
+            // Safety check
+            if (!base) continue;
 			
             let allTextAreas =  [...base.querySelectorAll("textarea")];
             
