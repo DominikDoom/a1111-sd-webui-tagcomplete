@@ -34,6 +34,10 @@ function getTextAreas() {
             textAreas = textAreas.concat([...gradioApp().querySelectorAll(entry.selectors.join(", "))]);
         } else { // Otherwise, we have to find the text areas by their adjacent labels
             let base = gradioApp().querySelector(entry.base);
+			
+			// Safety check
+			if (!base) continue;
+			
             let allTextAreas =  [...base.querySelectorAll("textarea")];
             
             // Filter the text areas where the adjacent label matches one of the selectors
