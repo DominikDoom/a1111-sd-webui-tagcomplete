@@ -4,6 +4,7 @@
 import gradio as gr
 from pathlib import Path
 from modules import scripts, script_callbacks, shared
+import yaml
 
 # Webui root path
 FILE_DIR = Path().absolute()
@@ -53,6 +54,30 @@ def get_ext_wildcards():
     return wildcard_files
 
 
+def get_ext_wildcard_tags():
+    """Returns a list of all tags found in extension YAML files found under a Tags: key."""
+    wildcard_tags = {} # { tag: count }
+    yaml_files = []
+    for path in WILDCARD_EXT_PATHS:
+        yaml_files.extend(p for p in path.rglob("*.yml"))
+        yaml_files.extend(p for p in path.rglob("*.yaml"))
+    for path in yaml_files:
+        try:
+            with open(path, encoding="utf8") as file:
+                data = yaml.safe_load(file)
+                for item in data:
+                    for _, tag in enumerate(data[item]['Tags']):
+                        if tag not in wildcard_tags:
+                            wildcard_tags[tag] = 1
+                        else:
+                            wildcard_tags[tag] += 1
+        except yaml.YAMLError as exc:
+            print(exc)
+    output = []
+    for tag, count in wildcard_tags.items():
+        output.append(f"{tag},{count}")
+    return output
+
 def get_embeddings():
     """Returns a list of all embeddings"""
     return [str(e.relative_to(EMB_PATH)) for e in EMB_PATH.glob("**/*") if e.suffix in {".bin", ".pt", ".png"}]
@@ -97,6 +122,7 @@ if not TEMP_PATH.exists():
 # even if no wildcards or embeddings are found
 write_to_temp_file('wc.txt', [])
 write_to_temp_file('wce.txt', [])
+write_to_temp_file('wcet.txt', [])
 write_to_temp_file('emb.txt', [])
 
 # Write wildcards to wc.txt if found
@@ -110,6 +136,12 @@ if WILDCARD_EXT_PATHS is not None:
     wildcards_ext = get_ext_wildcards()
     if wildcards_ext:
         write_to_temp_file('wce.txt', wildcards_ext)
+
+# Write extension wildcards to wce.txt if found
+if WILDCARD_EXT_PATHS is not None:
+    wildcards_ext = get_ext_wildcard_tags()
+    if wildcards_ext:
+        write_to_temp_file('wcet.txt', wildcards_ext)
 
 # Write embeddings to emb.txt if found
 if EMB_PATH.exists():
