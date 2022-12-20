@@ -343,6 +343,9 @@ function escapeHTML(unsafeText) {
 
 const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const TAG_REGEX = /(<[^\t\n\r,>]+>?|[^\s,|<>]+|<)/g
+const WC_REGEX = /\b__([^, ]+)__([^, ]*)\b/g;
+const UMI_PROMPT_REGEX = /<[^\s]*?\[[^,<>]*[\]|]?>?/g;
+const UMI_TAG_REGEX = /(?:\[|\||--)([^<>\[\]\-|]+)/g;
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -413,8 +416,8 @@ function insertTextAtCursor(textArea, result, tagword) {
 
     // If it was a yaml wildcard, also update the umiPreviousTags
     if (tagType === "yamlWildcard" && originalTagword.length > 0) {
-        let umiSubPrompt = originalTagword.match(/<[^\s]*?\[[^,<>]*[\]|]?>?/g)[0];
-        umiPreviousTags = [...umiSubPrompt.matchAll(/(?:\[|\||--)([^<>\[\]\-|]+)/g)].map(x => x[1]);
+        let umiSubPrompt = originalTagword.match(UMI_PROMPT_REGEX)[0];
+        umiPreviousTags = [...umiSubPrompt.matchAll(UMI_TAG_REGEX)].map(x => x[1]);
     }
 
     // Hide results after inserting
@@ -616,9 +619,9 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
     tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
 
-    if (CFG.useWildcards && [...tagword.matchAll(/\b__([^, ]+)__([^, ]*)\b/g)].length > 0) {
+    if (CFG.useWildcards && [...tagword.matchAll(WC_REGEX)].length > 0) {
         // Show wildcards from a file with that name
-        wcMatch = [...tagword.matchAll(/\b__([^, ]+)__([^, ]*)\b/g)]
+        wcMatch = [...tagword.matchAll(WC_REGEX)]
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
 
@@ -645,10 +648,10 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             tempResults = wildcardFiles.concat(wildcardExtFiles);
         }
         results = tempResults.map(x => ["Wildcards: " + x[1].trim(), "wildcardFile"]); // Mark as wildcard
-    } else if (CFG.useWildcards && tagword.match(/<[^\s]*?\[[^,<>]*[\]|]?>?/g)) {
+    } else if (CFG.useWildcards && tagword.match(UMI_PROMPT_REGEX)) {
         // We are in a UMI yaml tag definition, parse further
-        let umiSubPrompt = tagword.match(/<[^\s]*?\[[^,<>]*[\]|]?>?/g)[0];
-        let umiTags = [...umiSubPrompt.matchAll(/(?:\[|\||--)([^<>\[\]\-|]+)/g)].map(x => x[1]);
+        let umiSubPrompt = tagword.match(UMI_PROMPT_REGEX)[0];
+        let umiTags = [...umiSubPrompt.matchAll(UMI_TAG_REGEX)].map(x => x[1]);
         if (umiTags.length > 0) {
             // Get difference for subprompt
             let diff = difference(umiTags, umiPreviousTags);
