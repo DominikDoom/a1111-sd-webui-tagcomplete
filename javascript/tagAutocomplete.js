@@ -344,8 +344,8 @@ function escapeHTML(unsafeText) {
 const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const TAG_REGEX = /(<[^\t\n\r,>]+>?|[^\s,|<>]+|<)/g
 const WC_REGEX = /\b__([^, ]+)__([^, ]*)\b/g;
-const UMI_PROMPT_REGEX = /<[^\s]*?\[[^,<>]*[\]|]?>?/g;
-const UMI_TAG_REGEX = /(?:\[|\||--)([^<>\[\]\-|]+)/g;
+const UMI_PROMPT_REGEX = /<[^\s]*?\[[^,<>]*[\]|]?>?/gi;
+const UMI_TAG_REGEX = /(?:\[|\||--)([^<>\[\]\-|]+)/gi;
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -416,8 +416,24 @@ function insertTextAtCursor(textArea, result, tagword) {
 
     // If it was a yaml wildcard, also update the umiPreviousTags
     if (tagType === "yamlWildcard" && originalTagword.length > 0) {
-        let umiSubPrompt = originalTagword.match(UMI_PROMPT_REGEX)[0];
-        umiPreviousTags = [...umiSubPrompt.matchAll(UMI_TAG_REGEX)].map(x => x[1]);
+        let editStart = Math.max(cursorPos - tagword.length, 0);
+        let editEnd = Math.min(cursorPos + tagword.length, originalTagword.length);
+        let surrounding = originalTagword.substring(editStart, editEnd);
+        let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`), "i"));
+        let insert = surrounding.replace(match, sanitizedText);
+
+        let modifiedTagword = prompt.substring(0, editStart) + insert + prompt.substring(editEnd);
+        let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
+
+        let umiTags = [];
+        umiSubPrompts.forEach(umiSubPrompt => {
+            umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
+        });
+
+        umiPreviousTags = umiTags;
+
+        console.log("updated: " + umiPreviousTags)
+        hideResults(textArea);
     }
 
     // Hide results after inserting
@@ -648,20 +664,29 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             tempResults = wildcardFiles.concat(wildcardExtFiles);
         }
         results = tempResults.map(x => ["Wildcards: " + x[1].trim(), "wildcardFile"]); // Mark as wildcard
-    } else if (CFG.useWildcards && tagword.match(UMI_PROMPT_REGEX)) {
+    } else if (CFG.useWildcards && [...tagword.matchAll(UMI_PROMPT_REGEX)].length > 0) {
         // We are in a UMI yaml tag definition, parse further
-        let umiSubPrompt = tagword.match(UMI_PROMPT_REGEX)[0];
-        let umiTags = [...umiSubPrompt.matchAll(UMI_TAG_REGEX)].map(x => x[1]);
+        let umiSubPrompts = [...prompt.matchAll(UMI_PROMPT_REGEX)];
+        
+        let umiTags = [];
+        umiSubPrompts.forEach(umiSubPrompt => {
+            umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
+        });
+        
         if (umiTags.length > 0) {
             // Get difference for subprompt
+            let tagCountChange = umiTags.length - umiPreviousTags.length;
             let diff = difference(umiTags, umiPreviousTags);
             umiPreviousTags = umiTags;
 
             // Show all condition
-            let showAll = umiSubPrompt.endsWith("[") || umiSubPrompt.endsWith("[--") || umiSubPrompt.endsWith("|");
+            let currentSubPrompt = umiSubPrompts.find(x => x[0].includes(tagword[0]))[0];
+            let showAll = currentSubPrompt.endsWith("[") || currentSubPrompt.endsWith("[--") || currentSubPrompt.endsWith("|");
+
+            console.log(currentSubPrompt, umiTags, diff, tagCountChange)
 
             // Exit early if the user closed the bracket manually
-            if ((!diff || diff.length === 0) && (!showAll || umiSubPrompt.endsWith("]"))) {
+            if ((!diff || diff.length === 0 || (diff.length === 1 && tagCountChange < 0)) && !showAll) {
                 if (!hideBlocked) hideResults(textArea);
                 return;
             }
@@ -669,6 +694,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             let umiTagword = diff[0];
             let tempResults = [];
             if (umiTagword && umiTagword.length > 0) {
+                umiTagword = umiTagword.toLowerCase().replace(/[\n\r]/g, "");
                 originalTagword = tagword;
                 tagword = umiTagword;
 
@@ -679,9 +705,13 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 results = tempResults.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
             } else if (showAll) {
                 results = yamlWildcards.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+                originalTagword = tagword;
+                tagword = "";
             }
         } else {
             results = yamlWildcards.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+            originalTagword = tagword;
+            tagword = "";
         }
     } else if (CFG.useEmbeddings && tagword.match(/<[^,> ]*>?/g)) {
         // Show embeddings
