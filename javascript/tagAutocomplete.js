@@ -342,7 +342,7 @@ function escapeHTML(unsafeText) {
 }
 
 const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
-const TAG_REGEX = /([^\s,|]+)/g
+const TAG_REGEX = /(<[^\t\n\r,>]+>?|[^\s,|<>]+|<)/g
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -358,6 +358,8 @@ function insertTextAtCursor(textArea, result, tagword) {
         sanitizedText = "__" + text.replace("Wildcards: ", "") + "__";
     } else if (tagType === "wildcardTag") {
         sanitizedText = text.replace(/^.*?: /g, "");
+    } else if (tagType === "yamlWildcard" && !yamlWildcards.includes(text)) {
+        sanitizedText = text.replaceAll("_", " "); // Replace underscores only if the yaml tag is not using them
     } else if (tagType === "embedding") {
         sanitizedText = `<${text.replace(/^.*?: /g, "")}>`;
     } else {
@@ -382,7 +384,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
     var optionalComma = "";
-    if (CFG.appendComma && tagType !== "wildcardFile") {
+    if (CFG.appendComma && tagType !== "wildcardFile" && tagType !== "yamlWildcard") {
         optionalComma = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ", ";
     }
 
@@ -408,6 +410,12 @@ function insertTextAtCursor(textArea, result, tagword) {
             .concat(weightedTags);
     }
     previousTags = tags;
+
+    // If it was a yaml wildcard, also update the umiPreviousTags
+    if (tagType === "yamlWildcard" && originalTagword.length > 0) {
+        let umiSubPrompt = originalTagword.match(/<[^\s]*?\[[^,<>]*[\]|]?>?/g)[0];
+        umiPreviousTags = [...umiSubPrompt.matchAll(/(?:\[|\||--)([^<>\[\]\-|]+)/g)].map(x => x[1]);
+    }
 
     // Hide results after inserting
     if (tagType === "wildcardFile") {
@@ -490,18 +498,20 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Add post count & color if it's a tag
         // Wildcards & Embeds have no tag type
         if (!result[1].startsWith("wildcard") && result[1] !== "embedding") {
-            // Set the color of the tag
-            let tagType = result[1];
-            let colorGroup = tagColors[tagFileName];
-            // Default to danbooru scheme if no matching one is found
-            if (!colorGroup)
-                colorGroup = tagColors["danbooru"];
+            if (!result[1].startsWith("yaml")) {
+                // Set the color of the tag
+                let tagType = result[1];
+                let colorGroup = tagColors[tagFileName];
+                // Default to danbooru scheme if no matching one is found
+                if (!colorGroup)
+                    colorGroup = tagColors["danbooru"];
 
-            // Set tag type to invalid if not found
-            if (!colorGroup[tagType])
-                tagType = "-1";
+                // Set tag type to invalid if not found
+                if (!colorGroup[tagType])
+                    tagType = "-1";
 
-            itemText.style = `color: ${colorGroup[tagType][mode]};`;
+                itemText.style = `color: ${colorGroup[tagType][mode]};`;
+            }
 
             // Post count
             if (result[2] && !isNaN(result[2])) {
@@ -555,9 +565,12 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
 
 var wildcardFiles = [];
 var wildcardExtFiles = [];
+var yamlWildcards = [];
+var umiPreviousTags = [];
 var embeddings = [];
 var results = [];
 var tagword = "";
+var originalTagword = "";
 var resultCount = 0;
 async function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
@@ -575,8 +588,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let weightedTags = [...prompt.matchAll(WEIGHT_REGEX)]
             .map(match => match[1]);
         let tags = prompt.match(TAG_REGEX)
-        if (weightedTags !== null) {
-            tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted)))
+        if (weightedTags !== null && tags !== null) {
+            tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted) && !tag.startsWith("<[")))
                 .concat(weightedTags);
         }
 
@@ -632,6 +645,41 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             tempResults = wildcardFiles.concat(wildcardExtFiles);
         }
         results = tempResults.map(x => ["Wildcards: " + x[1].trim(), "wildcardFile"]); // Mark as wildcard
+    } else if (CFG.useWildcards && tagword.match(/<[^\s]*?\[[^,<>]*[\]|]?>?/g)) {
+        // We are in a UMI yaml tag definition, parse further
+        let umiSubPrompt = tagword.match(/<[^\s]*?\[[^,<>]*[\]|]?>?/g)[0];
+        let umiTags = [...umiSubPrompt.matchAll(/(?:\[|\||--)([^<>\[\]\-|]+)/g)].map(x => x[1]);
+        if (umiTags.length > 0) {
+            // Get difference for subprompt
+            let diff = difference(umiTags, umiPreviousTags);
+            umiPreviousTags = umiTags;
+
+            // Show all condition
+            let showAll = umiSubPrompt.endsWith("[") || umiSubPrompt.endsWith("[--") || umiSubPrompt.endsWith("|");
+
+            // Exit early if the user closed the bracket manually
+            if ((!diff || diff.length === 0) && (!showAll || umiSubPrompt.endsWith("]"))) {
+                if (!hideBlocked) hideResults(textArea);
+                return;
+            }
+
+            let umiTagword = diff[0];
+            let tempResults = [];
+            if (umiTagword && umiTagword.length > 0) {
+                originalTagword = tagword;
+                tagword = umiTagword;
+
+                let searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(umiTagword)}`, 'i')
+                let baseFilter = x => x[0].toLowerCase().search(searchRegex) > -1;
+                let spaceIncludeFilter = x => x[0].toLowerCase().replaceAll(" ", "_").search(searchRegex) > -1;
+                tempResults = yamlWildcards.filter(x => baseFilter(x) || spaceIncludeFilter(x)) // Filter by tagword
+                results = tempResults.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+            } else if (showAll) {
+                results = yamlWildcards.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+            }
+        } else {
+            results = yamlWildcards.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+        }
     } else if (CFG.useEmbeddings && tagword.match(/<[^,> ]*>?/g)) {
         // Show embeddings
         let tempResults = [];
@@ -662,13 +710,13 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         }    
         // If onlyShowAlias is enabled, we don't need to include normal results
         if (CFG.alias.onlyShowAlias) {
-            results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) >- 1);
+            results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) > -1);
         } else {
             // Else both normal tags and aliases/translations are included depending on the config
-            let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) >- 1;
-            let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) >- 1;
-            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) >- 1)
-                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) >- 1);
+            let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) > -1;
+            let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) > -1;
+            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) > -1)
+                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) > -1);
             
             let fil;
             if (CFG.alias.searchByAlias && CFG.translation.searchByTranslation)
@@ -820,6 +868,16 @@ async function setup() {
             }
         } catch (e) {
             console.error("Error loading wildcards: " + e);
+        }
+    }
+    // Load yaml wildcards
+    if (yamlWildcards.length === 0) {
+        try {
+            let yamlTags = (await readFile(`${tagBasePath}/temp/wcet.txt?${new Date().getTime()}`)).split("\n");
+            // Split into tag, count pairs
+            yamlWildcards = yamlTags.map(x => x.trim().split(","));
+        } catch (e) {
+            console.error("Error loading yaml wildcards: " + e);
         }
     }
     // Load embeddings
