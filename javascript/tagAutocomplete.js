@@ -680,10 +680,9 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             umiPreviousTags = umiTags;
 
             // Show all condition
-            let currentSubPrompt = umiSubPrompts.find(x => x[0].includes(tagword[0]))[0];
-            let showAll = currentSubPrompt.endsWith("[") || currentSubPrompt.endsWith("[--") || currentSubPrompt.endsWith("|");
+            let showAll = tagword.endsWith("[") || tagword.endsWith("[--") || tagword.endsWith("|");
 
-            console.log(currentSubPrompt, umiTags, diff, tagCountChange)
+            console.log(tagword, umiTags, diff, tagCountChange)
 
             // Exit early if the user closed the bracket manually
             if ((!diff || diff.length === 0 || (diff.length === 1 && tagCountChange < 0)) && !showAll) {
