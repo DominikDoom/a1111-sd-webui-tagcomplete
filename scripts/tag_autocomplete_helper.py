@@ -73,8 +73,10 @@ def get_ext_wildcard_tags():
                             wildcard_tags[tag] += 1
         except yaml.YAMLError as exc:
             print(exc)
+    # Sort by count
+    sorted_tags = sorted(wildcard_tags.items(), key=lambda item: item[1], reverse=True)
     output = []
-    for tag, count in wildcard_tags.items():
+    for tag, count in sorted_tags:
         output.append(f"{tag},{count}")
     return output
 
@@ -136,12 +138,10 @@ if WILDCARD_EXT_PATHS is not None:
     wildcards_ext = get_ext_wildcards()
     if wildcards_ext:
         write_to_temp_file('wce.txt', wildcards_ext)
-
-# Write extension wildcards to wce.txt if found
-if WILDCARD_EXT_PATHS is not None:
-    wildcards_ext = get_ext_wildcard_tags()
-    if wildcards_ext:
-        write_to_temp_file('wcet.txt', wildcards_ext)
+    # Write yaml extension wildcards to wcet.txt if found
+    wildcards_yaml_ext = get_ext_wildcard_tags()
+    if wildcards_yaml_ext:
+        write_to_temp_file('wcet.txt', wildcards_yaml_ext)
 
 # Write embeddings to emb.txt if found
 if EMB_PATH.exists():
