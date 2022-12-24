@@ -132,7 +132,7 @@ var translations = new Map();
 
 async function loadTags(c) {
     // Load main tags and aliases
-    if (allTags.length === 0) {
+    if (allTags.length === 0 && c.tagFile && c.tagFile !== "None") {
         try {
             allTags = await loadCSV(`${tagBasePath}/${c.tagFile}?${new Date().getTime()}`);
         } catch (e) {
