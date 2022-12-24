@@ -669,9 +669,54 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let umiSubPrompts = [...prompt.matchAll(UMI_PROMPT_REGEX)];
         
         let umiTags = [];
+        let umiTagsWithOperators = []
         umiSubPrompts.forEach(umiSubPrompt => {
             umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
+            umiTagsWithOperators = umiTagsWithOperators.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)]);
         });
+
+        // UMI tag matching for narrowed down tag counts
+        const partition = (arr, predicate) => arr.reduce((acc, val, i, arr) => {
+            acc[predicate(val, i, arr) ? 0 : 1].push(val);
+            return acc;
+        }, [[], []]);
+
+        const [positiveAndOptional, negative] = partition(umiTagsWithOperators, x => !x[0].startsWith("--"));
+
+        const [positive, optional] = partition(
+            positiveAndOptional,
+            (x, i, arr) => 
+                x[0].startsWith("[")
+                && x.input.endsWith("|"), // bad condition, find a better one
+        ); 
+            
+        const matches = {
+            neg: negative.map(x => x[1].toLowerCase()),
+            pos: positive.map(x => x[1].toLowerCase()),
+            opt: optional.map(x => x[1].toLowerCase())
+        };
+
+        const filteredWildcards = (tagword) => {
+            // TODO; fix optional tagword matching, rn the top level is too greedy and makes finding out if this is an optional tagword impossible
+            const tagwordIsOptional = matches.opt.includes(tagword);
+            console.log('tagwordIsOptional', tagwordIsOptional)
+            const wildcards = yamlWildcards.filter(x => {
+                let tags = x[1];
+                const matchesNeg = matches.neg.length === 0 || matches.neg.every(x => x === tagword || !tags[x]);
+                if (!matchesNeg) return false;
+                const matchesPos = matches.pos.length === 0 || matches.pos.every(x => x === tagword || tags[x]);
+                if (!matchesPos) return false;
+                const matchesOpt = matches.opt.length === 0 || tagwordIsOptional || matches.opt.some(x => x !== tagword && tags[x]);
+                if (!matchesOpt) return false;
+                return true;
+            }).reduce((acc, val) => {
+                Object.keys(val[1]).forEach(tag => acc[tag] = acc[tag] + 1 || 1);
+                return acc;
+            }, {});
+            console.log(wildcards);
+
+            return Object.entries(wildcards).sort((a, b) => b[1] - a[1]).filter(x => x[0] === tagword || !umiTags.includes(x[0]));
+        }
         
         if (umiTags.length > 0) {
             // Get difference for subprompt
@@ -682,7 +727,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             // Show all condition
             let showAll = tagword.endsWith("[") || tagword.endsWith("[--") || tagword.endsWith("|");
 
-            console.log(tagword, umiTags, diff, tagCountChange)
+            console.log(tagword, umiTags, diff, tagCountChange, umiTagsWithOperators)
 
             // Exit early if the user closed the bracket manually
             if ((!diff || diff.length === 0 || (diff.length === 1 && tagCountChange < 0)) && !showAll) {
@@ -696,19 +741,21 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 umiTagword = umiTagword.toLowerCase().replace(/[\n\r]/g, "");
                 originalTagword = tagword;
                 tagword = umiTagword;
-
+                let filteredWildcardsSorted = filteredWildcards(umiTagword);
                 let searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(umiTagword)}`, 'i')
                 let baseFilter = x => x[0].toLowerCase().search(searchRegex) > -1;
                 let spaceIncludeFilter = x => x[0].toLowerCase().replaceAll(" ", "_").search(searchRegex) > -1;
-                tempResults = yamlWildcards.filter(x => baseFilter(x) || spaceIncludeFilter(x)) // Filter by tagword
+                tempResults = filteredWildcardsSorted.filter(x => baseFilter(x) || spaceIncludeFilter(x)) // Filter by tagword
                 results = tempResults.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
             } else if (showAll) {
-                results = yamlWildcards.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+                let filteredWildcardsSorted = filteredWildcards("");
+                results = filteredWildcardsSorted.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
                 originalTagword = tagword;
                 tagword = "";
             }
         } else {
-            results = yamlWildcards.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+            let filteredWildcardsSorted = filteredWildcards("");
+            results = filteredWildcardsSorted.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
             originalTagword = tagword;
             tagword = "";
         }
@@ -907,7 +954,16 @@ async function setup() {
         try {
             let yamlTags = (await readFile(`${tagBasePath}/temp/wcet.txt?${new Date().getTime()}`)).split("\n");
             // Split into tag, count pairs
-            yamlWildcards = yamlTags.map(x => x.trim().split(","));
+            yamlWildcards = yamlTags.map(x => x
+                .trim()
+                .split(","))
+                .map(([i, ...rest]) => [
+                    i,
+                    rest.reduce((a, b) => {
+                        a[b.toLowerCase()] = true;
+                        return a;
+                    }, {}),
+                ]);
         } catch (e) {
             console.error("Error loading yaml wildcards: " + e);
         }

@@ -61,16 +61,14 @@ def get_ext_wildcard_tags():
     for path in WILDCARD_EXT_PATHS:
         yaml_files.extend(p for p in path.rglob("*.yml"))
         yaml_files.extend(p for p in path.rglob("*.yaml"))
+    count = 0
     for path in yaml_files:
         try:
             with open(path, encoding="utf8") as file:
                 data = yaml.safe_load(file)
                 for item in data:
-                    for _, tag in enumerate(data[item]['Tags']):
-                        if tag not in wildcard_tags:
-                            wildcard_tags[tag] = 1
-                        else:
-                            wildcard_tags[tag] += 1
+                    wildcard_tags[count] = ','.join(data[item]['Tags'])
+                    count += 1
         except yaml.YAMLError as exc:
             print(exc)
     # Sort by count
