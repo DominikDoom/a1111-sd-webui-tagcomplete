@@ -132,7 +132,7 @@ var translations = new Map();
 
 async function loadTags(c) {
     // Load main tags and aliases
-    if (allTags.length === 0) {
+    if (allTags.length === 0 && c.tagFile && c.tagFile !== "None") {
         try {
             allTags = await loadCSV(`${tagBasePath}/${c.tagFile}?${new Date().getTime()}`);
         } catch (e) {
@@ -670,52 +670,103 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         
         let umiTags = [];
         let umiTagsWithOperators = []
+
+        const insertAt = (str,char,pos) => str.slice(0,pos) + char + str.slice(pos);
+
         umiSubPrompts.forEach(umiSubPrompt => {
             umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
-            umiTagsWithOperators = umiTagsWithOperators.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)]);
+            
+            const start = umiSubPrompt.index;
+            const end = umiSubPrompt.index + umiSubPrompt[0].length;
+            if (textArea.selectionStart >= start && textArea.selectionStart <= end) {
+                umiTagsWithOperators = insertAt(umiSubPrompt[0], '###', textArea.selectionStart - start);
+            }
         });
 
-        // UMI tag matching for narrowed down tag counts
-        const partition = (arr, predicate) => arr.reduce((acc, val, i, arr) => {
-            acc[predicate(val, i, arr) ? 0 : 1].push(val);
+        const promptSplitToTags = umiTagsWithOperators.replace(']###[', '][').split("][");
+
+        const clean = (str) => str
+            .replaceAll('>', '')
+            .replaceAll('<', '')
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .trim();
+
+        const matches = promptSplitToTags.reduce((acc, curr) => {
+            isOptional = curr.includes("|");
+            isNegative = curr.startsWith("--");
+            let out;
+            if (isOptional) {
+                out = {
+                    hasCursor: curr.includes("###"),
+                    tags: clean(curr).split('|').map(x => ({ 
+                        hasCursor: x.includes("###"), 
+                        isNegative: x.startsWith("--"),
+                        tag: clean(x).replaceAll("###", '').replaceAll("--", '')
+                    }))
+                };
+                acc.optional.push(out);
+                acc.all.push(...out.tags.map(x => x.tag));
+            } else if (isNegative) {
+                out = {
+                    hasCursor: curr.includes("###"),
+                    tags: clean(curr).replaceAll("###", '').split('|'),
+                };
+                out.tags = out.tags.map(x => x.startsWith("--") ? x.substring(2) : x);
+                acc.negative.push(out);
+                acc.all.push(...out.tags);
+            } else {
+                out = {
+                    hasCursor: curr.includes("###"),
+                    tags: clean(curr).replaceAll("###", '').split('|'),
+                };
+                acc.positive.push(out);
+                acc.all.push(...out.tags);
+            }
             return acc;
-        }, [[], []]);
+        }, { positive: [], negative: [], optional: [], all: [] });
 
-        const [positiveAndOptional, negative] = partition(umiTagsWithOperators, x => !x[0].startsWith("--"));
-
-        const [positive, optional] = partition(
-            positiveAndOptional,
-            (x, i, arr) => 
-                x[0].startsWith("[")
-                && x.input.endsWith("|"), // bad condition, find a better one
-        ); 
-            
-        const matches = {
-            neg: negative.map(x => x[1].toLowerCase()),
-            pos: positive.map(x => x[1].toLowerCase()),
-            opt: optional.map(x => x[1].toLowerCase())
-        };
+        console.log({ matches })
 
         const filteredWildcards = (tagword) => {
-            // TODO; fix optional tagword matching, rn the top level is too greedy and makes finding out if this is an optional tagword impossible
-            const tagwordIsOptional = matches.opt.includes(tagword);
-            console.log('tagwordIsOptional', tagwordIsOptional)
             const wildcards = yamlWildcards.filter(x => {
                 let tags = x[1];
-                const matchesNeg = matches.neg.length === 0 || matches.neg.every(x => x === tagword || !tags[x]);
+                const matchesNeg =
+                    matches.negative.length === 0
+                    || matches.negative.every(x => 
+                        x.hasCursor 
+                        || x.tags.every(t => !tags[t])
+                    );
                 if (!matchesNeg) return false;
-                const matchesPos = matches.pos.length === 0 || matches.pos.every(x => x === tagword || tags[x]);
+                const matchesPos =
+                    matches.positive.length === 0
+                    || matches.positive.every(x =>
+                        x.hasCursor
+                        || x.tags.every(t => tags[t])
+                    );
                 if (!matchesPos) return false;
-                const matchesOpt = matches.opt.length === 0 || tagwordIsOptional || matches.opt.some(x => x !== tagword && tags[x]);
+                const matchesOpt =
+                    matches.optional.length === 0
+                    || matches.optional.some(x =>
+                        x.tags.some(t =>
+                            t.hasCursor
+                            || t.isNegative
+                                ? !tags[t.tag]
+                                : tags[t.tag]
+                    ));
                 if (!matchesOpt) return false;
                 return true;
             }).reduce((acc, val) => {
                 Object.keys(val[1]).forEach(tag => acc[tag] = acc[tag] + 1 || 1);
                 return acc;
             }, {});
-            console.log(wildcards);
 
-            return Object.entries(wildcards).sort((a, b) => b[1] - a[1]).filter(x => x[0] === tagword || !umiTags.includes(x[0]));
+            return Object.entries(wildcards)
+                .sort((a, b) => b[1] - a[1])
+                .filter(x =>
+                    x[0] === tagword
+                    || !matches.all.includes(x[0])
+                );
         }
         
         if (umiTags.length > 0) {
@@ -727,15 +778,13 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             // Show all condition
             let showAll = tagword.endsWith("[") || tagword.endsWith("[--") || tagword.endsWith("|");
 
-            console.log(tagword, umiTags, diff, tagCountChange, umiTagsWithOperators)
-
             // Exit early if the user closed the bracket manually
             if ((!diff || diff.length === 0 || (diff.length === 1 && tagCountChange < 0)) && !showAll) {
                 if (!hideBlocked) hideResults(textArea);
                 return;
             }
 
-            let umiTagword = diff[0];
+            let umiTagword = diff[0] || '';
             let tempResults = [];
             if (umiTagword && umiTagword.length > 0) {
                 umiTagword = umiTagword.toLowerCase().replace(/[\n\r]/g, "");
@@ -817,6 +866,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
     // Guard for empty results
     if (!results.length) {
+        console.log('No results found for "' + tagword + '"');
         hideResults(textArea);
         return;
     }
