@@ -432,7 +432,6 @@ function insertTextAtCursor(textArea, result, tagword) {
 
         umiPreviousTags = umiTags;
 
-        console.log("updated: " + umiPreviousTags)
         hideResults(textArea);
     }
 
@@ -726,7 +725,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             return acc;
         }, { positive: [], negative: [], optional: [], all: [] });
 
-        console.log({ matches })
+        //console.log({ matches })
 
         const filteredWildcards = (tagword) => {
             const wildcards = yamlWildcards.filter(x => {
@@ -866,7 +865,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
     // Guard for empty results
     if (!results.length) {
-        console.log('No results found for "' + tagword + '"');
+        //console.log('No results found for "' + tagword + '"');
         hideResults(textArea);
         return;
     }
