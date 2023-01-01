@@ -7,7 +7,9 @@ const styleColors = {
     "--results-bg-odd": ["#111827", "#f9fafb"],
     "--results-hover": ["#1f2937", "#f5f6f8"],
     "--results-selected": ["#374151", "#e5e7eb"],
-    "--post-count-color": ["#6b6f7b", "#a2a9b4"]
+    "--post-count-color": ["#6b6f7b", "#a2a9b4"],
+    "--embedding-v1-color": ["lightsteelblue", "#2b5797"],
+    "--embedding-v2-color": ["skyblue", "#2d89ef"],
 }
 const browserVars = {
     "--results-overflow-y": {
@@ -65,6 +67,12 @@ const autocompleteCSS = `
         padding: 0 0 0 15px;
         flex-grow: 1;
         color: var(--post-count-color);
+    }
+    .acListItem.acEmbeddingV1 {
+        color: var(--embedding-v1-color);
+    }
+    .acListItem.acEmbeddingV2 {
+        color: var(--embedding-v2-color);
     }
 `;
 
@@ -364,7 +372,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     } else if (tagType === "yamlWildcard" && !yamlWildcards.includes(text)) {
         sanitizedText = text.replaceAll("_", " "); // Replace underscores only if the yaml tag is not using them
     } else if (tagType === "embedding") {
-        sanitizedText = `<${text.replace(/^.*?: /g, "")}>`;
+        sanitizedText = `${text.replace(/^.*?: /g, "")}`;
     } else {
         sanitizedText = CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
     }
@@ -422,7 +430,6 @@ function insertTextAtCursor(textArea, result, tagword) {
         let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`), "i"));
         let insert = surrounding.replace(match, sanitizedText);
 
-        let modifiedTagword = prompt.substring(0, editStart) + insert + prompt.substring(editEnd);
         let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
 
         let umiTags = [];
@@ -549,6 +556,17 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 countDiv.classList.add("acPostCount");
                 flexDiv.appendChild(countDiv);
             }
+        } else if (result[1] === "embedding" && result[2]) { // Check if it is an embedding we have version info for
+            let versionDiv = document.createElement("div");
+            versionDiv.textContent = result[2];
+            versionDiv.classList.add("acPostCount");
+
+            if (result[2].startsWith("v1"))
+                itemText.classList.add("acEmbeddingV1");
+            else if (result[2].startsWith("v2"))
+                itemText.classList.add("acEmbeddingV2");
+                
+            flexDiv.appendChild(versionDiv);
         }
 
         // Add listener
@@ -811,7 +829,14 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Show embeddings
         let tempResults = [];
         if (tagword !== "<") {
-            tempResults = embeddings.filter(x => x.toLowerCase().includes(tagword.replace("<", ""))) // Filter by tagword
+            let searchTerm = tagword.replace("<", "")
+            let versionString;
+            if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
+                versionString = searchTerm.slice(0, 2);
+                searchTerm = searchTerm.slice(2);
+            }
+            let versionCondition = x => x[1] && x[1] === versionString;
+            tempResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm) && versionCondition(x)); // Filter by tagword
         } else {
             tempResults = embeddings;
         }
@@ -825,7 +850,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
         }
         genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
-        results = genericResults.concat(tempResults.map(x => ["Embeddings: " + x.trim(), "embedding"])); // Mark as embedding
+        results = tempResults.map(x => [x[0].trim(), "embedding", x[1] + " Embedding"]).concat(genericResults); // Mark as embedding
     } else {
         // Create escaped search regex with support for * as a start placeholder
         let searchRegex;
@@ -1022,7 +1047,7 @@ async function setup() {
         try {
             embeddings = (await readFile(`${tagBasePath}/temp/emb.txt?${new Date().getTime()}`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.replace(".bin", "").replace(".pt", "").replace(".png", "")); // Remove file extensions
+                .map(x => x.trim().split(",")); // Split into name, version type pairs
         } catch (e) {
             console.error("Error loading embeddings.txt: " + e);
         }
