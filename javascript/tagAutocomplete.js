@@ -1059,10 +1059,7 @@ async function setup() {
     let textAreas = getTextAreas();
 
     // Add event listener to apply settings button so we can mirror the changes to our internal config
-    let applySettingsButton = (
-        gradioApp().querySelector("#tab_settings > div > .gr-button-primary") ||
-        gradioApp().querySelector("#tab_settings > div > div > #settings_submit")
-    );
+    let applySettingsButton = gradioApp().querySelector("#tab_settings #settings_submit") || gradioApp().querySelector("#tab_settings > div > .gr-button-primary");
     applySettingsButton.addEventListener("click", () => {
         // Wait 500ms to make sure the settings have been applied to the webui opts object
         setTimeout(async () => { 
