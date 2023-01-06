@@ -986,6 +986,7 @@ function navigateInList(textArea, event) {
 
 // One-time setup, triggered from onUiUpdate
 async function setup() {
+  console.log('One-time setup, triggered from onUiUpdate')
     // Load colors
     CFG["colors"] = (await readFile(`${tagBasePath}/colors.json?${new Date().getTime()}`, true));
 
@@ -1147,15 +1148,17 @@ async function setup() {
     }
     gradioApp().appendChild(acStyle);
 }
-
+let loading = false;
 onUiUpdate(async () => {
+    if (loading) return;
     if (Object.keys(opts).length === 0) return;
     if (CFG) return;
-
+    loading = true;
     // Get our tag base path from the temp file
     tagBasePath = await readFile(`tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
     // Load config from webui opts
     await syncOptions();
     // Rest of setup
     setup();
+    loading = false;
 });
