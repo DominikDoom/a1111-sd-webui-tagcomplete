@@ -128,7 +128,7 @@ def get_embeddings(sd_model):
     except AttributeError:
         print("tag_autocomplete_helper: Old webui version or unrecognized model shape, using fallback for embedding completion.")
         # Get a list of all embeddings in the folder
-        all_embeds = [str(e.relative_to(EMB_PATH)) for e in EMB_PATH.glob("*") if e.suffix in {".bin", ".pt", ".png",'.webp', '.jxl', '.avif'}]
+        all_embeds = [str(e.relative_to(EMB_PATH)) for e in EMB_PATH.rglob("*") if e.suffix in {".bin", ".pt", ".png",'.webp', '.jxl', '.avif'}]
         # Remove files with a size of 0
         all_embeds = [e for e in all_embeds if EMB_PATH.joinpath(e).stat().st_size > 0]
         # Remove file extensions
