@@ -7,7 +7,7 @@ const styleColors = {
     "--results-bg-odd": ["#111827", "#f9fafb"],
     "--results-hover": ["#1f2937", "#f5f6f8"],
     "--results-selected": ["#374151", "#e5e7eb"],
-    "--post-count-color": ["#6b6f7b", "#a2a9b4"],
+    "--meta-text-color": ["#6b6f7b", "#a2a9b4"],
     "--embedding-v1-color": ["lightsteelblue", "#2b5797"],
     "--embedding-v2-color": ["skyblue", "#2d89ef"],
 }
@@ -61,12 +61,12 @@ const autocompleteCSS = `
         overflow: hidden;
         white-space: nowrap;
     }
-    .acPostCount {
+    .acMetaText {
         position: relative;
         text-align: end;
         padding: 0 0 0 15px;
         flex-grow: 1;
-        color: var(--post-count-color);
+        color: var(--meta-text-color);
     }
     .acListItem.acEmbeddingV1 {
         color: var(--embedding-v1-color);
@@ -263,20 +263,20 @@ let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 function insertTextAtCursor(textArea, result, tagword) {
-    let text = result[0];
-    let tagType = result[1];
+    let text = result.text;
+    let tagType = result.type;
 
     let cursorPos = textArea.selectionStart;
     var sanitizedText = text
 
     // Replace differently depending on if it's a tag or wildcard
-    if (tagType === "wildcardFile") {
+    if (tagType === ResultType.wildcardFile) {
         sanitizedText = "__" + text.replace("Wildcards: ", "") + "__";
-    } else if (tagType === "wildcardTag") {
+    } else if (tagType === ResultType.wildcardTag) {
         sanitizedText = text.replace(/^.*?: /g, "");
-    } else if (tagType === "yamlWildcard" && !yamlWildcards.includes(text)) {
+    } else if (tagType === ResultType.yamlWildcard && !yamlWildcards.includes(text)) {
         sanitizedText = text.replaceAll("_", " "); // Replace underscores only if the yaml tag is not using them
-    } else if (tagType === "embedding") {
+    } else if (tagType === ResultType.embedding) {
         sanitizedText = `${text.replace(/^.*?: /g, "")}`;
     } else {
         sanitizedText = CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
@@ -300,7 +300,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
     var optionalComma = "";
-    if (CFG.appendComma && tagType !== "wildcardFile" && tagType !== "yamlWildcard") {
+    if (CFG.appendComma && ![ResultType.wildcardFile, ResultType.yamlWildcard].includes(tagType)) {
         optionalComma = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ", ";
     }
 
@@ -328,13 +328,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     previousTags = tags;
 
     // If it was a yaml wildcard, also update the umiPreviousTags
-    if (tagType === "yamlWildcard" && originalTagword.length > 0) {
-        let editStart = Math.max(cursorPos - tagword.length, 0);
-        let editEnd = Math.min(cursorPos + tagword.length, originalTagword.length);
-        let surrounding = originalTagword.substring(editStart, editEnd);
-        let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`), "i"));
-        let insert = surrounding.replace(match, sanitizedText);
-
+    if (tagType === ResultType.yamlWildcard && originalTagword.length > 0) {
         let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
 
         let umiTags = [];
@@ -348,7 +342,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     }
 
     // Hide results after inserting
-    if (tagType === "wildcardFile") {
+    if (tagType === ResultType.wildcardFile) {
         // If it's a wildcard, we want to keep the results open so the user can select another wildcard
         hideBlocked = true;
         autocomplete(textArea, prompt, sanitizedText);
@@ -391,13 +385,13 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         let displayText = "";
         // If the tag matches the tagword, we don't need to display the alias
-        if (result[3] && !result[0].includes(tagword)) { // Alias
-            let splitAliases = result[3].split(",");
+        if (result.aliases && !result.text.includes(tagword)) { // Alias
+            let splitAliases = result.aliases.split(",");
             let bestAlias = splitAliases.find(a => a.toLowerCase().includes(tagword));
 
             // search in translations if no alias matches
             if (!bestAlias) {
-                let tagOrAlias = pair => pair[0] === result[0] || result[3].split(",").includes(pair[0]);
+                let tagOrAlias = pair => pair[0] === result.text || splitAliases.includes(pair[0]);
                 var tArray = [...translations];
                 if (tArray) {
                     var translationKey = [...translations].find(pair => tagOrAlias(pair) && pair[1].includes(tagword));
@@ -409,43 +403,43 @@ function addResultsToList(textArea, results, tagword, resetList) {
             displayText = escapeHTML(bestAlias);
 
             // Append translation for alias if it exists and is not what the user typed
-            if (translations.has(bestAlias) && translations.get(bestAlias) !== bestAlias && bestAlias !== result[0])
+            if (translations.has(bestAlias) && translations.get(bestAlias) !== bestAlias && bestAlias !== result.text)
                 displayText += `[${translations.get(bestAlias)}]`;
 
-            if (!CFG.alias.onlyShowAlias && result[0] !== bestAlias)
-                displayText += " ➝ " + result[0];
+            if (!CFG.alias.onlyShowAlias && result.text !== bestAlias)
+                displayText += " ➝ " + result.text;
         } else { // No alias
-            displayText = escapeHTML(result[0]);
+            displayText = escapeHTML(result.text);
         }
 
         // Append translation for result if it exists
-        if (translations.has(result[0]))
-            displayText += `[${translations.get(result[0])}]`;
+        if (translations.has(result.text))
+            displayText += `[${translations.get(result.text)}]`;
 
         // Print search term bolded in result
         itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
 
         // Add post count & color if it's a tag
-        // Wildcards & Embeds have no tag type
-        if (!result[1].startsWith("wildcard") && result[1] !== "embedding") {
-            if (!result[1].startsWith("yaml")) {
+        // Wildcards & Embeds have no tag category
+        if (![ResultType.wildcardFile, ResultType.wildcardTag, ResultType.embedding].includes(result.type)) {
+            if (result.category) {
                 // Set the color of the tag
-                let tagType = result[1];
+                let cat = result.category;
                 let colorGroup = tagColors[tagFileName];
                 // Default to danbooru scheme if no matching one is found
                 if (!colorGroup)
                     colorGroup = tagColors["danbooru"];
 
                 // Set tag type to invalid if not found
-                if (!colorGroup[tagType])
-                    tagType = "-1";
+                if (!colorGroup[cat])
+                    cat = "-1";
 
-                itemText.style = `color: ${colorGroup[tagType][mode]};`;
+                itemText.style = `color: ${colorGroup[cat][mode]};`;
             }
 
             // Post count
-            if (result[2] && !isNaN(result[2])) {
-                let postCount = result[2];
+            if (result.count && !isNaN(result.count)) {
+                let postCount = result.count;
                 let formatter;
 
                 // Danbooru formats numbers with a padded fraction for 1M or 1k, but not for 10/100k
@@ -458,20 +452,23 @@ function addResultsToList(textArea, results, tagword, resetList) {
     
                 let countDiv = document.createElement("div");
                 countDiv.textContent = formattedCount;
-                countDiv.classList.add("acPostCount");
+                countDiv.classList.add("acMetaText");
                 flexDiv.appendChild(countDiv);
             }
-        } else if (result[1] === "embedding" && result[2]) { // Check if it is an embedding we have version info for
-            let versionDiv = document.createElement("div");
-            versionDiv.textContent = result[2];
-            versionDiv.classList.add("acPostCount");
+        } else if (result.meta) { // Check if it is an embedding we have version info for
+            let metaDiv = document.createElement("div");
+            metaDiv.textContent = result.meta;
+            metaDiv.classList.add("acMetaText");
 
-            if (result[2].startsWith("v1"))
-                itemText.classList.add("acEmbeddingV1");
-            else if (result[2].startsWith("v2"))
-                itemText.classList.add("acEmbeddingV2");
+            // Add version info classes if it is an embedding
+            if (result.type === ResultType.embedding) {
+                if (result.meta.startsWith("v1"))
+                    itemText.classList.add("acEmbeddingV1");
+                else if (result.meta.startsWith("v2"))
+                    itemText.classList.add("acEmbeddingV2");
+            }
                 
-            flexDiv.appendChild(versionDiv);
+            flexDiv.appendChild(metaDiv);
         }
 
         // Add listener
@@ -555,6 +552,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         tagword = fixedTag;
     }
 
+    results = [];
     tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
 
     if (CFG.useWildcards && [...tagword.matchAll(WC_REGEX)].length > 0) {
@@ -574,8 +572,13 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let wildcards = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt?${new Date().getTime()}`)).split("\n")
             .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
 
-        results = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
-            .map(x => [wcFile + ": " + x.trim(), "wildcardTag"]); // Mark as wildcard
+
+        let tempResults = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
+        tempResults.forEach(t => {
+            let result = new AutocompleteResult(t.trim(), ResultType.wildcardTag);
+            result.meta = wcFile;
+            results.push(result);
+        });
     } else if (CFG.useWildcards && (tagword.startsWith("__") && !tagword.endsWith("__") || tagword === "__")) {
         // Show available wildcard files
         let tempResults = [];
@@ -585,7 +588,13 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         } else {
             tempResults = wildcardFiles.concat(wildcardExtFiles);
         }
-        results = tempResults.map(x => ["Wildcards: " + x[1].trim(), "wildcardFile"]); // Mark as wildcard
+
+        // Add final results
+        tempResults.forEach(wcFile => {
+            let result = new AutocompleteResult(wcFile[1].trim(), ResultType.wildcardFile);
+            result.meta = "Wildcard file";
+            results.push(result);
+        })
     } else if (CFG.useWildcards && [...tagword.matchAll(UMI_PROMPT_REGEX)].length > 0) {
         // We are in a UMI yaml tag definition, parse further
         let umiSubPrompts = [...prompt.matchAll(UMI_PROMPT_REGEX)];
@@ -717,16 +726,36 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 let baseFilter = x => x[0].toLowerCase().search(searchRegex) > -1;
                 let spaceIncludeFilter = x => x[0].toLowerCase().replaceAll(" ", "_").search(searchRegex) > -1;
                 tempResults = filteredWildcardsSorted.filter(x => baseFilter(x) || spaceIncludeFilter(x)) // Filter by tagword
-                results = tempResults.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+
+                // Add final results
+                tempResults.forEach(t => {
+                    let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
+                    result.count = t[1];
+                    results.push(result);
+                });
             } else if (showAll) {
                 let filteredWildcardsSorted = filteredWildcards("");
-                results = filteredWildcardsSorted.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+                
+                // Add final results
+                filteredWildcardsSorted.forEach(t => {
+                    let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
+                    result.count = t[1];
+                    results.push(result);
+                });
+        
                 originalTagword = tagword;
                 tagword = "";
             }
         } else {
             let filteredWildcardsSorted = filteredWildcards("");
-            results = filteredWildcardsSorted.map(x => [x[0].trim(), "yamlWildcard", x[1]]); // Mark as yaml wildcard
+                
+            // Add final results
+            filteredWildcardsSorted.forEach(t => {
+                let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
+                result.count = t[1];
+                results.push(result);
+            });
+
             originalTagword = tagword;
             tagword = "";
         }
@@ -756,8 +785,21 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         } else {
             searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
         }
-        genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
-        results = tempResults.map(x => [x[0].trim(), "embedding", x[1] + " Embedding"]).concat(genericResults); // Mark as embedding
+        let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
+
+        // Add final results
+        tempResults.forEach(t => {
+            let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
+            result.meta = t[1] + " Embedding";
+            results.push(result);
+        });
+        genericResults.forEach(g => {
+            let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
+            result.category = g[1];
+            result.count = g[2];
+            result.aliases = g[3];
+            results.push(result);
+        });
     } else {
         // Create escaped search regex with support for * as a start placeholder
         let searchRegex;
@@ -787,7 +829,14 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             else
                 fil = (x) => baseFilter(x);
 
-            results = allTags.filter(fil);
+            // Add final results
+            allTags.filter(fil).forEach(t => {
+                let result = new AutocompleteResult(t[0].trim(), ResultType.tag)
+                result.category = t[1];
+                result.count = t[2];
+                result.aliases = t[3];
+                results.push(result);
+            });
         }
         // Slice if the user has set a max result count
         if (!CFG.showAllResults) {
