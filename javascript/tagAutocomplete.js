@@ -23,7 +23,9 @@ const autocompleteCSS = `
         background-color: transparent;
         min-width: fit-content;
         align-self: center;
-        margin: 0 5px;
+    }
+    #quicksettings [id^=setting_tac] > label > span {
+        margin-bottom: 0px;
     }
     [id^=refresh_tac] {
         max-width: 2.5em;
