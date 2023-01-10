@@ -1,3 +1,5 @@
+// Utility functions for tag autocomplete
+
 // Parse the CSV file into a 2D array. Doesn't use regex, so it is very lightweight.
 function parseCSV(str) {
     var arr = [];

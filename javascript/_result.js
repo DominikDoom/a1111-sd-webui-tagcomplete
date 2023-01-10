@@ -1,3 +1,5 @@
+// Result data type for cleaner use of optional completion result properties
+
 // Type enum
 const ResultType = Object.freeze({
     "tag": 1,
