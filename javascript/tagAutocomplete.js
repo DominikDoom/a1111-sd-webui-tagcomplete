@@ -576,6 +576,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     // Guard for empty prompt
     if (prompt.length === 0) {
         hideResults(textArea);
+        previousTags = [];
+        tagword = "";
         return;
     }
 
@@ -588,6 +590,14 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         if (weightedTags !== null && tags !== null) {
             tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted) && !tag.startsWith("<[")))
                 .concat(weightedTags);
+        }
+
+        // Guard for no tags
+        if (!tags || tags.length === 0) {
+            previousTags = [];
+            tagword = "";
+            hideResults(textArea);
+            return;
         }
 
         let tagCountChange = tags.length - previousTags.length;
