@@ -158,7 +158,9 @@ async function syncOptions() {
             txt2img: opts["tac_activeIn.txt2img"],
             img2img: opts["tac_activeIn.img2img"],
             negativePrompts: opts["tac_activeIn.negativePrompts"],
-            thirdParty: opts["tac_activeIn.thirdParty"]
+            thirdParty: opts["tac_activeIn.thirdParty"],
+            modelList: opts["tac_activeIn.modelList"],
+            modelListMode: opts["tac_activeIn.modelListMode"]
         },
         // Results related settings
         maxResults: opts["tac_maxResults"],
@@ -256,11 +258,34 @@ function hideResults(textArea) {
     selectedTag = null;
 }
 
+var currentModelHash = "";
+// Function to check activation criteria
+function isEnabled() {
+    if (CFG.activeIn.global) {
+        let modelList = CFG.activeIn.modelList
+            .split(",")
+            .map(x => x.trim())
+            .filter(x => x.length > 0);
+        
+        if (CFG.activeIn.modelListMode === "blacklist") {
+            // If the current model is in the blacklist, disable
+            return !modelList.includes(currentModelHash);
+        } else {
+            // If the current model is in the whitelist, enable.
+            // An empty whitelist is ignored.
+            return modelList.length === 0 || modelList.includes(currentModelHash);
+        }
+    } else {
+        return false;
+    }
+}
+
 const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const TAG_REGEX = /(<[^\t\n\r,>]+>?|[^\s,|<>]+|<)/g
 const WC_REGEX = /\b__([^, ]+)__([^, ]*)\b/g;
 const UMI_PROMPT_REGEX = /<[^\s]*?\[[^,<>]*[\]|]?>?/gi;
 const UMI_TAG_REGEX = /(?:\[|\||--)([^<>\[\]\-|]+)/gi;
+const MODEL_HASH_REGEX = /\[(.+)\]/g;
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -514,7 +539,7 @@ var originalTagword = "";
 var resultCount = 0;
 async function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
-    if (!CFG.activeIn.global) return;
+    if (!isEnabled()) return;
 
     // Guard for empty prompt
     if (prompt.length === 0) {
@@ -859,8 +884,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
 var oldSelectedTag = null;
 function navigateInList(textArea, event) {
-    // Return if the function is deactivated in the UI
-    if (!CFG.activeIn.global) return;
+    // Return if the function is deactivated in the UI or the current model is excluded due to white/blacklist settings
+    if (!isEnabled()) return;
 
     validKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Enter", "Tab", "Escape"];
 
@@ -1031,6 +1056,14 @@ async function setup() {
                 await syncOptions();
             }, 500);
         });
+    });
+    // Add change listener to model dropdown to react to model changes
+    let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint select");
+    currentModelHash = [...modelDropdown.value.matchAll(MODEL_HASH_REGEX)][0][1]; // Set initial model hash
+    modelDropdown.addEventListener("change", () => {
+        setTimeout(() => {
+            currentModelHash = [...modelDropdown.value.matchAll(MODEL_HASH_REGEX)][0][1];
+        }, 100);
     });
 
     // Not found, we're on a page without prompt textareas
