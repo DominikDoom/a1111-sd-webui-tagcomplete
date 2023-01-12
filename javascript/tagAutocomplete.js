@@ -70,6 +70,13 @@ const autocompleteCSS = `
         flex-grow: 1;
         color: var(--meta-text-color);
     }
+    .acWikiLink {
+        padding: 0.5rem;
+        margin: -0.5rem 0 -0.5rem -0.5rem;
+    }
+    .acWikiLink:hover {
+        text-decoration: underline;
+    }
     .acListItem.acEmbeddingV1 {
         color: var(--embedding-v1-color);
     }
@@ -169,6 +176,7 @@ async function syncOptions() {
         delayTime: opts["tac_delayTime"],
         useWildcards: opts["tac_useWildcards"],
         useEmbeddings: opts["tac_useEmbeddings"],
+        showWikiLinks: opts["tac_showWikiLinks"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
@@ -408,7 +416,6 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         let itemText = document.createElement("div");
         itemText.classList.add("acListItem");
-        flexDiv.appendChild(itemText);
 
         let displayText = "";
         // If the tag matches the tagword, we don't need to display the alias
@@ -446,6 +453,31 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Print search term bolded in result
         itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
 
+        // Add wiki link if the setting is enabled and a supported tag set loaded
+        if (CFG.showWikiLinks && (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"))) {
+            let wikiLink = document.createElement("a");
+            wikiLink.classList.add("acWikiLink");
+            wikiLink.innerText = "?";
+
+            let linkPart = displayText;
+            // Only use alias result if it is one
+            if (displayText.includes("➝"))
+                linkPart = displayText.split(" ➝ ")[1];
+            
+            // Set link based on selected file
+            let tagFileNameLower = tagFileName.toLowerCase();
+            if (tagFileNameLower.startsWith("danbooru")) {
+                wikiLink.href = `https://danbooru.donmai.us/wiki_pages/${linkPart}`;
+            } else if (tagFileNameLower.startsWith("e621")) {
+                wikiLink.href = `https://e621.net/wiki_pages/${linkPart}`;
+            }
+            
+            wikiLink.target = "_blank";
+            flexDiv.appendChild(wikiLink);
+        }
+
+        flexDiv.appendChild(itemText);
+
         // Add post count & color if it's a tag
         // Wildcards & Embeds have no tag category
         if (![ResultType.wildcardFile, ResultType.wildcardTag, ResultType.embedding].includes(result.type)) {
@@ -461,7 +493,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 if (!colorGroup[cat])
                     cat = "-1";
 
-                itemText.style = `color: ${colorGroup[cat][mode]};`;
+                flexDiv.style = `color: ${colorGroup[cat][mode]};`;
             }
 
             // Post count
