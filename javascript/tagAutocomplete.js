@@ -267,7 +267,7 @@ function isEnabled() {
             .map(x => x.trim())
             .filter(x => x.length > 0);
         
-        if (CFG.activeIn.modelListMode === "blacklist") {
+        if (CFG.activeIn.modelListMode.toLowerCase() === "blacklist") {
             // If the current model is in the blacklist, disable
             return !modelList.includes(currentModelHash);
         } else {
