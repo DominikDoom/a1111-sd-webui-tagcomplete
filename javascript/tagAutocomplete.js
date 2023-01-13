@@ -454,7 +454,9 @@ function addResultsToList(textArea, results, tagword, resetList) {
         itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
 
         // Add wiki link if the setting is enabled and a supported tag set loaded
-        if (CFG.showWikiLinks && (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"))) {
+        if (CFG.showWikiLinks
+            && (result.type === ResultType.tag)
+            && (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"))) {
             let wikiLink = document.createElement("a");
             wikiLink.classList.add("acWikiLink");
             wikiLink.innerText = "?";
