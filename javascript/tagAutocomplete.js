@@ -986,7 +986,6 @@ function navigateInList(textArea, event) {
 
 // One-time setup, triggered from onUiUpdate
 async function setup() {
-  console.log('One-time setup, triggered from onUiUpdate')
     // Load colors
     CFG["colors"] = (await readFile(`${tagBasePath}/colors.json?${new Date().getTime()}`, true));
 
