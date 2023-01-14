@@ -266,7 +266,7 @@ function hideResults(textArea) {
     selectedTag = null;
 }
 
-var currentModelHash = "";
+var currentModelName = "";
 // Function to check activation criteria
 function isEnabled() {
     if (CFG.activeIn.global) {
@@ -277,11 +277,11 @@ function isEnabled() {
         
         if (CFG.activeIn.modelListMode.toLowerCase() === "blacklist") {
             // If the current model is in the blacklist, disable
-            return !modelList.includes(currentModelHash);
+            return !modelList.includes(currentModelName);
         } else {
             // If the current model is in the whitelist, enable.
             // An empty whitelist is ignored.
-            return modelList.length === 0 || modelList.includes(currentModelHash);
+            return modelList.length === 0 || modelList.includes(currentModelName);
         }
     } else {
         return false;
@@ -293,7 +293,6 @@ const TAG_REGEX = /(<[^\t\n\r,>]+>?|[^\s,|<>]+|<)/g
 const WC_REGEX = /\b__([^, ]+)__([^, ]*)\b/g;
 const UMI_PROMPT_REGEX = /<[^\s]*?\[[^,<>]*[\]|]?>?/gi;
 const UMI_TAG_REGEX = /(?:\[|\||--)([^<>\[\]\-|]+)/gi;
-const MODEL_HASH_REGEX = /\[(.+)\]/g;
 let hideBlocked = false;
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -1103,10 +1102,10 @@ async function setup() {
     });
     // Add change listener to model dropdown to react to model changes
     let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint select");
-    currentModelHash = [...modelDropdown.value.matchAll(MODEL_HASH_REGEX)][0][1]; // Set initial model hash
+    currentModelName = modelDropdown.value;
     modelDropdown.addEventListener("change", () => {
         setTimeout(() => {
-            currentModelHash = [...modelDropdown.value.matchAll(MODEL_HASH_REGEX)][0][1];
+            currentModelName = modelDropdown.value;
         }, 100);
     });
 
