@@ -266,6 +266,7 @@ function hideResults(textArea) {
     selectedTag = null;
 }
 
+var currentModelHash = "";
 var currentModelName = "";
 // Function to check activation criteria
 function isEnabled() {
@@ -275,13 +276,14 @@ function isEnabled() {
             .map(x => x.trim())
             .filter(x => x.length > 0);
         
+        let shortHash = currentModelHash.substring(0, 10);
         if (CFG.activeIn.modelListMode.toLowerCase() === "blacklist") {
             // If the current model is in the blacklist, disable
-            return !modelList.includes(currentModelName);
+            return modelList.filter(x => x === currentModelName || x === currentModelHash || x === shortHash).length === 0;
         } else {
             // If the current model is in the whitelist, enable.
             // An empty whitelist is ignored.
-            return modelList.length === 0 || modelList.includes(currentModelName);
+            return modelList.length === 0 || modelList.filter(x => x === currentModelName || x === currentModelHash || x === shortHash).length > 0;
         }
     } else {
         return false;
@@ -1100,6 +1102,7 @@ async function setup() {
             }, 500);
         });
     });
+
     // Add change listener to model dropdown to react to model changes
     let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint select");
     currentModelName = modelDropdown.value;
@@ -1108,6 +1111,19 @@ async function setup() {
             currentModelName = modelDropdown.value;
         }, 100);
     });
+    // Add mutation observer for the model hash text to also allow hash-based blacklist again
+    let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");
+    if (modelHashText) {
+        currentModelHash = modelHashText.title
+        let modelHashObserver = new MutationObserver((mutationList, observer) => {
+            for (const mutation of mutationList) {
+                if (mutation.type === "attributes" && mutation.attributeName === "title") {
+                    currentModelHash = mutation.target.title;
+                }
+            }
+        });
+        modelHashObserver.observe(modelHashText, { attributes: true });
+    }
 
     // Not found, we're on a page without prompt textareas
     if (textAreas.every(v => v === null || v === undefined)) return;
