@@ -20,6 +20,8 @@ TAGS_PATH = Path(scripts.basedir()).joinpath('tags')
 # The path to the folder containing the wildcards and embeddings
 WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
 EMB_PATH = Path(shared.cmd_opts.embeddings_dir)
+LORA_PATH = Path(shared.cmd_opts.lora_dir)
+HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir)
 
 
 def find_ext_wildcard_paths():
@@ -137,6 +139,36 @@ def get_embeddings(sd_model):
 
     write_to_temp_file('emb.txt', results)
 
+def get_hypernetworks(sd_model):
+    """Write a list of all hypernetworks"""
+
+    results = []
+
+    # Get a list of all hypernetworks in the folder
+    all_hypernetworks = [str(h.relative_to(HYP_PATH)) for h in HYP_PATH.rglob("*") if h.suffix in {".pt"}]
+    # Remove files with a size of 0
+    all_hypernetworks = [h for h in all_hypernetworks if HYP_PATH.joinpath(h).stat().st_size > 0]
+    # Remove file extensions
+    all_hypernetworks = [h[:h.rfind('.')] for h in all_hypernetworks]
+    results = [h + "," for h in all_hypernetworks]
+
+    write_to_temp_file('hyp.txt', results)
+
+def get_lora(sd_model):
+    """Write a list of all lora"""
+
+    results = []
+
+    # Get a list of all lora in the folder
+    all_lora = [str(l.relative_to(LORA_PATH)) for l in LORA_PATH.rglob("*") if l.suffix in {".safetensors"}]
+    # Remove files with a size of 0
+    all_lora = [l for l in all_lora if LORA_PATH.joinpath(l).stat().st_size > 0]
+    # Remove file extensions
+    all_lora = [l[:l.rfind('.')] for l in all_lora]
+    results = [l + "," for l in all_lora]
+
+    write_to_temp_file('lora.txt', results)
+
 
 def write_tag_base_path():
     """Writes the tag base path to a fixed location temporary file"""
@@ -202,6 +234,8 @@ if WILDCARD_EXT_PATHS is not None:
 if EMB_PATH.exists():
     # Get embeddings after the model loaded callback
     script_callbacks.on_model_loaded(get_embeddings)
+    script_callbacks.on_model_loaded(get_hypernetworks)
+    script_callbacks.on_model_loaded(get_lora)
         
 
 # Register autocomplete options

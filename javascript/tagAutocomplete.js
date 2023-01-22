@@ -314,6 +314,10 @@ function insertTextAtCursor(textArea, result, tagword) {
         sanitizedText = text.replaceAll("_", " "); // Replace underscores only if the yaml tag is not using them
     } else if (tagType === ResultType.embedding) {
         sanitizedText = `${text.replace(/^.*?: /g, "")}`;
+    } else if (tagType === ResultType.hypernetworks) {
+        sanitizedText = `<hypernet:${text.replace(/^.*?: /g, "")}:1>`;
+    } else if(tagType === ResultType.lora) {
+        sanitizedText = `<lora:${text.replace(/^.*?: /g, "")}:1>`;
     } else {
         sanitizedText = CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
     }
@@ -568,6 +572,8 @@ var wildcardExtFiles = [];
 var yamlWildcards = [];
 var umiPreviousTags = [];
 var embeddings = [];
+var hypernetworks = [];
+var lora = [];
 var results = [];
 var tagword = "";
 var originalTagword = "";
@@ -831,11 +837,11 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             originalTagword = tagword;
             tagword = "";
         }
-    } else if (CFG.useEmbeddings && tagword.match(/<[^,> ]*>?/g)) {
+    } else if (CFG.useEmbeddings && tagword.match(/<e:[^,> ]*>?/g)) {
         // Show embeddings
         let tempResults = [];
-        if (tagword !== "<") {
-            let searchTerm = tagword.replace("<", "")
+        if (tagword !== "<e:") {
+            let searchTerm = tagword.replace("<e:", "")
             let versionString;
             if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
                 versionString = searchTerm.slice(0, 2);
@@ -863,6 +869,89 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         tempResults.forEach(t => {
             let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
             result.meta = t[1] + " Embedding";
+            results.push(result);
+        });
+        genericResults.forEach(g => {
+            let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
+            result.category = g[1];
+            result.count = g[2];
+            result.aliases = g[3];
+            results.push(result);
+        });
+
+    } else if(tagword.match(/<h:[^,> ]*>?/g)) {
+        // Show hypernetworks
+        let tempResults = [];
+        if (tagword !== "<h:") {
+            let searchTerm = tagword.replace("<h:", "")
+            let versionString;
+            if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
+                versionString = searchTerm.slice(0, 2);
+                searchTerm = searchTerm.slice(2);
+            }
+            if (versionString)
+                tempResults = hypernetworks.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
+            else
+                tempResults = hypernetworks.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
+        } else {
+            tempResults = hypernetworks;
+        }
+        // Since some tags are kaomoji, we have to still get the normal results first.
+        // Create escaped search regex with support for * as a start placeholder
+        let searchRegex;
+        if (tagword.startsWith("*")) {
+            tagword = tagword.slice(1);
+            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+        } else {
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+        }
+        let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
+
+        // Add final results
+        tempResults.forEach(t => {
+            let result = new AutocompleteResult(t[0].trim(), ResultType.hypernetworks)
+            result.meta = t[1] + " Hypernetworks";
+            results.push(result);
+        });
+        genericResults.forEach(g => {
+            let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
+            result.category = g[1];
+            result.count = g[2];
+            result.aliases = g[3];
+            results.push(result);
+        });
+    } else if(tagword.match(/<l:[^,> ]*>?/g)){
+        // Show lora
+        let tempResults = [];
+        if (tagword !== "<l:") {
+            let searchTerm = tagword.replace("<l:", "")
+            let versionString;
+            if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
+                versionString = searchTerm.slice(0, 2);
+                searchTerm = searchTerm.slice(2);
+            }
+            if (versionString)
+                tempResults = lora.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
+            else
+                tempResults = lora.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
+        } else {
+            tempResults = lora;
+        }
+        // Since some tags are kaomoji, we have to still get the normal results first.
+        // Create escaped search regex with support for * as a start placeholder
+        let searchRegex;
+        if (tagword.startsWith("*")) {
+            tagword = tagword.slice(1);
+            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+        } else {
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+        }
+        let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
+
+        // Add final results
+        tempResults.forEach(t => {
+            let result = new AutocompleteResult(t[0].trim(), ResultType.lora)
+            result.meta = t[1] + " Lora";
             results.push(result);
         });
         genericResults.forEach(g => {
@@ -1078,6 +1167,26 @@ async function setup() {
                 .map(x => x.trim().split(",")); // Split into name, version type pairs
         } catch (e) {
             console.error("Error loading embeddings.txt: " + e);
+        }
+    }
+    // Load hypernetworks
+    if (hypernetworks.length === 0) {
+        try {
+            hypernetworks = (await readFile(`${tagBasePath}/temp/hyp.txt?${new Date().getTime()}`)).split("\n")
+                .filter(x => x.trim().length > 0) //Remove empty lines
+                .map(x => x.trim().split(",")); // Split into name, version type pairs
+        } catch (e) {
+            console.error("Error loading hypernetworks.txt: " + e);
+        }
+    }
+    // Load lora
+    if (lora.length === 0) {
+        try {
+            lora = (await readFile(`${tagBasePath}/temp/lora.txt?${new Date().getTime()}`)).split("\n")
+                .filter(x => x.trim().length > 0) // Remove empty lines
+                .map(x => x.trim().split(",")); // Split into name, version type pairs
+        } catch (e) {
+            console.error("Error loading lora.txt: " + e);
         }
     }
 
