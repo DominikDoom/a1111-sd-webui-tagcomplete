@@ -41,8 +41,8 @@ git clone "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git" extens
 
 Or create a folder there manually and place the `javascript`, `scripts` and `tags` folders in it.
 
-### In the root folder (old)
-Copy the `javascript`, `scripts` and `tags` folder into your web UI installation root. It will run automatically the next time the web UI is started.
+### In the root folder (legacy)
+This installation method is for old webui versions pre-extension system, it will not work on current versions!
 
 ---
 

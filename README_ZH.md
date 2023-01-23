@@ -39,8 +39,8 @@ git clone "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git" extens
 
 或者手动创建一个文件夹，将 `javascript`、`scripts`和`tags`文件夹放在其中。
 
-### 在根目录下（旧方法)
-只需要将`javascript`，`scripts`和`tags`文件夹复制到你的Web UI安装根目录下.下次启动Web UI时它将自动启动。
+### 在根目录下（过时的方法）
+这种安装方法适用于添加扩展系统之前的旧版webui，在目前的版本上是行不通的。
 
 ---
 在这两种配置中，标签文件夹包含`colors.json`和脚本用于自动完成的标签数据。
