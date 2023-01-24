@@ -176,6 +176,8 @@ async function syncOptions() {
         delayTime: opts["tac_delayTime"],
         useWildcards: opts["tac_useWildcards"],
         useEmbeddings: opts["tac_useEmbeddings"],
+        useHypernetworks: opts["tac_useHypernetworks"],
+        useLoras: opts["tac_useLoras"],
         showWikiLinks: opts["tac_showWikiLinks"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
@@ -487,41 +489,39 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         // Add post count & color if it's a tag
         // Wildcards & Embeds have no tag category
-        if (![ResultType.wildcardFile, ResultType.wildcardTag, ResultType.embedding].includes(result.type)) {
-            if (result.category) {
-                // Set the color of the tag
-                let cat = result.category;
-                let colorGroup = tagColors[tagFileName];
-                // Default to danbooru scheme if no matching one is found
-                if (!colorGroup)
-                    colorGroup = tagColors["danbooru"];
+        if (result.category) {
+            // Set the color of the tag
+            let cat = result.category;
+            let colorGroup = tagColors[tagFileName];
+            // Default to danbooru scheme if no matching one is found
+            if (!colorGroup)
+                colorGroup = tagColors["danbooru"];
 
-                // Set tag type to invalid if not found
-                if (!colorGroup[cat])
-                    cat = "-1";
+            // Set tag type to invalid if not found
+            if (!colorGroup[cat])
+                cat = "-1";
 
-                flexDiv.style = `color: ${colorGroup[cat][mode]};`;
-            }
+            flexDiv.style = `color: ${colorGroup[cat][mode]};`;
+        }
 
-            // Post count
-            if (result.count && !isNaN(result.count)) {
-                let postCount = result.count;
-                let formatter;
+        // Post count
+        if (result.count && !isNaN(result.count)) {
+            let postCount = result.count;
+            let formatter;
 
-                // Danbooru formats numbers with a padded fraction for 1M or 1k, but not for 10/100k
-                if (postCount >= 1000000 || (postCount >= 1000 && postCount < 10000))
-                    formatter = Intl.NumberFormat("en", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 1 });
-                else
-                    formatter = Intl.NumberFormat("en", {notation: "compact"});
-    
-                let formattedCount = formatter.format(postCount);
-    
-                let countDiv = document.createElement("div");
-                countDiv.textContent = formattedCount;
-                countDiv.classList.add("acMetaText");
-                flexDiv.appendChild(countDiv);
-            }
-        } else if (result.meta) { // Check if it is an embedding we have version info for
+            // Danbooru formats numbers with a padded fraction for 1M or 1k, but not for 10/100k
+            if (postCount >= 1000000 || (postCount >= 1000 && postCount < 10000))
+                formatter = Intl.NumberFormat("en", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            else
+                formatter = Intl.NumberFormat("en", {notation: "compact"});
+
+            let formattedCount = formatter.format(postCount);
+
+            let countDiv = document.createElement("div");
+            countDiv.textContent = formattedCount;
+            countDiv.classList.add("acMetaText");
+            flexDiv.appendChild(countDiv);
+        } else if (result.meta) { // Check if there is meta info to display
             let metaDiv = document.createElement("div");
             metaDiv.textContent = result.meta;
             metaDiv.classList.add("acMetaText");
@@ -854,6 +854,73 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         } else {
             tempResults = embeddings;
         }
+
+        // Add final results
+        tempResults.forEach(t => {
+            let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
+            result.meta = t[1] + " Embedding";
+            results.push(result);
+        });
+    } else if(CFG.useHypernetworks && tagword.match(/<h:[^,> ]*>?/g)) {
+        // Show hypernetworks
+        let tempResults = [];
+        if (tagword !== "<h:") {
+            let searchTerm = tagword.replace("<h:", "")
+            tempResults = hypernetworks.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
+        } else {
+            tempResults = hypernetworks;
+        }
+
+        // Add final results
+        tempResults.forEach(t => {
+            let result = new AutocompleteResult(t.trim(), ResultType.hypernetwork)
+            result.meta = "Hypernetwork";
+            results.push(result);
+        });
+    } else if(CFG.useLoras && tagword.match(/<l:[^,> ]*>?/g)){
+        // Show lora
+        let tempResults = [];
+        if (tagword !== "<l:") {
+            let searchTerm = tagword.replace("<l:", "")
+            tempResults = loras.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
+        } else {
+            tempResults = loras;
+        }
+
+        // Add final results
+        tempResults.forEach(t => {
+            let result = new AutocompleteResult(t.trim(), ResultType.lora)
+            result.meta = "Lora";
+            results.push(result);
+        });
+    } else if ((CFG.useEmbeddings || CFG.useHypernetworks || CFG.useLoras) && tagword.match(/<[^,> ]*>?/g)) {
+        // Embeddings, lora, wildcards all together with generic options
+        let tempEmbResults = [];
+        let tempHypResults = [];
+        let tempLoraResults = [];
+        if (tagword !== "<") {
+            let searchTerm = tagword.replace("<", "")
+            
+            let versionString;
+            if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
+                versionString = searchTerm.slice(0, 2);
+                searchTerm = searchTerm.slice(2);
+            }
+
+            if (versionString && CFG.useEmbeddings) {
+                // Version string is only for embeddings atm, so we don't search the other lists here.
+                tempEmbResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
+            } else {
+                tempEmbResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
+                tempHypResults = hypernetworks.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
+                tempLoraResults = loras.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
+            }
+        } else {
+            tempEmbResults = embeddings;
+            tempHypResults = hypernetworks;
+            tempLoraResults = loras;
+        }
+
         // Since some tags are kaomoji, we have to still get the normal results first.
         // Create escaped search regex with support for * as a start placeholder
         let searchRegex;
@@ -866,49 +933,37 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
 
         // Add final results
-        tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
-            result.meta = t[1] + " Embedding";
-            results.push(result);
-        });
+        let mixedResults = [];
+        if (CFG.useEmbeddings) {
+            tempEmbResults.forEach(t => {
+                let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
+                result.meta = t[1] + " Embedding";
+                mixedResults.push(result);
+            });
+        }
+        if (CFG.useHypernetworks) {
+            tempHypResults.forEach(t => {
+                let result = new AutocompleteResult(t.trim(), ResultType.hypernetwork)
+                result.meta = "Hypernetwork";
+                mixedResults.push(result);
+            });
+        }
+        if (CFG.useLoras) {
+            tempLoraResults.forEach(t => {
+                let result = new AutocompleteResult(t.trim(), ResultType.lora)
+                result.meta = "Lora";
+                mixedResults.push(result);
+            });
+        }
+
+        // Add all mixed results to the final results, sorted by name so that they aren't after one another.
+        results = mixedResults.sort((a, b) => a.text.localeCompare(b.text));
+
         genericResults.forEach(g => {
             let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
             result.category = g[1];
             result.count = g[2];
             result.aliases = g[3];
-            results.push(result);
-        });
-
-    } else if(tagword.match(/<h:[^,> ]*>?/g)) {
-        // Show hypernetworks
-        let tempResults = [];
-        if (tagword !== "<h:") {
-            let searchTerm = tagword.replace("<h:", "")
-            tempResults = hypernetworks.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
-        } else {
-            tempResults = hypernetworks;
-        }
-
-        // Add final results
-        tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.hypernetwork)
-            result.meta = t[1] + " Hypernetworks";
-            results.push(result);
-        });
-    } else if(tagword.match(/<l:[^,> ]*>?/g)){
-        // Show lora
-        let tempResults = [];
-        if (tagword !== "<l:") {
-            let searchTerm = tagword.replace("<l:", "")
-            tempResults = loras.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
-        } else {
-            tempResults = loras;
-        }
-
-        // Add final results
-        tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.lora)
-            result.meta = t[1] + " Lora";
             results.push(result);
         });
     } else {
