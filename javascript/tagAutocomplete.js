@@ -198,7 +198,9 @@ async function syncOptions() {
         extra: {
             extraFile: opts["tac_extra.extraFile"],
             onlyAliasExtraFile: opts["tac_extra.onlyAliasExtraFile"]
-        }
+        },
+        // Settings not from tac but still used by the script
+        extraNetworksDefaultMultiplier: opts["extra_networks_default_multiplier"]
     }
 
     if (CFG && CFG.colors) {
@@ -317,9 +319,9 @@ function insertTextAtCursor(textArea, result, tagword) {
     } else if (tagType === ResultType.embedding) {
         sanitizedText = `${text.replace(/^.*?: /g, "")}`;
     } else if (tagType === ResultType.hypernetwork) {
-        sanitizedText = `<hypernet:${text.replace(/^.*?: /g, "")}:1>`;
+        sanitizedText = `<hypernet:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
     } else if(tagType === ResultType.lora) {
-        sanitizedText = `<lora:${text.replace(/^.*?: /g, "")}:1>`;
+        sanitizedText = `<lora:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
     } else {
         sanitizedText = CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
     }
