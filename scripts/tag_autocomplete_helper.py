@@ -20,6 +20,8 @@ TAGS_PATH = Path(scripts.basedir()).joinpath('tags')
 # The path to the folder containing the wildcards and embeddings
 WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
 EMB_PATH = Path(shared.cmd_opts.embeddings_dir)
+LORA_PATH = Path(shared.cmd_opts.lora_dir)
+HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir)
 
 
 def find_ext_wildcard_paths():
@@ -137,6 +139,22 @@ def get_embeddings(sd_model):
 
     write_to_temp_file('emb.txt', results)
 
+def get_hypernetworks():
+    """Write a list of all hypernetworks"""
+
+    # Get a list of all hypernetworks in the folder
+    all_hypernetworks = [str(h.name) for h in HYP_PATH.rglob("*") if h.suffix in {".pt"}]
+    # Remove file extensions
+    return [h[:h.rfind('.')] for h in all_hypernetworks]
+
+def get_lora():
+    """Write a list of all lora"""
+
+    # Get a list of all lora in the folder
+    all_lora = [str(l.name) for l in LORA_PATH.rglob("*") if l.suffix in {".safetensors", ".ckpt", ".pt"}]
+    # Remove file extensions
+    return [l[:l.rfind('.')] for l in all_lora]
+
 
 def write_tag_base_path():
     """Writes the tag base path to a fixed location temporary file"""
@@ -178,6 +196,8 @@ if not TEMP_PATH.exists():
 write_to_temp_file('wc.txt', [])
 write_to_temp_file('wce.txt', [])
 write_to_temp_file('wcet.txt', [])
+write_to_temp_file('hyp.txt', [])
+write_to_temp_file('lora.txt', [])
 # Only reload embeddings if the file doesn't exist, since they are already re-written on model load
 if not TEMP_PATH.joinpath("emb.txt").exists():
     write_to_temp_file('emb.txt', [])
@@ -202,7 +222,16 @@ if WILDCARD_EXT_PATHS is not None:
 if EMB_PATH.exists():
     # Get embeddings after the model loaded callback
     script_callbacks.on_model_loaded(get_embeddings)
-        
+
+if HYP_PATH.exists():
+    hypernets = get_hypernetworks()
+    if hypernets:
+        write_to_temp_file('hyp.txt', hypernets)
+
+if LORA_PATH.exists():
+    lora = get_lora()
+    if lora:
+        write_to_temp_file('lora.txt', lora)
 
 # Register autocomplete options
 def on_ui_settings():
@@ -224,6 +253,8 @@ def on_ui_settings():
     shared.opts.add_option("tac_delayTime", shared.OptionInfo(100, "Time in ms to wait before triggering completion again (Requires restart)", section=TAC_SECTION))
     shared.opts.add_option("tac_useWildcards", shared.OptionInfo(True, "Search for wildcards", section=TAC_SECTION))
     shared.opts.add_option("tac_useEmbeddings", shared.OptionInfo(True, "Search for embeddings", section=TAC_SECTION))
+    shared.opts.add_option("tac_useHypernetworks", shared.OptionInfo(True, "Search for hypernetworks", section=TAC_SECTION))
+    shared.opts.add_option("tac_useLoras", shared.OptionInfo(True, "Search for Loras", section=TAC_SECTION))
     shared.opts.add_option("tac_showWikiLinks", shared.OptionInfo(False, "Show '?' next to tags, linking to its Danbooru or e621 wiki page (Warning: This is an external site and very likely contains NSFW examples!)", section=TAC_SECTION))
     # Insertion related settings
     shared.opts.add_option("tac_replaceUnderscores", shared.OptionInfo(True, "Replace underscores with spaces on insertion", section=TAC_SECTION))
