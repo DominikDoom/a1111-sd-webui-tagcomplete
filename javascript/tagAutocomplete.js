@@ -1086,7 +1086,7 @@ async function setup() {
 
     // Add event listener to apply settings button so we can mirror the changes to our internal config
     let applySettingsButton = gradioApp().querySelector("#tab_settings #settings_submit") || gradioApp().querySelector("#tab_settings > div > .gr-button-primary");
-    applySettingsButton.addEventListener("click", () => {
+    applySettingsButton?.addEventListener("click", () => {
         // Wait 500ms to make sure the settings have been applied to the webui opts object
         setTimeout(async () => { 
             await syncOptions();
@@ -1095,7 +1095,7 @@ async function setup() {
     // Add change listener to our quicksettings to change our internal config without the apply button for them
     let quicksettings = gradioApp().querySelector('#quicksettings');
     let commonQueryPart = "[id^=setting_tac] > label >";
-    quicksettings.querySelectorAll(`${commonQueryPart} input, ${commonQueryPart} textarea, ${commonQueryPart} select`).forEach(e => {
+    quicksettings?.querySelectorAll(`${commonQueryPart} input, ${commonQueryPart} textarea, ${commonQueryPart} select`).forEach(e => {
         e.addEventListener("change", () => {
             setTimeout(async () => { 
                 await syncOptions();
@@ -1106,7 +1106,7 @@ async function setup() {
     // Add change listener to model dropdown to react to model changes
     let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint select");
     currentModelName = modelDropdown.value;
-    modelDropdown.addEventListener("change", () => {
+    modelDropdown?.addEventListener("change", () => {
         setTimeout(() => {
             currentModelName = modelDropdown.value;
         }, 100);
