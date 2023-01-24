@@ -314,7 +314,7 @@ function insertTextAtCursor(textArea, result, tagword) {
         sanitizedText = text.replaceAll("_", " "); // Replace underscores only if the yaml tag is not using them
     } else if (tagType === ResultType.embedding) {
         sanitizedText = `${text.replace(/^.*?: /g, "")}`;
-    } else if (tagType === ResultType.hypernetworks) {
+    } else if (tagType === ResultType.hypernetwork) {
         sanitizedText = `<hypernet:${text.replace(/^.*?: /g, "")}:1>`;
     } else if(tagType === ResultType.lora) {
         sanitizedText = `<lora:${text.replace(/^.*?: /g, "")}:1>`;
@@ -573,7 +573,7 @@ var yamlWildcards = [];
 var umiPreviousTags = [];
 var embeddings = [];
 var hypernetworks = [];
-var lora = [];
+var loras = [];
 var results = [];
 var tagword = "";
 var originalTagword = "";
@@ -884,40 +884,15 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let tempResults = [];
         if (tagword !== "<h:") {
             let searchTerm = tagword.replace("<h:", "")
-            let versionString;
-            if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
-                versionString = searchTerm.slice(0, 2);
-                searchTerm = searchTerm.slice(2);
-            }
-            if (versionString)
-                tempResults = hypernetworks.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
-            else
-                tempResults = hypernetworks.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
+            tempResults = hypernetworks.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
         } else {
             tempResults = hypernetworks;
         }
-        // Since some tags are kaomoji, we have to still get the normal results first.
-        // Create escaped search regex with support for * as a start placeholder
-        let searchRegex;
-        if (tagword.startsWith("*")) {
-            tagword = tagword.slice(1);
-            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
-        } else {
-            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-        }
-        let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
 
         // Add final results
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.hypernetworks)
+            let result = new AutocompleteResult(t[0].trim(), ResultType.hypernetwork)
             result.meta = t[1] + " Hypernetworks";
-            results.push(result);
-        });
-        genericResults.forEach(g => {
-            let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
-            result.category = g[1];
-            result.count = g[2];
-            result.aliases = g[3];
             results.push(result);
         });
     } else if(tagword.match(/<l:[^,> ]*>?/g)){
@@ -925,40 +900,15 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let tempResults = [];
         if (tagword !== "<l:") {
             let searchTerm = tagword.replace("<l:", "")
-            let versionString;
-            if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
-                versionString = searchTerm.slice(0, 2);
-                searchTerm = searchTerm.slice(2);
-            }
-            if (versionString)
-                tempResults = lora.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
-            else
-                tempResults = lora.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
+            tempResults = loras.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
         } else {
-            tempResults = lora;
+            tempResults = loras;
         }
-        // Since some tags are kaomoji, we have to still get the normal results first.
-        // Create escaped search regex with support for * as a start placeholder
-        let searchRegex;
-        if (tagword.startsWith("*")) {
-            tagword = tagword.slice(1);
-            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
-        } else {
-            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-        }
-        let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
 
         // Add final results
         tempResults.forEach(t => {
             let result = new AutocompleteResult(t[0].trim(), ResultType.lora)
             result.meta = t[1] + " Lora";
-            results.push(result);
-        });
-        genericResults.forEach(g => {
-            let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
-            result.category = g[1];
-            result.count = g[2];
-            result.aliases = g[3];
             results.push(result);
         });
     } else {
@@ -1174,17 +1124,15 @@ async function setup() {
         try {
             hypernetworks = (await readFile(`${tagBasePath}/temp/hyp.txt?${new Date().getTime()}`)).split("\n")
                 .filter(x => x.trim().length > 0) //Remove empty lines
-                .map(x => x.trim().split(",")); // Split into name, version type pairs
         } catch (e) {
             console.error("Error loading hypernetworks.txt: " + e);
         }
     }
     // Load lora
-    if (lora.length === 0) {
+    if (loras.length === 0) {
         try {
-            lora = (await readFile(`${tagBasePath}/temp/lora.txt?${new Date().getTime()}`)).split("\n")
+            loras = (await readFile(`${tagBasePath}/temp/lora.txt?${new Date().getTime()}`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim().split(",")); // Split into name, version type pairs
         } catch (e) {
             console.error("Error loading lora.txt: " + e);
         }

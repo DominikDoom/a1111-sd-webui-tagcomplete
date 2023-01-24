@@ -7,7 +7,7 @@ const ResultType = Object.freeze({
     "wildcardTag": 3,
     "wildcardFile": 4,
     "yamlWildcard": 5,
-    "hypernetworks": 6,
+    "hypernetwork": 6,
     "lora": 7
 });
 
