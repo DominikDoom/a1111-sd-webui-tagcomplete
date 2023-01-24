@@ -326,7 +326,7 @@ function insertTextAtCursor(textArea, result, tagword) {
         sanitizedText = CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
     }
 
-    if (CFG.escapeParentheses) {
+    if (CFG.escapeParentheses && tagType === ResultType.tag) {
         sanitizedText = sanitizedText
             .replaceAll("(", "\\(")
             .replaceAll(")", "\\)")
