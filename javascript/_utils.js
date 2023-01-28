@@ -102,14 +102,24 @@ function processQueue(queue, context, ...args) {
     }
 }
 // The same but with return values
-function processQueueReturn(queue, context, ...args)
+async function processQueueReturn(queue, context, ...args)
 {
-    let results = [];
+    let qeueueReturns = [];
     for (let i = 0; i < queue.length; i++) {
-        results.push(queue[i].call(context, ...args));
+        qeueueReturns.push(await queue[i].call(context, ...args));
     }
-    return results;
+    return qeueueReturns;
 }
-function processParsers(textArea, prompt) {
-    return processQueueReturn(parsers, null, textArea, prompt);
+// Specific to tag completion parsers
+async function processParsers(textArea, prompt) {
+    // Get all parsers that have a successful trigger condition
+    let matchingParsers = parsers.filter(parser => parser.triggerCondition());
+    // Guard condition
+    if (matchingParsers.length === 0) {
+        return null;
+    }
+
+    let parseFunctions = matchingParsers.map(parser => parser.parse);
+    // Process them and return the results
+    return await processQueueReturn(parseFunctions, null, textArea, prompt);
 }
