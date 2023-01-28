@@ -1,3 +1,10 @@
+class FunctionNotOverriddenError extends Error {
+    constructor(message = "", ...args) {
+        super(message, ...args);
+        this.message = message + " is an abstract base function and must be overwritten.";
+      }
+}
+
 class BaseTagParser {
     triggerCondition = null;
 
@@ -9,6 +16,6 @@ class BaseTagParser {
     }
 
     parse() {
-        throw new NotImplementedError();
+        throw new FunctionNotOverriddenError("parse()");
     }
 }
