@@ -39,9 +39,9 @@ var umiPreviousTags = [];
 /// Similar to a callback system, but primitive.
 
 // Queues
-var afterInsertQueue = [];
-var afterSetupQueue = [];
-var afterConfigChangeQueue = [];
+const afterInsertQueue = [];
+const afterSetupQueue = [];
+const afterConfigChangeQueue = [];
 
 // List of parsers to try
-var parsers = [];
+const parsers = [];

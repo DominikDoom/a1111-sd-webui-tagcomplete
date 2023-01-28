@@ -224,6 +224,9 @@ async function syncOptions() {
 
     // Apply changes
     CFG = newCFG;
+
+    // Callback
+    processQueue(afterConfigChangeQueue, null);
 }
 
 // Create the result list div and necessary styling
@@ -358,6 +361,9 @@ function insertTextAtCursor(textArea, result, tagword) {
             .concat(weightedTags);
     }
     previousTags = tags;
+
+    // Callback
+    processQueue(afterInsertQueue, null, tagType);
 
     // If it was a yaml wildcard, also update the umiPreviousTags
     if (tagType === ResultType.yamlWildcard && originalTagword.length > 0) {
@@ -611,6 +617,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
     results = [];
     tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
+
+    let resultCandidates = processParsers(textArea, prompt);
 
     if (CFG.useWildcards && [...tagword.matchAll(WC_REGEX)].length > 0) {
         // Show wildcards from a file with that name
@@ -1286,6 +1294,9 @@ async function setup() {
         acStyle.appendChild(document.createTextNode(css));
     }
     gradioApp().appendChild(acStyle);
+
+    // Callback
+    processQueue(afterSetupQueue, null);
 }
 
 onUiUpdate(async () => {

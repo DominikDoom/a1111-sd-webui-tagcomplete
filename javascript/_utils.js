@@ -94,3 +94,22 @@ function escapeHTML(unsafeText) {
     div.textContent = unsafeText;
     return div.innerHTML;
 }
+
+// Queue calling function to process global queues
+function processQueue(queue, context, ...args) {
+    for (let i = 0; i < queue.length; i++) {
+        queue[i].call(context, ...args);
+    }
+}
+// The same but with return values
+function processQueueReturn(queue, context, ...args)
+{
+    let results = [];
+    for (let i = 0; i < queue.length; i++) {
+        results.push(queue[i].call(context, ...args));
+    }
+    return results;
+}
+function processParsers(textArea, prompt) {
+    return processQueueReturn(parsers, null, textArea, prompt);
+}
