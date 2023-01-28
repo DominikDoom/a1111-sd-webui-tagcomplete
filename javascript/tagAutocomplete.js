@@ -1,5 +1,3 @@
-var CFG = null;
-
 const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
@@ -84,10 +82,6 @@ const autocompleteCSS = `
         color: var(--embedding-v2-color);
     }
 `;
-
-var tagBasePath = "";
-var allTags = [];
-var translations = new Map();
 
 async function loadTags(c) {
     // Load main tags and aliases
@@ -248,10 +242,6 @@ function createResultsDiv(textArea) {
     return resultsDiv;
 }
 
-// The selected tag index. Needs to be up here so hide can access it.
-var selectedTag = null;
-var previousTags = [];
-
 // Show or hide the results div
 function isVisible(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
@@ -270,8 +260,6 @@ function hideResults(textArea) {
     selectedTag = null;
 }
 
-var currentModelHash = "";
-var currentModelName = "";
 // Function to check activation criteria
 function isEnabled() {
     if (CFG.activeIn.global) {
@@ -569,17 +557,6 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
     }
 }
 
-var wildcardFiles = [];
-var wildcardExtFiles = [];
-var yamlWildcards = [];
-var umiPreviousTags = [];
-var embeddings = [];
-var hypernetworks = [];
-var loras = [];
-var results = [];
-var tagword = "";
-var originalTagword = "";
-var resultCount = 0;
 async function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
     if (!isEnabled()) return;
@@ -1023,7 +1000,6 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     addResultsToList(textArea, results, tagword, true);
 }
 
-var oldSelectedTag = null;
 function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI or the current model is excluded due to white/blacklist settings
     if (!isEnabled()) return;
