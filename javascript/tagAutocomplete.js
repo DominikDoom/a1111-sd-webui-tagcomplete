@@ -1181,6 +1181,7 @@ async function setup() {
         try {
             hypernetworks = (await readFile(`${tagBasePath}/temp/hyp.txt?${new Date().getTime()}`)).split("\n")
                 .filter(x => x.trim().length > 0) //Remove empty lines
+                .map(x => x.trim()); // Remove carriage returns and padding if it exists
         } catch (e) {
             console.error("Error loading hypernetworks.txt: " + e);
         }
@@ -1190,6 +1191,7 @@ async function setup() {
         try {
             loras = (await readFile(`${tagBasePath}/temp/lora.txt?${new Date().getTime()}`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
+                .map(x => x.trim()); // Remove carriage returns and padding if it exists
         } catch (e) {
             console.error("Error loading lora.txt: " + e);
         }
