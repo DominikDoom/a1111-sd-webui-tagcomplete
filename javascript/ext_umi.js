@@ -23,6 +23,11 @@ class UmiParser extends BaseTagParser {
             }
         });
 
+        // Safety check since UMI parsing sometimes seems to trigger outside of an UMI subprompt and thus fails
+        if (umiTagsWithOperators.length === 0) {
+            return null;
+        }
+
         const promptSplitToTags = umiTagsWithOperators.replace(']###[', '][').split("][");
 
         const clean = (str) => str
@@ -178,4 +183,23 @@ class UmiParser extends BaseTagParser {
     }
 }
 
+function updateUmiTags(tagType, newPrompt, textArea) {
+    // If it was a yaml wildcard, also update the umiPreviousTags
+    if (tagType === ResultType.yamlWildcard && originalTagword.length > 0) {
+        let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
+
+        let umiTags = [];
+        umiSubPrompts.forEach(umiSubPrompt => {
+            umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
+        });
+
+        umiPreviousTags = umiTags;
+
+        hideResults(textArea);
+    }
+}
+
+// Add UMI parser
 PARSERS.push(new UmiParser(UMI_TRIGGER));
+// Add tag update after insert
+QUEUE_AFTER_INSERT.push(updateUmiTags);

@@ -361,21 +361,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     previousTags = tags;
 
     // Callback
-    processQueue(QUEUE_AFTER_INSERT, null, tagType);
-
-    // If it was a yaml wildcard, also update the umiPreviousTags
-    if (tagType === ResultType.yamlWildcard && originalTagword.length > 0) {
-        let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
-
-        let umiTags = [];
-        umiSubPrompts.forEach(umiSubPrompt => {
-            umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
-        });
-
-        umiPreviousTags = umiTags;
-
-        hideResults(textArea);
-    }
+    processQueue(QUEUE_AFTER_INSERT, null, tagType, newPrompt, textArea);
 
     // Hide results after inserting
     if (tagType === ResultType.wildcardFile) {
@@ -383,7 +369,7 @@ function insertTextAtCursor(textArea, result, tagword) {
         hideBlocked = true;
         autocomplete(textArea, prompt, sanitizedText);
         setTimeout(() => { hideBlocked = false; }, 100);
-    } else {
+    } else if (!hideBlocked && isVisible(textArea)) {
         hideResults(textArea);
     }
 }
