@@ -6,10 +6,6 @@ const WC_TRIGGER = () => CFG.useWildcards && [...tagword.matchAll(WC_REGEX)].len
 const WC_FILE_TRIGGER = () => CFG.useWildcards && (tagword.startsWith("__") && !tagword.endsWith("__") || tagword === "__");
 
 class WildcardParser extends BaseTagParser {
-    constructor(TRIGGER) {
-        super(TRIGGER);
-    }
-
     async parse() {
         // Show wildcards from a file with that name
         let wcMatch = [...tagword.matchAll(WC_REGEX)]
@@ -24,22 +20,19 @@ class WildcardParser extends BaseTagParser {
         let wildcards = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt?${new Date().getTime()}`)).split("\n")
             .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
 
+        let finalResults = [];
         let tempResults = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
-            .map(t => {
-                let result = new AutocompleteResult(t.trim(), ResultType.wildcardTag);
-                result.meta = wcFile;
-                return result;
-            });
+        tempResults.forEach(t => {
+            let result = new AutocompleteResult(t.trim(), ResultType.wildcardTag);
+            result.meta = wcFile;
+            finalResults.push(result);
+        });
 
-        return tempResults;
+        return finalResults;
     }
 }
 
 class WildcardFileParser extends BaseTagParser {
-    constructor(TRIGGER) {
-        super(TRIGGER);
-    }
-
     parse() {
         // Show available wildcard files
         let tempResults = [];
@@ -63,5 +56,5 @@ class WildcardFileParser extends BaseTagParser {
 }
 
 // Register the parsers
-parsers.push(new WildcardParser(WC_TRIGGER));
-parsers.push(new WildcardFileParser(WC_FILE_TRIGGER));
+PARSERS.push(new WildcardParser(WC_TRIGGER));
+PARSERS.push(new WildcardFileParser(WC_FILE_TRIGGER));
