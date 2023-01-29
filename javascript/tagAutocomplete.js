@@ -226,7 +226,7 @@ async function syncOptions() {
     CFG = newCFG;
 
     // Callback
-    processQueue(afterConfigChangeQueue, null);
+    processQueue(QUEUE_AFTER_CONFIG_CHANGE, null);
 }
 
 // Create the result list div and necessary styling
@@ -362,7 +362,7 @@ function insertTextAtCursor(textArea, result, tagword) {
     previousTags = tags;
 
     // Callback
-    processQueue(afterInsertQueue, null, tagType);
+    processQueue(QUEUE_AFTER_INSERT, null, tagType);
 
     // If it was a yaml wildcard, also update the umiPreviousTags
     if (tagType === ResultType.yamlWildcard && originalTagword.length > 0) {
@@ -1266,7 +1266,7 @@ async function setup() {
     gradioApp().appendChild(acStyle);
 
     // Callback
-    processQueue(afterSetupQueue, null);
+    processQueue(QUEUE_AFTER_SETUP, null);
 }
 
 onUiUpdate(async () => {

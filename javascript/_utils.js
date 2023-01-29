@@ -113,7 +113,7 @@ async function processQueueReturn(queue, context, ...args)
 // Specific to tag completion parsers
 async function processParsers(textArea, prompt) {
     // Get all parsers that have a successful trigger condition
-    let matchingParsers = parsers.filter(parser => parser.triggerCondition());
+    let matchingParsers = PARSERS.filter(parser => parser.triggerCondition());
     // Guard condition
     if (matchingParsers.length === 0) {
         return null;
