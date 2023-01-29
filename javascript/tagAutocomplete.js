@@ -605,6 +605,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
     // Process all parsers
     let resultCandidates = await processParsers(textArea, prompt);
+    // If one ore more result candidates match, use their results
     if (resultCandidates && resultCandidates.length > 0) {
         // Flatten our candidate(s)
         results = resultCandidates.flat();
@@ -613,179 +614,69 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let shouldSort = resultCandidates.length > 1;
         if (shouldSort) {
             results = results.sort((a, b) => a.text.localeCompare(b.text));
-        }
-    } else {
-        if (CFG.useEmbeddings && tagword.match(/<e:[^,> ]*>?/g)) {
-            // Show embeddings
-            let tempResults = [];
-            if (tagword !== "<e:") {
-                let searchTerm = tagword.replace("<e:", "")
-                let versionString;
-                if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
-                    versionString = searchTerm.slice(0, 2);
-                    searchTerm = searchTerm.slice(2);
-                }
-                if (versionString)
-                    tempResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
-                else
-                    tempResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
-            } else {
-                tempResults = embeddings;
-            }
 
-            // Add final results
-            tempResults.forEach(t => {
-                let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
-                result.meta = t[1] + " Embedding";
-                results.push(result);
-            });
-        } else if(CFG.useHypernetworks && tagword.match(/<h:[^,> ]*>?/g)) {
-            // Show hypernetworks
-            let tempResults = [];
-            if (tagword !== "<h:") {
-                let searchTerm = tagword.replace("<h:", "")
-                tempResults = hypernetworks.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
-            } else {
-                tempResults = hypernetworks;
-            }
-
-            // Add final results
-            tempResults.forEach(t => {
-                let result = new AutocompleteResult(t.trim(), ResultType.hypernetwork)
-                result.meta = "Hypernetwork";
-                results.push(result);
-            });
-        } else if(CFG.useLoras && tagword.match(/<l:[^,> ]*>?/g)){
-            // Show lora
-            let tempResults = [];
-            if (tagword !== "<l:") {
-                let searchTerm = tagword.replace("<l:", "")
-                tempResults = loras.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
-            } else {
-                tempResults = loras;
-            }
-
-            // Add final results
-            tempResults.forEach(t => {
-                let result = new AutocompleteResult(t.trim(), ResultType.lora)
-                result.meta = "Lora";
-                results.push(result);
-            });
-        } else if ((CFG.useEmbeddings || CFG.useHypernetworks || CFG.useLoras) && tagword.match(/<[^,> ]*>?/g)) {
-            // Embeddings, lora, wildcards all together with generic options
-            let tempEmbResults = [];
-            let tempHypResults = [];
-            let tempLoraResults = [];
-            if (tagword !== "<") {
-                let searchTerm = tagword.replace("<", "")
-                
-                let versionString;
-                if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
-                    versionString = searchTerm.slice(0, 2);
-                    searchTerm = searchTerm.slice(2);
-                }
-
-                if (versionString && CFG.useEmbeddings) {
-                    // Version string is only for embeddings atm, so we don't search the other lists here.
-                    tempEmbResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
+            // Since some tags are kaomoji, we have to add the normal results in some cases
+            if (tagword.startsWith("<") || tagword.startsWith("*<")) {
+                // Create escaped search regex with support for * as a start placeholder
+                let searchRegex;
+                if (tagword.startsWith("*")) {
+                    tagword = tagword.slice(1);
+                    searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
                 } else {
-                    tempEmbResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
-                    tempHypResults = hypernetworks.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
-                    tempLoraResults = loras.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
+                    searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
                 }
-            } else {
-                tempEmbResults = embeddings;
-                tempHypResults = hypernetworks;
-                tempLoraResults = loras;
-            }
+                let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
 
-            // Since some tags are kaomoji, we have to still get the normal results first.
-            // Create escaped search regex with support for * as a start placeholder
-            let searchRegex;
-            if (tagword.startsWith("*")) {
-                tagword = tagword.slice(1);
-                searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
-            } else {
-                searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-            }
-            let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
-
-            // Add final results
-            let mixedResults = [];
-            if (CFG.useEmbeddings) {
-                tempEmbResults.forEach(t => {
-                    let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
-                    result.meta = t[1] + " Embedding";
-                    mixedResults.push(result);
-                });
-            }
-            if (CFG.useHypernetworks) {
-                tempHypResults.forEach(t => {
-                    let result = new AutocompleteResult(t.trim(), ResultType.hypernetwork)
-                    result.meta = "Hypernetwork";
-                    mixedResults.push(result);
-                });
-            }
-            if (CFG.useLoras) {
-                tempLoraResults.forEach(t => {
-                    let result = new AutocompleteResult(t.trim(), ResultType.lora)
-                    result.meta = "Lora";
-                    mixedResults.push(result);
-                });
-            }
-
-            // Add all mixed results to the final results, sorted by name so that they aren't after one another.
-            results = mixedResults.sort((a, b) => a.text.localeCompare(b.text));
-
-            genericResults.forEach(g => {
-                let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
-                result.category = g[1];
-                result.count = g[2];
-                result.aliases = g[3];
-                results.push(result);
-            });
-        } else {
-            // Create escaped search regex with support for * as a start placeholder
-            let searchRegex;
-            if (tagword.startsWith("*")) {
-                tagword = tagword.slice(1);
-                searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
-            } else {
-                searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-            }    
-            // If onlyShowAlias is enabled, we don't need to include normal results
-            if (CFG.alias.onlyShowAlias) {
-                results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) > -1);
-            } else {
-                // Else both normal tags and aliases/translations are included depending on the config
-                let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) > -1;
-                let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) > -1;
-                let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) > -1)
-                    || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) > -1);
-                
-                let fil;
-                if (CFG.alias.searchByAlias && CFG.translation.searchByTranslation)
-                    fil = (x) => baseFilter(x) || aliasFilter(x) || translationFilter(x);
-                else if (CFG.alias.searchByAlias && !CFG.translation.searchByTranslation)
-                    fil = (x) => baseFilter(x) || aliasFilter(x);
-                else if (CFG.translation.searchByTranslation && !CFG.alias.searchByAlias)
-                    fil = (x) => baseFilter(x) || translationFilter(x);
-                else
-                    fil = (x) => baseFilter(x);
-
-                // Add final results
-                allTags.filter(fil).forEach(t => {
-                    let result = new AutocompleteResult(t[0].trim(), ResultType.tag)
-                    result.category = t[1];
-                    result.count = t[2];
-                    result.aliases = t[3];
+                genericResults.forEach(g => {
+                    let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
+                    result.category = g[1];
+                    result.count = g[2];
+                    result.aliases = g[3];
                     results.push(result);
                 });
             }
-            // Slice if the user has set a max result count
-            if (!CFG.showAllResults) {
-                results = results.slice(0, CFG.maxResults);
-            }
+        }
+    } else { // Else search the normal tag list
+        // Create escaped search regex with support for * as a start placeholder
+        let searchRegex;
+        if (tagword.startsWith("*")) {
+            tagword = tagword.slice(1);
+            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+        } else {
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+        }    
+        // If onlyShowAlias is enabled, we don't need to include normal results
+        if (CFG.alias.onlyShowAlias) {
+            results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) > -1);
+        } else {
+            // Else both normal tags and aliases/translations are included depending on the config
+            let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) > -1;
+            let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) > -1;
+            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) > -1)
+                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) > -1);
+            
+            let fil;
+            if (CFG.alias.searchByAlias && CFG.translation.searchByTranslation)
+                fil = (x) => baseFilter(x) || aliasFilter(x) || translationFilter(x);
+            else if (CFG.alias.searchByAlias && !CFG.translation.searchByTranslation)
+                fil = (x) => baseFilter(x) || aliasFilter(x);
+            else if (CFG.translation.searchByTranslation && !CFG.alias.searchByAlias)
+                fil = (x) => baseFilter(x) || translationFilter(x);
+            else
+                fil = (x) => baseFilter(x);
+
+            // Add final results
+            allTags.filter(fil).forEach(t => {
+                let result = new AutocompleteResult(t[0].trim(), ResultType.tag)
+                result.category = t[1];
+                result.count = t[2];
+                result.aliases = t[3];
+                results.push(result);
+            });
+        }
+        // Slice if the user has set a max result count
+        if (!CFG.showAllResults) {
+            results = results.slice(0, CFG.maxResults);
         }
     }
 
