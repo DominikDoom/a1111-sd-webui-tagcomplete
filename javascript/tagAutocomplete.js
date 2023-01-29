@@ -524,6 +524,9 @@ function addResultsToList(textArea, results, tagword, resetList) {
         resultsList.appendChild(li);
     }
     resultCount = nextLength;
+
+    if (resetList)
+        resultDiv.scrollTop = 0;
 }
 
 function updateSelectionStyle(textArea, newIndex, oldIndex) {
