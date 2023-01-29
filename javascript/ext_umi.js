@@ -183,7 +183,7 @@ class UmiParser extends BaseTagParser {
     }
 }
 
-function updateUmiTags(tagType, newPrompt, textArea) {
+function updateUmiTags( tagType, sanitizedText, newPrompt, textArea) {
     // If it was a yaml wildcard, also update the umiPreviousTags
     if (tagType === ResultType.yamlWildcard && originalTagword.length > 0) {
         let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
@@ -196,7 +196,10 @@ function updateUmiTags(tagType, newPrompt, textArea) {
         umiPreviousTags = umiTags;
 
         hideResults(textArea);
+
+        return true;
     }
+    return false;
 }
 
 // Add UMI parser

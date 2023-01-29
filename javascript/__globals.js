@@ -25,6 +25,7 @@ var resultCount = 0;
 var previousTags = [];
 var tagword = "";
 var originalTagword = "";
+let hideBlocked = false;
 
 // Tag selection for keyboard navigation
 var selectedTag = null;

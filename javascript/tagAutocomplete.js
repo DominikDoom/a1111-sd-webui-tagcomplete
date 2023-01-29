@@ -288,10 +288,8 @@ function isEnabled() {
 const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const TAG_REGEX = /(<[^\t\n\r,>]+>?|[^\s,|<>]+|<)/g
 
-let hideBlocked = false;
-
 // On click, insert the tag into the prompt textbox with respect to the cursor position
-function insertTextAtCursor(textArea, result, tagword) {
+async function insertTextAtCursor(textArea, result, tagword) {
     let text = result.text;
     let tagType = result.type;
 
@@ -361,15 +359,13 @@ function insertTextAtCursor(textArea, result, tagword) {
     previousTags = tags;
 
     // Callback
-    processQueue(QUEUE_AFTER_INSERT, null, tagType, newPrompt, textArea);
+    let returns = await processQueueReturn(QUEUE_AFTER_INSERT, null, tagType, sanitizedText, newPrompt, textArea);
+    // Return if any queue function returned true (has handled hide/show already)
+    if (returns.some(x => x === true))
+        return;
 
-    // Hide results after inserting
-    if (tagType === ResultType.wildcardFile) {
-        // If it's a wildcard, we want to keep the results open so the user can select another wildcard
-        hideBlocked = true;
-        autocomplete(textArea, prompt, sanitizedText);
-        setTimeout(() => { hideBlocked = false; }, 100);
-    } else if (!hideBlocked && isVisible(textArea)) {
+    // Hide results after inserting, if it hasn't been hidden already by a queue function
+    if (!hideBlocked && isVisible(textArea)) {
         hideResults(textArea);
     }
 }

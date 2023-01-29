@@ -55,6 +55,20 @@ class WildcardFileParser extends BaseTagParser {
     }
 }
 
+function keepOpenIfWildcard(tagType, sanitizedText, newPrompt, textArea) {
+    // If it's a wildcard, we want to keep the results open so the user can select another wildcard
+    if (tagType === ResultType.wildcardFile) {
+        hideBlocked = true;
+        autocomplete(textArea, newPrompt, sanitizedText);
+        setTimeout(() => { hideBlocked = false; }, 100);
+        return true;
+    }
+    return false;
+}
+
 // Register the parsers
 PARSERS.push(new WildcardParser(WC_TRIGGER));
 PARSERS.push(new WildcardFileParser(WC_FILE_TRIGGER));
+
+// Add the keep open function to the queue
+QUEUE_AFTER_INSERT.push(keepOpenIfWildcard);
