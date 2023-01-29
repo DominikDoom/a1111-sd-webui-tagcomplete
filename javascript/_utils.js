@@ -106,7 +106,9 @@ async function processQueueReturn(queue, context, ...args)
 {
     let qeueueReturns = [];
     for (let i = 0; i < queue.length; i++) {
-        qeueueReturns.push(await queue[i].call(context, ...args));
+        let returnValue = await queue[i].call(context, ...args);
+        if (returnValue)
+            qeueueReturns.push(returnValue);
     }
     return qeueueReturns;
 }
