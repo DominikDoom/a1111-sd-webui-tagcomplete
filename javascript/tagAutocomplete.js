@@ -409,6 +409,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
     for (let i = resultCount; i < nextLength; i++) {
         let result = results[i];
+
+        // Skip if the result is null or undefined
+        if (!result)
+            continue;
+
         let li = document.createElement("li");
 
         let flexDiv = document.createElement("div");
@@ -803,7 +808,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     }
 
     // Guard for empty results
-    if (!results.length) {
+    if (!results || results.length === 0) {
         //console.log('No results found for "' + tagword + '"');
         hideResults(textArea);
         return;
