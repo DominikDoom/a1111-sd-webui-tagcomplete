@@ -6,7 +6,9 @@ const ResultType = Object.freeze({
     "embedding": 2,
     "wildcardTag": 3,
     "wildcardFile": 4,
-    "yamlWildcard": 5
+    "yamlWildcard": 5,
+    "hypernetwork": 6,
+    "lora": 7
 });
 
 // Class to hold result data and annotations to make it clearer to use
