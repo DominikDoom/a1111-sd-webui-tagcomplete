@@ -286,7 +286,9 @@ function isEnabled() {
 }
 
 const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
-const TAG_REGEX = /(<[^\t\n\r,>]+>?|[^\s,|<>]+|<)/g
+const POINTY_REGEX = /<[^\s,<](?:[^\t\n\r,<>]*>|[^\t\n\r,> ]*)/g;
+const NORMAL_TAG_REGEX = /[^\s,|<>]+|</g;
+const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 async function insertTextAtCursor(textArea, result, tagword) {
