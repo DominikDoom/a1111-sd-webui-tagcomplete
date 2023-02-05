@@ -74,8 +74,11 @@ def get_ext_wildcard_tags():
             with open(path, encoding="utf8") as file:
                 data = yaml.safe_load(file)
                 for item in data:
-                    wildcard_tags[count] = ','.join(data[item]['Tags'])
-                    count += 1
+                    if data[item] and 'Tags' in data[item]:
+                        wildcard_tags[count] = ','.join(data[item]['Tags'])
+                        count += 1
+                    else:
+                        print('Issue with tags found in ' + path.name + ' at item ' + item)
         except yaml.YAMLError as exc:
             print(exc)
     # Sort by count
