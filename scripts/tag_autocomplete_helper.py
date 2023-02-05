@@ -20,9 +20,12 @@ TAGS_PATH = Path(scripts.basedir()).joinpath('tags')
 # The path to the folder containing the wildcards and embeddings
 WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
 EMB_PATH = Path(shared.cmd_opts.embeddings_dir)
-LORA_PATH = Path(shared.cmd_opts.lora_dir)
 HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir)
 
+try:
+    LORA_PATH = Path(shared.cmd_opts.lora_dir)
+except AttributeError:
+    LORA_PATH = None
 
 def find_ext_wildcard_paths():
     """Returns the path to the extension wildcards folder"""
