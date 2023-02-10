@@ -17,7 +17,7 @@ class WildcardParser extends BaseTagParser {
         // Use found wildcard file or look in external wildcard files
         let wcPair = wcFound || wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
 
-        let wildcards = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt?${new Date().getTime()}`)).split("\n")
+        let wildcards = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt`)).split("\n")
             .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
 
         let finalResults = [];
@@ -58,14 +58,14 @@ class WildcardFileParser extends BaseTagParser {
 async function load() {
     if (wildcardFiles.length === 0 && wildcardExtFiles.length === 0) {
         try {
-            let wcFileArr = (await readFile(`${tagBasePath}/temp/wc.txt?${new Date().getTime()}`)).split("\n");
+            let wcFileArr = (await readFile(`${tagBasePath}/temp/wc.txt`)).split("\n");
             let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
             wildcardFiles = wcFileArr.slice(1)
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
 
             // To support multiple sources, we need to separate them using the provided "-----" strings
-            let wcExtFileArr = (await readFile(`${tagBasePath}/temp/wce.txt?${new Date().getTime()}`)).split("\n");
+            let wcExtFileArr = (await readFile(`${tagBasePath}/temp/wce.txt`)).split("\n");
             let splitIndices = [];
             for (let index = 0; index < wcExtFileArr.length; index++) {
                 if (wcExtFileArr[index].trim() === "-----") {

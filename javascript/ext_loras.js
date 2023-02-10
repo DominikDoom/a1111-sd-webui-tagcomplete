@@ -27,7 +27,7 @@ class LoraParser extends BaseTagParser {
 async function load() {
     if (loras.length === 0) {
         try {
-            loras = (await readFile(`${tagBasePath}/temp/lora.txt?${new Date().getTime()}`)).split("\n")
+            loras = (await readFile(`${tagBasePath}/temp/lora.txt`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
                 .map(x => x.trim()); // Remove carriage returns and padding if it exists
         } catch (e) {

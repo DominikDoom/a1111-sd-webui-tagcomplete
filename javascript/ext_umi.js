@@ -205,7 +205,7 @@ function updateUmiTags( tagType, sanitizedText, newPrompt, textArea) {
 async function load() {
     if (yamlWildcards.length === 0) {
         try {
-            let yamlTags = (await readFile(`${tagBasePath}/temp/wcet.txt?${new Date().getTime()}`)).split("\n");
+            let yamlTags = (await readFile(`${tagBasePath}/temp/wcet.txt`)).split("\n");
             // Split into tag, count pairs
             yamlWildcards = yamlTags.map(x => x
                 .trim()

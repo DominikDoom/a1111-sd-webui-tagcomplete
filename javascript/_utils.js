@@ -38,7 +38,10 @@ function parseCSV(str) {
 }
 
 // Load file
-async function readFile(filePath, json = false) {
+async function readFile(filePath, json = false, cache = false) {
+    if (!cache)
+        filePath += `?${new Date().getTime()}`;
+        
     let response = await fetch(`file=${filePath}`);
 
     if (response.status != 200) {

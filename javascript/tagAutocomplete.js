@@ -87,14 +87,14 @@ async function loadTags(c) {
     // Load main tags and aliases
     if (allTags.length === 0 && c.tagFile && c.tagFile !== "None") {
         try {
-            allTags = await loadCSV(`${tagBasePath}/${c.tagFile}?${new Date().getTime()}`);
+            allTags = await loadCSV(`${tagBasePath}/${c.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
         }
         if (c.extra.extraFile && c.extra.extraFile !== "None") {
             try {
-                extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}?${new Date().getTime()}`);
+                extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
                 if (c.extra.onlyAliasExtraFile) {
                     // This works purely on index, so it's not very robust. But a lot faster.
                     for (let i = 0, n = extras.length; i < n; i++) {
@@ -135,7 +135,7 @@ async function loadTags(c) {
 async function loadTranslations(c) {
     if (c.translation.translationFile && c.translation.translationFile !== "None") {
         try {
-            let tArray = await loadCSV(`${tagBasePath}/${c.translation.translationFile}?${new Date().getTime()}`);
+            let tArray = await loadCSV(`${tagBasePath}/${c.translation.translationFile}`);
             tArray.forEach(t => {
                 if (c.translation.oldFormat)
                     translations.set(t[0], t[2]);
@@ -781,7 +781,7 @@ function navigateInList(textArea, event) {
 // One-time setup, triggered from onUiUpdate
 async function setup() {
     // Load colors
-    CFG["colors"] = (await readFile(`${tagBasePath}/colors.json?${new Date().getTime()}`, true));
+    CFG["colors"] = (await readFile(`${tagBasePath}/colors.json`, true));
 
     // Load external files needed by completion extensions
     await processQueue(QUEUE_FILE_LOAD, null);
@@ -909,7 +909,7 @@ onUiUpdate(async () => {
     if (CFG) return;
 
     // Get our tag base path from the temp file
-    tagBasePath = await readFile(`tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
+    tagBasePath = await readFile(`tmp/tagAutocompletePath.txt`);
     // Load config from webui opts
     await syncOptions();
     // Rest of setup

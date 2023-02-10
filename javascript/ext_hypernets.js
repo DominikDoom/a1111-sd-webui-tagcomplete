@@ -27,7 +27,7 @@ class HypernetParser extends BaseTagParser {
 async function load() {
     if (hypernetworks.length === 0) {
         try {
-            hypernetworks = (await readFile(`${tagBasePath}/temp/hyp.txt?${new Date().getTime()}`)).split("\n")
+            hypernetworks = (await readFile(`${tagBasePath}/temp/hyp.txt`)).split("\n")
                 .filter(x => x.trim().length > 0) //Remove empty lines
                 .map(x => x.trim()); // Remove carriage returns and padding if it exists
         } catch (e) {
