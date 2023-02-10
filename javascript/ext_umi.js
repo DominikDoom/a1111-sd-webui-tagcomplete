@@ -202,7 +202,29 @@ function updateUmiTags( tagType, sanitizedText, newPrompt, textArea) {
     return false;
 }
 
+async function load() {
+    if (yamlWildcards.length === 0) {
+        try {
+            let yamlTags = (await readFile(`${tagBasePath}/temp/wcet.txt?${new Date().getTime()}`)).split("\n");
+            // Split into tag, count pairs
+            yamlWildcards = yamlTags.map(x => x
+                .trim()
+                .split(","))
+                .map(([i, ...rest]) => [
+                    i,
+                    rest.reduce((a, b) => {
+                        a[b.toLowerCase()] = true;
+                        return a;
+                    }, {}),
+                ]);
+        } catch (e) {
+            console.error("Error loading yaml wildcards: " + e);
+        }
+    }
+}
+
 // Add UMI parser
 PARSERS.push(new UmiParser(UMI_TRIGGER));
 // Add tag update after insert
 QUEUE_AFTER_INSERT.push(updateUmiTags);
+QUEUE_FILE_LOAD.push(load);

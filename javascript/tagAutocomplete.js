@@ -226,7 +226,7 @@ async function syncOptions() {
     CFG = newCFG;
 
     // Callback
-    processQueue(QUEUE_AFTER_CONFIG_CHANGE, null);
+    await processQueue(QUEUE_AFTER_CONFIG_CHANGE, null);
 }
 
 // Create the result list div and necessary styling
@@ -783,91 +783,8 @@ async function setup() {
     // Load colors
     CFG["colors"] = (await readFile(`${tagBasePath}/colors.json?${new Date().getTime()}`, true));
 
-    // Load wildcards
-    if (wildcardFiles.length === 0 && wildcardExtFiles.length === 0) {
-        try {
-            let wcFileArr = (await readFile(`${tagBasePath}/temp/wc.txt?${new Date().getTime()}`)).split("\n");
-            let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
-            wildcardFiles = wcFileArr.slice(1)
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
-
-            // To support multiple sources, we need to separate them using the provided "-----" strings
-            let wcExtFileArr = (await readFile(`${tagBasePath}/temp/wce.txt?${new Date().getTime()}`)).split("\n");
-            let splitIndices = [];
-            for (let index = 0; index < wcExtFileArr.length; index++) {
-                if (wcExtFileArr[index].trim() === "-----") {
-                    splitIndices.push(index);
-                }
-            }
-            // For each group, add them to the wildcardFiles array with the base path as the first element
-            for (let i = 0; i < splitIndices.length; i++) {
-                let start = splitIndices[i - 1] || 0;
-                if (i > 0) start++; // Skip the "-----" line
-                let end = splitIndices[i];
-
-                let wcExtFile = wcExtFileArr.slice(start, end);
-                let base = wcExtFile[0].trim() + "/";
-                wcExtFile = wcExtFile.slice(1)
-                    .filter(x => x.trim().length > 0) // Remove empty lines
-                    .map(x => x.trim().replace(base, "").replace(".txt", "")); // Remove file extension & newlines;
-
-                wcExtFile = wcExtFile.map(x => [base, x]);
-                wildcardExtFiles.push(...wcExtFile);
-            }
-        } catch (e) {
-            console.error("Error loading wildcards: " + e);
-        }
-    }
-    // Load yaml wildcards
-    if (yamlWildcards.length === 0) {
-        try {
-            let yamlTags = (await readFile(`${tagBasePath}/temp/wcet.txt?${new Date().getTime()}`)).split("\n");
-            // Split into tag, count pairs
-            yamlWildcards = yamlTags.map(x => x
-                .trim()
-                .split(","))
-                .map(([i, ...rest]) => [
-                    i,
-                    rest.reduce((a, b) => {
-                        a[b.toLowerCase()] = true;
-                        return a;
-                    }, {}),
-                ]);
-        } catch (e) {
-            console.error("Error loading yaml wildcards: " + e);
-        }
-    }
-    // Load embeddings
-    if (embeddings.length === 0) {
-        try {
-            embeddings = (await readFile(`${tagBasePath}/temp/emb.txt?${new Date().getTime()}`)).split("\n")
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim().split(",")); // Split into name, version type pairs
-        } catch (e) {
-            console.error("Error loading embeddings.txt: " + e);
-        }
-    }
-    // Load hypernetworks
-    if (hypernetworks.length === 0) {
-        try {
-            hypernetworks = (await readFile(`${tagBasePath}/temp/hyp.txt?${new Date().getTime()}`)).split("\n")
-                .filter(x => x.trim().length > 0) //Remove empty lines
-                .map(x => x.trim()); // Remove carriage returns and padding if it exists
-        } catch (e) {
-            console.error("Error loading hypernetworks.txt: " + e);
-        }
-    }
-    // Load lora
-    if (loras.length === 0) {
-        try {
-            loras = (await readFile(`${tagBasePath}/temp/lora.txt?${new Date().getTime()}`)).split("\n")
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim()); // Remove carriage returns and padding if it exists
-        } catch (e) {
-            console.error("Error loading lora.txt: " + e);
-        }
-    }
+    // Load external files needed by completion extensions
+    await processQueue(QUEUE_FILE_LOAD, null);
 
     // Find all textareas
     let textAreas = getTextAreas();
@@ -984,7 +901,7 @@ async function setup() {
     gradioApp().appendChild(acStyle);
 
     // Callback
-    processQueue(QUEUE_AFTER_SETUP, null);
+    await processQueue(QUEUE_AFTER_SETUP, null);
 }
 
 onUiUpdate(async () => {

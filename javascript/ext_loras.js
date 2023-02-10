@@ -24,4 +24,19 @@ class LoraParser extends BaseTagParser {
     }
 }
 
+async function load() {
+    if (loras.length === 0) {
+        try {
+            loras = (await readFile(`${tagBasePath}/temp/lora.txt?${new Date().getTime()}`)).split("\n")
+                .filter(x => x.trim().length > 0) // Remove empty lines
+                .map(x => x.trim()); // Remove carriage returns and padding if it exists
+        } catch (e) {
+            console.error("Error loading lora.txt: " + e);
+        }
+    }
+}
+
 PARSERS.push(new LoraParser(LORA_TRIGGER));
+
+// Add load function to the queue
+QUEUE_FILE_LOAD.push(load);

@@ -55,6 +55,44 @@ class WildcardFileParser extends BaseTagParser {
     }
 }
 
+async function load() {
+    if (wildcardFiles.length === 0 && wildcardExtFiles.length === 0) {
+        try {
+            let wcFileArr = (await readFile(`${tagBasePath}/temp/wc.txt?${new Date().getTime()}`)).split("\n");
+            let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
+            wildcardFiles = wcFileArr.slice(1)
+                .filter(x => x.trim().length > 0) // Remove empty lines
+                .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
+
+            // To support multiple sources, we need to separate them using the provided "-----" strings
+            let wcExtFileArr = (await readFile(`${tagBasePath}/temp/wce.txt?${new Date().getTime()}`)).split("\n");
+            let splitIndices = [];
+            for (let index = 0; index < wcExtFileArr.length; index++) {
+                if (wcExtFileArr[index].trim() === "-----") {
+                    splitIndices.push(index);
+                }
+            }
+            // For each group, add them to the wildcardFiles array with the base path as the first element
+            for (let i = 0; i < splitIndices.length; i++) {
+                let start = splitIndices[i - 1] || 0;
+                if (i > 0) start++; // Skip the "-----" line
+                let end = splitIndices[i];
+
+                let wcExtFile = wcExtFileArr.slice(start, end);
+                let base = wcExtFile[0].trim() + "/";
+                wcExtFile = wcExtFile.slice(1)
+                    .filter(x => x.trim().length > 0) // Remove empty lines
+                    .map(x => x.trim().replace(base, "").replace(".txt", "")); // Remove file extension & newlines;
+
+                wcExtFile = wcExtFile.map(x => [base, x]);
+                wildcardExtFiles.push(...wcExtFile);
+            }
+        } catch (e) {
+            console.error("Error loading wildcards: " + e);
+        }
+    }
+}
+
 function keepOpenIfWildcard(tagType, sanitizedText, newPrompt, textArea) {
     // If it's a wildcard, we want to keep the results open so the user can select another wildcard
     if (tagType === ResultType.wildcardFile) {
@@ -72,3 +110,5 @@ PARSERS.push(new WildcardFileParser(WC_FILE_TRIGGER));
 
 // Add the keep open function to the queue
 QUEUE_AFTER_INSERT.push(keepOpenIfWildcard);
+// Add the load function to the queue
+QUEUE_FILE_LOAD.push(load);

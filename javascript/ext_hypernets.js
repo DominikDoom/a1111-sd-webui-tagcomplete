@@ -24,4 +24,19 @@ class HypernetParser extends BaseTagParser {
     }
 }
 
+async function load() {
+    if (hypernetworks.length === 0) {
+        try {
+            hypernetworks = (await readFile(`${tagBasePath}/temp/hyp.txt?${new Date().getTime()}`)).split("\n")
+                .filter(x => x.trim().length > 0) //Remove empty lines
+                .map(x => x.trim()); // Remove carriage returns and padding if it exists
+        } catch (e) {
+            console.error("Error loading hypernetworks.txt: " + e);
+        }
+    }
+}
+
 PARSERS.push(new HypernetParser(HYP_TRIGGER));
+
+// Add load function to the queue
+QUEUE_FILE_LOAD.push(load);

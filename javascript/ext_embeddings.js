@@ -32,4 +32,19 @@ class EmbeddingParser extends BaseTagParser {
     }
 }
 
+async function load() {
+    if (embeddings.length === 0) {
+        try {
+            embeddings = (await readFile(`${tagBasePath}/temp/emb.txt?${new Date().getTime()}`)).split("\n")
+                .filter(x => x.trim().length > 0) // Remove empty lines
+                .map(x => x.trim().split(",")); // Split into name, version type pairs
+        } catch (e) {
+            console.error("Error loading embeddings.txt: " + e);
+        }
+    }
+}
+
 PARSERS.push(new EmbeddingParser(EMB_TRIGGER));
+
+// Add load function to the queue
+QUEUE_FILE_LOAD.push(load);

@@ -96,9 +96,9 @@ function escapeHTML(unsafeText) {
 }
 
 // Queue calling function to process global queues
-function processQueue(queue, context, ...args) {
+async function processQueue(queue, context, ...args) {
     for (let i = 0; i < queue.length; i++) {
-        queue[i].call(context, ...args);
+        await queue[i].call(context, ...args);
     }
 }
 // The same but with return values
