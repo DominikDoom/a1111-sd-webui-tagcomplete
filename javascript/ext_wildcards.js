@@ -1,5 +1,5 @@
 // Regex
-const WC_REGEX = /\b__([^, ]+)__([^, ]*)\b/g;
+const WC_REGEX = /\b__([^,]+)__([^, ]*)\b/g;
 
 // Trigger conditions
 const WC_TRIGGER = () => CFG.useWildcards && [...tagword.matchAll(WC_REGEX)].length > 0;
