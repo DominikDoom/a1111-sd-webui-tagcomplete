@@ -234,7 +234,7 @@ if HYP_PATH.exists():
     if hypernets:
         write_to_temp_file('hyp.txt', hypernets)
 
-if LORA_PATH.exists():
+if LORA_PATH is not None and LORA_PATH.exists():
     lora = get_lora()
     if lora:
         write_to_temp_file('lora.txt', lora)
