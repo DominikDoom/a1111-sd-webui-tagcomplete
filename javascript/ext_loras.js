@@ -36,7 +36,15 @@ async function load() {
     }
 }
 
+function sanitize(tagType, text) {
+    if (tagType === ResultType.lora) {
+        return `<lora:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
+    }
+    return null;
+}
+
 PARSERS.push(new LoraParser(LORA_TRIGGER));
 
-// Add load function to the queue
+// Add our utility functions to their respective queues
 QUEUE_FILE_LOAD.push(load);
+QUEUE_SANITIZE.push(sanitize);

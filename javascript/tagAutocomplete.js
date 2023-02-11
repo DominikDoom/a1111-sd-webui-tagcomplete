@@ -299,29 +299,21 @@ async function insertTextAtCursor(textArea, result, tagword) {
     let cursorPos = textArea.selectionStart;
     var sanitizedText = text
 
-    // Replace differently depending on if it's a tag or wildcard
-    if (tagType === ResultType.wildcardFile) {
-        sanitizedText = "__" + text.replace("Wildcards: ", "") + "__";
-    } else if (tagType === ResultType.wildcardTag) {
-        sanitizedText = text.replace(/^.*?: /g, "");
-    } else if (tagType === ResultType.yamlWildcard && !yamlWildcards.includes(text)) {
-        sanitizedText = text.replaceAll("_", " "); // Replace underscores only if the yaml tag is not using them
-    } else if (tagType === ResultType.embedding) {
-        sanitizedText = `${text.replace(/^.*?: /g, "")}`;
-    } else if (tagType === ResultType.hypernetwork) {
-        sanitizedText = `<hypernet:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
-    } else if(tagType === ResultType.lora) {
-        sanitizedText = `<lora:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
+    // Run sanitize queue and use first result as sanitized text
+    sanitizeResults = await processQueueReturn(QUEUE_SANITIZE, null, tagType, text);
+
+    if (sanitizeResults && sanitizeResults.length > 0) {
+        sanitizedText = sanitizeResults[0];
     } else {
         sanitizedText = CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
-    }
 
-    if (CFG.escapeParentheses && tagType === ResultType.tag) {
-        sanitizedText = sanitizedText
-            .replaceAll("(", "\\(")
-            .replaceAll(")", "\\)")
-            .replaceAll("[", "\\[")
-            .replaceAll("]", "\\]");
+        if (CFG.escapeParentheses && tagType === ResultType.tag) {
+            sanitizedText = sanitizedText
+                .replaceAll("(", "\\(")
+                .replaceAll(")", "\\)")
+                .replaceAll("[", "\\[")
+                .replaceAll("]", "\\]");
+        }
     }
 
     var prompt = textArea.value;

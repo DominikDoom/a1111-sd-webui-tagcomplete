@@ -44,7 +44,15 @@ async function load() {
     }
 }
 
+function sanitize(tagType, text) {
+    if (tagType === ResultType.embedding) {
+        return text.replace(/^.*?: /g, "");
+    }
+    return null;
+}
+
 PARSERS.push(new EmbeddingParser(EMB_TRIGGER));
 
-// Add load function to the queue
+// Add our utility functions to their respective queues
 QUEUE_FILE_LOAD.push(load);
+QUEUE_SANITIZE.push(sanitize);

@@ -93,6 +93,15 @@ async function load() {
     }
 }
 
+function sanitize(tagType, text) {
+    if (tagType === ResultType.wildcardFile) {
+        return `__${text}__`;
+    } else if (tagType === ResultType.wildcardTag) {
+        return text.replace(/^.*?: /g, "");
+    }
+    return null;
+}
+
 function keepOpenIfWildcard(tagType, sanitizedText, newPrompt, textArea) {
     // If it's a wildcard, we want to keep the results open so the user can select another wildcard
     if (tagType === ResultType.wildcardFile) {
@@ -108,7 +117,7 @@ function keepOpenIfWildcard(tagType, sanitizedText, newPrompt, textArea) {
 PARSERS.push(new WildcardParser(WC_TRIGGER));
 PARSERS.push(new WildcardFileParser(WC_FILE_TRIGGER));
 
-// Add the keep open function to the queue
-QUEUE_AFTER_INSERT.push(keepOpenIfWildcard);
-// Add the load function to the queue
+// Add our utility functions to their respective queues
 QUEUE_FILE_LOAD.push(load);
+QUEUE_SANITIZE.push(sanitize);
+QUEUE_AFTER_INSERT.push(keepOpenIfWildcard);

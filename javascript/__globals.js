@@ -44,6 +44,7 @@ const QUEUE_AFTER_INSERT = [];
 const QUEUE_AFTER_SETUP = [];
 const QUEUE_FILE_LOAD = [];
 const QUEUE_AFTER_CONFIG_CHANGE = [];
+const QUEUE_SANITIZE = [];
 
 // List of parsers to try
 const PARSERS = [];

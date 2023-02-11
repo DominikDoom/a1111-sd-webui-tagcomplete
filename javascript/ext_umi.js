@@ -223,8 +223,18 @@ async function load() {
     }
 }
 
+function sanitize(tagType, text) {
+    // Replace underscores only if the yaml tag is not using them
+    if (tagType === ResultType.yamlWildcard && !yamlWildcards.includes(text)) {
+        return text.replaceAll("_", " "); 
+    }
+    return null;
+}
+
 // Add UMI parser
 PARSERS.push(new UmiParser(UMI_TRIGGER));
-// Add tag update after insert
-QUEUE_AFTER_INSERT.push(updateUmiTags);
+
+// Add our utility functions to their respective queues
 QUEUE_FILE_LOAD.push(load);
+QUEUE_SANITIZE.push(sanitize);
+QUEUE_AFTER_INSERT.push(updateUmiTags);
