@@ -35,6 +35,7 @@ const autocompleteCSS = `
     .autocompleteResults {
         position: absolute;
         z-index: 999;
+        max-width: calc(100% - 1.5em);
         margin: 5px 0 0 0;
         background-color: var(--results-bg) !important;
         border: var(--results-border-width) solid var(--results-border-color) !important;
