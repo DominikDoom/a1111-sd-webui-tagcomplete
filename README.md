@@ -117,34 +117,24 @@ Like on Booru sites, tags can have one or multiple aliases which redirect to the
 
 #### Translations
 An additional file can be added in the translation section, which will be used to translate both tags and aliases and also enables searching by translation.
-This file needs to be a CSV in the format `<English tag/alias>,<Translation>`, but for backwards compatibility with older extra files that used a three column format, you can turn on `oldFormat` to use that instead.
+This file needs to be a CSV in the format `<English tag/alias>,<Translation>`, but for backwards compatibility with older files that used a three column format, you can turn on `oldFormat` to use that instead.
 
 Example with chinese translation:
 
 ![IME-input](https://user-images.githubusercontent.com/34448969/200126551-2264e9cc-abb2-4450-9afa-43f362a77ab0.png)
 ![english-input](https://user-images.githubusercontent.com/34448969/200126513-bf6b3940-6e22-41b0-a369-f2b4640f87d6.png)
 
-**Important**
-As of a recent update, translations added in the old Extra file way will only work as an alias and not be visible anymore if typing the English tag for that translation.
-
 #### Extra file
-Aliases can be added in multiple ways, which is where the "Extra" file comes into play.
-1. As an extra file containing tag, category, optional count and the new alias. Will be matched to the English tags in the main file based on the name & type, so might be slow for large files.
-2. As an extra file with `onlyAliasExtraFile` true. With this configuration, the extra file has to include *only* the alias itself. That means it is purely index based, assigning the aliases to the main tags is really fast but also needs the lines to match (including empty lines). If the order or amount in the main file changes, the translations will potentially not match anymore. Not recommended.
+An extra file can be used to add new / custom tags not included in the main set.
+The format is identical to the normal tag format shown in [CSV tag data](#csv-tag-data) below, with one exception:
+Since custom tags likely have no count, column three (or two if counting from zero) is instead used for the gray meta text displayed next to the tag.
+If left empty, it will instead show "Custom tag".
 
-So your CSV values would look like this for each method:
-|            |       1                  |       2                  |
-|------------|--------------------------|--------------------------|
-| Main file  | `tag,type,count,(alias)` | `tag,type,count,(alias)` |
-| Extra file | `tag,type,(count),alias` | `alias`                  |
+An example with the included (very basic) extra-quality-tags.csv file:
 
-Count in the extra file is optional, since there isn't always a post count for custom tag sets.
+![image](https://user-images.githubusercontent.com/34448969/218264276-cd77ba8e-62d8-41a2-b03c-6c04887ee18b.png)
 
-The extra files can also be used to just add new / custom tags not included in the main set, provided `onlyAliasExtraFile` is false.
-If an extra tag doesn't match any existing tag, it will be added to the list as a new tag instead. For this, it will need to include the post count and alias columns even if they don't contain anything, so it could be in the form of `tag,type,,`.
-
-##### WARNING
-Do not use e621.csv or danbooru.csv as an extra file. Alias comparison has exponential runtime, so for the combination of danbooru+e621, it will need to do 10,000,000,000 (yes, ten billion) lookups and usually take multiple minutes to load.
+Whether the custom tags should be added before or after the normal tags can be chosen in the settings.
 
 ## CSV tag data
 The script expects a CSV file with tags saved in the following way:
