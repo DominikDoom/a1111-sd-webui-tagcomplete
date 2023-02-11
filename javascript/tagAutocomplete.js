@@ -61,10 +61,10 @@ const autocompleteCSS = `
     }
     .acListItem {
         white-space: break-spaces;
-        flex-shrink: 1;
     }
     .acMetaText {
         position: relative;
+        flex-grow: 1;
         text-align: end;
         padding: 0 0 0 15px;
         white-space: nowrap;
