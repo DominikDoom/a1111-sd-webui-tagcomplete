@@ -5,6 +5,7 @@ var tagBasePath = "";
 // Tag completion data loaded from files
 var allTags = [];
 var translations = new Map();
+var extras = [];
 // Same for tag-likes
 var wildcardFiles = [];
 var wildcardExtFiles = [];

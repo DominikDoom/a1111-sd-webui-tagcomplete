@@ -92,42 +92,13 @@ async function loadTags(c) {
             console.error("Error loading tags file: " + e);
             return;
         }
-        if (c.extra.extraFile && c.extra.extraFile !== "None") {
-            try {
-                extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
-                if (c.extra.onlyAliasExtraFile) {
-                    // This works purely on index, so it's not very robust. But a lot faster.
-                    for (let i = 0, n = extras.length; i < n; i++) {
-                        if (extras[i][0]) {
-                            let aliasStr = allTags[i][3] || "";
-                            let optComma = aliasStr.length > 0 ? "," : "";
-                            allTags[i][3] = aliasStr + optComma + extras[i][0];
-                        }
-                    }
-                } else {
-                    extras.forEach(e => {
-                        let hasCount = e[2] && e[3] || (!isNaN(e[2]) && !e[3]);
-                        // Check if a tag in allTags has the same name & category as the extra tag
-                        if (tag = allTags.find(t => t[0] === e[0] && t[1] == e[1])) {
-                            if (hasCount && e[3] || isNaN(e[2])) { // If the extra tag has a translation / alias, add it to the normal tag
-                                let aliasStr = tag[3] || "";
-                                let optComma = aliasStr.length > 0 ? "," : "";
-                                let alias = hasCount && e[3] || isNaN(e[2]) ? e[2] : e[3];
-                                tag[3] = aliasStr + optComma + alias;
-                            }
-                        } else {
-                            let count = hasCount ? e[2] : null;
-                            let aliases = hasCount && e[3] ? e[3] : e[2];
-                            // If the tag doesn't exist, add it to allTags
-                            let newTag = [e[0], e[1], count, aliases];
-                            allTags.push(newTag);
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Error loading extra file: " + e);
-                return;
-            }
+    }
+    if (c.extra.extraFile && c.extra.extraFile !== "None") {
+        try {
+            extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
+        } catch (e) {
+            console.error("Error loading extra file: " + e);
+            return;
         }
     }
 }
@@ -191,7 +162,7 @@ async function syncOptions() {
         // Extra file settings
         extra: {
             extraFile: opts["tac_extra.extraFile"],
-            onlyAliasExtraFile: opts["tac_extra.onlyAliasExtraFile"]
+            addMode: opts["tac_extra.addMode"]
         },
         // Settings not from tac but still used by the script
         extraNetworksDefaultMultiplier: opts["extra_networks_default_multiplier"]
@@ -671,6 +642,25 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 result.aliases = t[3];
                 results.push(result);
             });
+
+            // Add extras
+            if (CFG.extra.extraFile) {
+                let extraResults = [];
+
+                extras.filter(fil).forEach(e => {
+                    let result = new AutocompleteResult(e[0].trim(), ResultType.extra)
+                    result.category = e[1] || 0; // If no category is given, use 0 as the default
+                    result.meta = e[2] || "Custom tag";
+                    result.aliases = e[3] || "";
+                    extraResults.push(result);
+                });
+
+                if (CFG.extra.addMode === "Insert before") {
+                    results = extraResults.concat(results);
+                } else {
+                    results = results.concat(extraResults);
+                }
+            }
         }
         // Slice if the user has set a max result count
         if (!CFG.showAllResults) {
