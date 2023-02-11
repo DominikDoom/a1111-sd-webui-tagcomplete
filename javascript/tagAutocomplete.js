@@ -1,5 +1,3 @@
-var CFG = null;
-
 const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
@@ -87,55 +85,22 @@ const autocompleteCSS = `
     }
 `;
 
-var tagBasePath = "";
-var allTags = [];
-var translations = new Map();
-
 async function loadTags(c) {
     // Load main tags and aliases
     if (allTags.length === 0 && c.tagFile && c.tagFile !== "None") {
         try {
-            allTags = await loadCSV(`${tagBasePath}/${c.tagFile}?${new Date().getTime()}`);
+            allTags = await loadCSV(`${tagBasePath}/${c.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
         }
-        if (c.extra.extraFile && c.extra.extraFile !== "None") {
-            try {
-                extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}?${new Date().getTime()}`);
-                if (c.extra.onlyAliasExtraFile) {
-                    // This works purely on index, so it's not very robust. But a lot faster.
-                    for (let i = 0, n = extras.length; i < n; i++) {
-                        if (extras[i][0]) {
-                            let aliasStr = allTags[i][3] || "";
-                            let optComma = aliasStr.length > 0 ? "," : "";
-                            allTags[i][3] = aliasStr + optComma + extras[i][0];
-                        }
-                    }
-                } else {
-                    extras.forEach(e => {
-                        let hasCount = e[2] && e[3] || (!isNaN(e[2]) && !e[3]);
-                        // Check if a tag in allTags has the same name & category as the extra tag
-                        if (tag = allTags.find(t => t[0] === e[0] && t[1] == e[1])) {
-                            if (hasCount && e[3] || isNaN(e[2])) { // If the extra tag has a translation / alias, add it to the normal tag
-                                let aliasStr = tag[3] || "";
-                                let optComma = aliasStr.length > 0 ? "," : "";
-                                let alias = hasCount && e[3] || isNaN(e[2]) ? e[2] : e[3];
-                                tag[3] = aliasStr + optComma + alias;
-                            }
-                        } else {
-                            let count = hasCount ? e[2] : null;
-                            let aliases = hasCount && e[3] ? e[3] : e[2];
-                            // If the tag doesn't exist, add it to allTags
-                            let newTag = [e[0], e[1], count, aliases];
-                            allTags.push(newTag);
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Error loading extra file: " + e);
-                return;
-            }
+    }
+    if (c.extra.extraFile && c.extra.extraFile !== "None") {
+        try {
+            extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
+        } catch (e) {
+            console.error("Error loading extra file: " + e);
+            return;
         }
     }
 }
@@ -143,7 +108,7 @@ async function loadTags(c) {
 async function loadTranslations(c) {
     if (c.translation.translationFile && c.translation.translationFile !== "None") {
         try {
-            let tArray = await loadCSV(`${tagBasePath}/${c.translation.translationFile}?${new Date().getTime()}`);
+            let tArray = await loadCSV(`${tagBasePath}/${c.translation.translationFile}`);
             tArray.forEach(t => {
                 if (c.translation.oldFormat)
                     translations.set(t[0], t[2]);
@@ -199,7 +164,7 @@ async function syncOptions() {
         // Extra file settings
         extra: {
             extraFile: opts["tac_extra.extraFile"],
-            onlyAliasExtraFile: opts["tac_extra.onlyAliasExtraFile"]
+            addMode: opts["tac_extra.addMode"]
         },
         // Settings not from tac but still used by the script
         extraNetworksDefaultMultiplier: opts["extra_networks_default_multiplier"]
@@ -232,6 +197,9 @@ async function syncOptions() {
 
     // Apply changes
     CFG = newCFG;
+
+    // Callback
+    await processQueue(QUEUE_AFTER_CONFIG_CHANGE, null);
 }
 
 // Create the result list div and necessary styling
@@ -249,10 +217,6 @@ function createResultsDiv(textArea) {
 
     return resultsDiv;
 }
-
-// The selected tag index. Needs to be up here so hide can access it.
-var selectedTag = null;
-var previousTags = [];
 
 // Show or hide the results div
 function isVisible(textArea) {
@@ -272,8 +236,6 @@ function hideResults(textArea) {
     selectedTag = null;
 }
 
-var currentModelHash = "";
-var currentModelName = "";
 // Function to check activation criteria
 function isEnabled() {
     if (CFG.activeIn.global) {
@@ -297,43 +259,34 @@ function isEnabled() {
 }
 
 const WEIGHT_REGEX = /[([]([^,()[\]:| ]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
-const TAG_REGEX = /(<[^\t\n\r,>]+>?|[^\s,|<>]+|<)/g
-const WC_REGEX = /\b__([^, ]+)__([^, ]*)\b/g;
-const UMI_PROMPT_REGEX = /<[^\s]*?\[[^,<>]*[\]|]?>?/gi;
-const UMI_TAG_REGEX = /(?:\[|\||--)([^<>\[\]\-|]+)/gi;
-let hideBlocked = false;
+const POINTY_REGEX = /<[^\s,<](?:[^\t\n\r,<>]*>|[^\t\n\r,> ]*)/g;
+const COMPLETED_WILDCARD_REGEX = /__[^\s,_][^\t\n\r,_]*[^\s,_]__[^\s,_]*/g;
+const NORMAL_TAG_REGEX = /[^\s,|<>]+|</g;
+const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
-function insertTextAtCursor(textArea, result, tagword) {
+async function insertTextAtCursor(textArea, result, tagword) {
     let text = result.text;
     let tagType = result.type;
 
     let cursorPos = textArea.selectionStart;
     var sanitizedText = text
 
-    // Replace differently depending on if it's a tag or wildcard
-    if (tagType === ResultType.wildcardFile) {
-        sanitizedText = "__" + text.replace("Wildcards: ", "") + "__";
-    } else if (tagType === ResultType.wildcardTag) {
-        sanitizedText = text.replace(/^.*?: /g, "");
-    } else if (tagType === ResultType.yamlWildcard && !yamlWildcards.includes(text)) {
-        sanitizedText = text.replaceAll("_", " "); // Replace underscores only if the yaml tag is not using them
-    } else if (tagType === ResultType.embedding) {
-        sanitizedText = `${text.replace(/^.*?: /g, "")}`;
-    } else if (tagType === ResultType.hypernetwork) {
-        sanitizedText = `<hypernet:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
-    } else if(tagType === ResultType.lora) {
-        sanitizedText = `<lora:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
+    // Run sanitize queue and use first result as sanitized text
+    sanitizeResults = await processQueueReturn(QUEUE_SANITIZE, null, tagType, text);
+
+    if (sanitizeResults && sanitizeResults.length > 0) {
+        sanitizedText = sanitizeResults[0];
     } else {
         sanitizedText = CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
-    }
 
-    if (CFG.escapeParentheses && tagType === ResultType.tag) {
-        sanitizedText = sanitizedText
-            .replaceAll("(", "\\(")
-            .replaceAll(")", "\\)")
-            .replaceAll("[", "\\[")
-            .replaceAll("]", "\\]");
+        if (CFG.escapeParentheses && tagType === ResultType.tag) {
+            sanitizedText = sanitizedText
+                .replaceAll("(", "\\(")
+                .replaceAll(")", "\\)")
+                .replaceAll("[", "\\[")
+                .replaceAll("]", "\\]");
+        }
     }
 
     var prompt = textArea.value;
@@ -373,27 +326,14 @@ function insertTextAtCursor(textArea, result, tagword) {
     }
     previousTags = tags;
 
-    // If it was a yaml wildcard, also update the umiPreviousTags
-    if (tagType === ResultType.yamlWildcard && originalTagword.length > 0) {
-        let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
+    // Callback
+    let returns = await processQueueReturn(QUEUE_AFTER_INSERT, null, tagType, sanitizedText, newPrompt, textArea);
+    // Return if any queue function returned true (has handled hide/show already)
+    if (returns.some(x => x === true))
+        return;
 
-        let umiTags = [];
-        umiSubPrompts.forEach(umiSubPrompt => {
-            umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
-        });
-
-        umiPreviousTags = umiTags;
-
-        hideResults(textArea);
-    }
-
-    // Hide results after inserting
-    if (tagType === ResultType.wildcardFile) {
-        // If it's a wildcard, we want to keep the results open so the user can select another wildcard
-        hideBlocked = true;
-        autocomplete(textArea, prompt, sanitizedText);
-        setTimeout(() => { hideBlocked = false; }, 100);
-    } else {
+    // Hide results after inserting, if it hasn't been hidden already by a queue function
+    if (!hideBlocked && isVisible(textArea)) {
         hideResults(textArea);
     }
 }
@@ -419,6 +359,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
     for (let i = resultCount; i < nextLength; i++) {
         let result = results[i];
+
+        // Skip if the result is null or undefined
+        if (!result)
+            continue;
+
         let li = document.createElement("li");
 
         let flexDiv = document.createElement("div");
@@ -547,6 +492,9 @@ function addResultsToList(textArea, results, tagword, resetList) {
         resultsList.appendChild(li);
     }
     resultCount = nextLength;
+
+    if (resetList)
+        resultDiv.scrollTop = 0;
 }
 
 function updateSelectionStyle(textArea, newIndex, oldIndex) {
@@ -571,17 +519,6 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
     }
 }
 
-var wildcardFiles = [];
-var wildcardExtFiles = [];
-var yamlWildcards = [];
-var umiPreviousTags = [];
-var embeddings = [];
-var hypernetworks = [];
-var loras = [];
-var results = [];
-var tagword = "";
-var originalTagword = "";
-var resultCount = 0;
 async function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
     if (!isEnabled()) return;
@@ -637,340 +574,40 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     results = [];
     tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
 
-    if (CFG.useWildcards && [...tagword.matchAll(WC_REGEX)].length > 0) {
-        // Show wildcards from a file with that name
-        wcMatch = [...tagword.matchAll(WC_REGEX)]
-        let wcFile = wcMatch[0][1];
-        let wcWord = wcMatch[0][2];
+    // Process all parsers
+    let resultCandidates = await processParsers(textArea, prompt);
+    // If one ore more result candidates match, use their results
+    if (resultCandidates && resultCandidates.length > 0) {
+        // Flatten our candidate(s)
+        results = resultCandidates.flat();
+        // If there was more than one candidate, sort the results by text to mix them
+        // instead of having them added in the order of the parsers
+        let shouldSort = resultCandidates.length > 1;
+        if (shouldSort) {
+            results = results.sort((a, b) => a.text.localeCompare(b.text));
 
-        var wcPair;
+            // Since some tags are kaomoji, we have to add the normal results in some cases
+            if (tagword.startsWith("<") || tagword.startsWith("*<")) {
+                // Create escaped search regex with support for * as a start placeholder
+                let searchRegex;
+                if (tagword.startsWith("*")) {
+                    tagword = tagword.slice(1);
+                    searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+                } else {
+                    searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+                }
+                let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
 
-        // Look in normal wildcard files
-        if (wcFound = wildcardFiles.find(x => x[1].toLowerCase() === wcFile))
-            wcPair = wcFound;
-        else // Look in extensions wildcard files
-            wcPair = wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
-
-        let wildcards = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt?${new Date().getTime()}`)).split("\n")
-            .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
-
-
-        let tempResults = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
-        tempResults.forEach(t => {
-            let result = new AutocompleteResult(t.trim(), ResultType.wildcardTag);
-            result.meta = wcFile;
-            results.push(result);
-        });
-    } else if (CFG.useWildcards && (tagword.startsWith("__") && !tagword.endsWith("__") || tagword === "__")) {
-        // Show available wildcard files
-        let tempResults = [];
-        if (tagword !== "__") {
-            let lmb = (x) => x[1].toLowerCase().includes(tagword.replace("__", ""))
-            tempResults = wildcardFiles.filter(lmb).concat(wildcardExtFiles.filter(lmb)) // Filter by tagword
-        } else {
-            tempResults = wildcardFiles.concat(wildcardExtFiles);
-        }
-
-        // Add final results
-        tempResults.forEach(wcFile => {
-            let result = new AutocompleteResult(wcFile[1].trim(), ResultType.wildcardFile);
-            result.meta = "Wildcard file";
-            results.push(result);
-        })
-    } else if (CFG.useWildcards && [...tagword.matchAll(UMI_PROMPT_REGEX)].length > 0) {
-        // We are in a UMI yaml tag definition, parse further
-        let umiSubPrompts = [...prompt.matchAll(UMI_PROMPT_REGEX)];
-        
-        let umiTags = [];
-        let umiTagsWithOperators = []
-
-        const insertAt = (str,char,pos) => str.slice(0,pos) + char + str.slice(pos);
-
-        umiSubPrompts.forEach(umiSubPrompt => {
-            umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
-            
-            const start = umiSubPrompt.index;
-            const end = umiSubPrompt.index + umiSubPrompt[0].length;
-            if (textArea.selectionStart >= start && textArea.selectionStart <= end) {
-                umiTagsWithOperators = insertAt(umiSubPrompt[0], '###', textArea.selectionStart - start);
-            }
-        });
-
-        const promptSplitToTags = umiTagsWithOperators.replace(']###[', '][').split("][");
-
-        const clean = (str) => str
-            .replaceAll('>', '')
-            .replaceAll('<', '')
-            .replaceAll('[', '')
-            .replaceAll(']', '')
-            .trim();
-
-        const matches = promptSplitToTags.reduce((acc, curr) => {
-            isOptional = curr.includes("|");
-            isNegative = curr.startsWith("--");
-            let out;
-            if (isOptional) {
-                out = {
-                    hasCursor: curr.includes("###"),
-                    tags: clean(curr).split('|').map(x => ({ 
-                        hasCursor: x.includes("###"), 
-                        isNegative: x.startsWith("--"),
-                        tag: clean(x).replaceAll("###", '').replaceAll("--", '')
-                    }))
-                };
-                acc.optional.push(out);
-                acc.all.push(...out.tags.map(x => x.tag));
-            } else if (isNegative) {
-                out = {
-                    hasCursor: curr.includes("###"),
-                    tags: clean(curr).replaceAll("###", '').split('|'),
-                };
-                out.tags = out.tags.map(x => x.startsWith("--") ? x.substring(2) : x);
-                acc.negative.push(out);
-                acc.all.push(...out.tags);
-            } else {
-                out = {
-                    hasCursor: curr.includes("###"),
-                    tags: clean(curr).replaceAll("###", '').split('|'),
-                };
-                acc.positive.push(out);
-                acc.all.push(...out.tags);
-            }
-            return acc;
-        }, { positive: [], negative: [], optional: [], all: [] });
-
-        //console.log({ matches })
-
-        const filteredWildcards = (tagword) => {
-            const wildcards = yamlWildcards.filter(x => {
-                let tags = x[1];
-                const matchesNeg =
-                    matches.negative.length === 0
-                    || matches.negative.every(x => 
-                        x.hasCursor 
-                        || x.tags.every(t => !tags[t])
-                    );
-                if (!matchesNeg) return false;
-                const matchesPos =
-                    matches.positive.length === 0
-                    || matches.positive.every(x =>
-                        x.hasCursor
-                        || x.tags.every(t => tags[t])
-                    );
-                if (!matchesPos) return false;
-                const matchesOpt =
-                    matches.optional.length === 0
-                    || matches.optional.some(x =>
-                        x.tags.some(t =>
-                            t.hasCursor
-                            || t.isNegative
-                                ? !tags[t.tag]
-                                : tags[t.tag]
-                    ));
-                if (!matchesOpt) return false;
-                return true;
-            }).reduce((acc, val) => {
-                Object.keys(val[1]).forEach(tag => acc[tag] = acc[tag] + 1 || 1);
-                return acc;
-            }, {});
-
-            return Object.entries(wildcards)
-                .sort((a, b) => b[1] - a[1])
-                .filter(x =>
-                    x[0] === tagword
-                    || !matches.all.includes(x[0])
-                );
-        }
-        
-        if (umiTags.length > 0) {
-            // Get difference for subprompt
-            let tagCountChange = umiTags.length - umiPreviousTags.length;
-            let diff = difference(umiTags, umiPreviousTags);
-            umiPreviousTags = umiTags;
-
-            // Show all condition
-            let showAll = tagword.endsWith("[") || tagword.endsWith("[--") || tagword.endsWith("|");
-
-            // Exit early if the user closed the bracket manually
-            if ((!diff || diff.length === 0 || (diff.length === 1 && tagCountChange < 0)) && !showAll) {
-                if (!hideBlocked) hideResults(textArea);
-                return;
-            }
-
-            let umiTagword = diff[0] || '';
-            let tempResults = [];
-            if (umiTagword && umiTagword.length > 0) {
-                umiTagword = umiTagword.toLowerCase().replace(/[\n\r]/g, "");
-                originalTagword = tagword;
-                tagword = umiTagword;
-                let filteredWildcardsSorted = filteredWildcards(umiTagword);
-                let searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(umiTagword)}`, 'i')
-                let baseFilter = x => x[0].toLowerCase().search(searchRegex) > -1;
-                let spaceIncludeFilter = x => x[0].toLowerCase().replaceAll(" ", "_").search(searchRegex) > -1;
-                tempResults = filteredWildcardsSorted.filter(x => baseFilter(x) || spaceIncludeFilter(x)) // Filter by tagword
-
-                // Add final results
-                tempResults.forEach(t => {
-                    let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
-                    result.count = t[1];
+                genericResults.forEach(g => {
+                    let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
+                    result.category = g[1];
+                    result.count = g[2];
+                    result.aliases = g[3];
                     results.push(result);
                 });
-            } else if (showAll) {
-                let filteredWildcardsSorted = filteredWildcards("");
-                
-                // Add final results
-                filteredWildcardsSorted.forEach(t => {
-                    let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
-                    result.count = t[1];
-                    results.push(result);
-                });
-        
-                originalTagword = tagword;
-                tagword = "";
             }
-        } else {
-            let filteredWildcardsSorted = filteredWildcards("");
-                
-            // Add final results
-            filteredWildcardsSorted.forEach(t => {
-                let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
-                result.count = t[1];
-                results.push(result);
-            });
-
-            originalTagword = tagword;
-            tagword = "";
         }
-    } else if (CFG.useEmbeddings && tagword.match(/<e:[^,> ]*>?/g)) {
-        // Show embeddings
-        let tempResults = [];
-        if (tagword !== "<e:") {
-            let searchTerm = tagword.replace("<e:", "")
-            let versionString;
-            if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
-                versionString = searchTerm.slice(0, 2);
-                searchTerm = searchTerm.slice(2);
-            }
-            if (versionString)
-                tempResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
-            else
-                tempResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
-        } else {
-            tempResults = embeddings;
-        }
-
-        // Add final results
-        tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
-            result.meta = t[1] + " Embedding";
-            results.push(result);
-        });
-    } else if(CFG.useHypernetworks && tagword.match(/<h:[^,> ]*>?/g)) {
-        // Show hypernetworks
-        let tempResults = [];
-        if (tagword !== "<h:") {
-            let searchTerm = tagword.replace("<h:", "")
-            tempResults = hypernetworks.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
-        } else {
-            tempResults = hypernetworks;
-        }
-
-        // Add final results
-        tempResults.forEach(t => {
-            let result = new AutocompleteResult(t.trim(), ResultType.hypernetwork)
-            result.meta = "Hypernetwork";
-            results.push(result);
-        });
-    } else if(CFG.useLoras && tagword.match(/<l:[^,> ]*>?/g)){
-        // Show lora
-        let tempResults = [];
-        if (tagword !== "<l:") {
-            let searchTerm = tagword.replace("<l:", "")
-            tempResults = loras.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
-        } else {
-            tempResults = loras;
-        }
-
-        // Add final results
-        tempResults.forEach(t => {
-            let result = new AutocompleteResult(t.trim(), ResultType.lora)
-            result.meta = "Lora";
-            results.push(result);
-        });
-    } else if ((CFG.useEmbeddings || CFG.useHypernetworks || CFG.useLoras) && tagword.match(/<[^,> ]*>?/g)) {
-        // Embeddings, lora, wildcards all together with generic options
-        let tempEmbResults = [];
-        let tempHypResults = [];
-        let tempLoraResults = [];
-        if (tagword !== "<") {
-            let searchTerm = tagword.replace("<", "")
-            
-            let versionString;
-            if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
-                versionString = searchTerm.slice(0, 2);
-                searchTerm = searchTerm.slice(2);
-            }
-
-            if (versionString && CFG.useEmbeddings) {
-                // Version string is only for embeddings atm, so we don't search the other lists here.
-                tempEmbResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
-            } else {
-                tempEmbResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
-                tempHypResults = hypernetworks.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
-                tempLoraResults = loras.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
-            }
-        } else {
-            tempEmbResults = embeddings;
-            tempHypResults = hypernetworks;
-            tempLoraResults = loras;
-        }
-
-        // Since some tags are kaomoji, we have to still get the normal results first.
-        // Create escaped search regex with support for * as a start placeholder
-        let searchRegex;
-        if (tagword.startsWith("*")) {
-            tagword = tagword.slice(1);
-            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
-        } else {
-            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-        }
-        let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, CFG.maxResults);
-
-        // Add final results
-        let mixedResults = [];
-        if (CFG.useEmbeddings) {
-            tempEmbResults.forEach(t => {
-                let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
-                result.meta = t[1] + " Embedding";
-                mixedResults.push(result);
-            });
-        }
-        if (CFG.useHypernetworks) {
-            tempHypResults.forEach(t => {
-                let result = new AutocompleteResult(t.trim(), ResultType.hypernetwork)
-                result.meta = "Hypernetwork";
-                mixedResults.push(result);
-            });
-        }
-        if (CFG.useLoras) {
-            tempLoraResults.forEach(t => {
-                let result = new AutocompleteResult(t.trim(), ResultType.lora)
-                result.meta = "Lora";
-                mixedResults.push(result);
-            });
-        }
-
-        // Add all mixed results to the final results, sorted by name so that they aren't after one another.
-        results = mixedResults.sort((a, b) => a.text.localeCompare(b.text));
-
-        genericResults.forEach(g => {
-            let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
-            result.category = g[1];
-            result.count = g[2];
-            result.aliases = g[3];
-            results.push(result);
-        });
-    } else {
+    } else { // Else search the normal tag list
         // Create escaped search regex with support for * as a start placeholder
         let searchRegex;
         if (tagword.startsWith("*")) {
@@ -1007,6 +644,25 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 result.aliases = t[3];
                 results.push(result);
             });
+
+            // Add extras
+            if (CFG.extra.extraFile) {
+                let extraResults = [];
+
+                extras.filter(fil).forEach(e => {
+                    let result = new AutocompleteResult(e[0].trim(), ResultType.extra)
+                    result.category = e[1] || 0; // If no category is given, use 0 as the default
+                    result.meta = e[2] || "Custom tag";
+                    result.aliases = e[3] || "";
+                    extraResults.push(result);
+                });
+
+                if (CFG.extra.addMode === "Insert before") {
+                    results = extraResults.concat(results);
+                } else {
+                    results = results.concat(extraResults);
+                }
+            }
         }
         // Slice if the user has set a max result count
         if (!CFG.showAllResults) {
@@ -1015,17 +671,16 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     }
 
     // Guard for empty results
-    if (!results.length) {
+    if (!results || results.length === 0) {
         //console.log('No results found for "' + tagword + '"');
         hideResults(textArea);
         return;
     }
 
-    showResults(textArea);
     addResultsToList(textArea, results, tagword, true);
+    showResults(textArea);
 }
 
-var oldSelectedTag = null;
 function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI or the current model is excluded due to white/blacklist settings
     if (!isEnabled()) return;
@@ -1111,93 +766,10 @@ function navigateInList(textArea, event) {
 // One-time setup, triggered from onUiUpdate
 async function setup() {
     // Load colors
-    CFG["colors"] = (await readFile(`${tagBasePath}/colors.json?${new Date().getTime()}`, true));
+    CFG["colors"] = (await readFile(`${tagBasePath}/colors.json`, true));
 
-    // Load wildcards
-    if (wildcardFiles.length === 0) {
-        try {
-            let wcFileArr = (await readFile(`${tagBasePath}/temp/wc.txt?${new Date().getTime()}`)).split("\n");
-            let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
-            wildcardFiles = wcFileArr.slice(1)
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
-
-            // To support multiple sources, we need to separate them using the provided "-----" strings
-            let wcExtFileArr = (await readFile(`${tagBasePath}/temp/wce.txt?${new Date().getTime()}`)).split("\n");
-            let splitIndices = [];
-            for (let index = 0; index < wcExtFileArr.length; index++) {
-                if (wcExtFileArr[index].trim() === "-----") {
-                    splitIndices.push(index);
-                }
-            }
-            // For each group, add them to the wildcardFiles array with the base path as the first element
-            for (let i = 0; i < splitIndices.length; i++) {
-                let start = splitIndices[i - 1] || 0;
-                if (i > 0) start++; // Skip the "-----" line
-                let end = splitIndices[i];
-
-                let wcExtFile = wcExtFileArr.slice(start, end);
-                let base = wcExtFile[0].trim() + "/";
-                wcExtFile = wcExtFile.slice(1)
-                    .filter(x => x.trim().length > 0) // Remove empty lines
-                    .map(x => x.trim().replace(base, "").replace(".txt", "")); // Remove file extension & newlines;
-
-                wcExtFile = wcExtFile.map(x => [base, x]);
-                wildcardExtFiles.push(...wcExtFile);
-            }
-        } catch (e) {
-            console.error("Error loading wildcards: " + e);
-        }
-    }
-    // Load yaml wildcards
-    if (yamlWildcards.length === 0) {
-        try {
-            let yamlTags = (await readFile(`${tagBasePath}/temp/wcet.txt?${new Date().getTime()}`)).split("\n");
-            // Split into tag, count pairs
-            yamlWildcards = yamlTags.map(x => x
-                .trim()
-                .split(","))
-                .map(([i, ...rest]) => [
-                    i,
-                    rest.reduce((a, b) => {
-                        a[b.toLowerCase()] = true;
-                        return a;
-                    }, {}),
-                ]);
-        } catch (e) {
-            console.error("Error loading yaml wildcards: " + e);
-        }
-    }
-    // Load embeddings
-    if (embeddings.length === 0) {
-        try {
-            embeddings = (await readFile(`${tagBasePath}/temp/emb.txt?${new Date().getTime()}`)).split("\n")
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim().split(",")); // Split into name, version type pairs
-        } catch (e) {
-            console.error("Error loading embeddings.txt: " + e);
-        }
-    }
-    // Load hypernetworks
-    if (hypernetworks.length === 0) {
-        try {
-            hypernetworks = (await readFile(`${tagBasePath}/temp/hyp.txt?${new Date().getTime()}`)).split("\n")
-                .filter(x => x.trim().length > 0) //Remove empty lines
-                .map(x => x.trim()); // Remove carriage returns and padding if it exists
-        } catch (e) {
-            console.error("Error loading hypernetworks.txt: " + e);
-        }
-    }
-    // Load lora
-    if (loras.length === 0) {
-        try {
-            loras = (await readFile(`${tagBasePath}/temp/lora.txt?${new Date().getTime()}`)).split("\n")
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim()); // Remove carriage returns and padding if it exists
-        } catch (e) {
-            console.error("Error loading lora.txt: " + e);
-        }
-    }
+    // Load external files needed by completion extensions
+    await processQueue(QUEUE_FILE_LOAD, null);
 
     // Find all textareas
     let textAreas = getTextAreas();
@@ -1312,6 +884,9 @@ async function setup() {
         acStyle.appendChild(document.createTextNode(css));
     }
     gradioApp().appendChild(acStyle);
+
+    // Callback
+    await processQueue(QUEUE_AFTER_SETUP, null);
 }
 let loading = false;
 onUiUpdate(async () => {
@@ -1320,7 +895,7 @@ onUiUpdate(async () => {
     if (CFG) return;
     loading = true;
     // Get our tag base path from the temp file
-    tagBasePath = await readFile(`tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
+    tagBasePath = await readFile(`tmp/tagAutocompletePath.txt`);
     // Load config from webui opts
     await syncOptions();
     // Rest of setup

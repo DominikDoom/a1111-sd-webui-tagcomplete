@@ -38,7 +38,10 @@ function parseCSV(str) {
 }
 
 // Load file
-async function readFile(filePath, json = false) {
+async function readFile(filePath, json = false, cache = false) {
+    if (!cache)
+        filePath += `?${new Date().getTime()}`;
+        
     let response = await fetch(`file=${filePath}`);
 
     if (response.status != 200) {
@@ -93,4 +96,35 @@ function escapeHTML(unsafeText) {
     let div = document.createElement('div');
     div.textContent = unsafeText;
     return div.innerHTML;
+}
+
+// Queue calling function to process global queues
+async function processQueue(queue, context, ...args) {
+    for (let i = 0; i < queue.length; i++) {
+        await queue[i].call(context, ...args);
+    }
+}
+// The same but with return values
+async function processQueueReturn(queue, context, ...args)
+{
+    let qeueueReturns = [];
+    for (let i = 0; i < queue.length; i++) {
+        let returnValue = await queue[i].call(context, ...args);
+        if (returnValue)
+            qeueueReturns.push(returnValue);
+    }
+    return qeueueReturns;
+}
+// Specific to tag completion parsers
+async function processParsers(textArea, prompt) {
+    // Get all parsers that have a successful trigger condition
+    let matchingParsers = PARSERS.filter(parser => parser.triggerCondition());
+    // Guard condition
+    if (matchingParsers.length === 0) {
+        return null;
+    }
+
+    let parseFunctions = matchingParsers.map(parser => parser.parse);
+    // Process them and return the results
+    return await processQueueReturn(parseFunctions, null, textArea, prompt);
 }

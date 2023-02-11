@@ -3,12 +3,13 @@
 // Type enum
 const ResultType = Object.freeze({
     "tag": 1,
-    "embedding": 2,
-    "wildcardTag": 3,
-    "wildcardFile": 4,
-    "yamlWildcard": 5,
-    "hypernetwork": 6,
-    "lora": 7
+    "extra": 2,
+    "embedding": 3,
+    "wildcardTag": 4,
+    "wildcardFile": 5,
+    "yamlWildcard": 6,
+    "hypernetwork": 7,
+    "lora": 8
 });
 
 // Class to hold result data and annotations to make it clearer to use
