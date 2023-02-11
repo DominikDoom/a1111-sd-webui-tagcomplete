@@ -35,13 +35,14 @@ const autocompleteCSS = `
     .autocompleteResults {
         position: absolute;
         z-index: 999;
-        max-width: calc(100% - 1.5em);
+        max-width: calc(100% - 1.5rem);
         margin: 5px 0 0 0;
         background-color: var(--results-bg) !important;
         border: var(--results-border-width) solid var(--results-border-color) !important;
         border-radius: 12px !important;
         overflow-y: var(--results-overflow-y);
         overflow-x: hidden;
+        word-break: break-word;
     }
     .autocompleteResultsList > li:nth-child(odd) {
         background-color: var(--results-bg-odd);
@@ -61,15 +62,14 @@ const autocompleteCSS = `
         display: flex;
     }
     .acListItem {
-        /*overflow: hidden;
-        white-space: nowrap;*/
         white-space: break-spaces;
+        flex-shrink: 1;
     }
     .acMetaText {
         position: relative;
         text-align: end;
         padding: 0 0 0 15px;
-        flex-grow: 1;
+        white-space: nowrap;
         color: var(--meta-text-color);
     }
     .acWikiLink {
