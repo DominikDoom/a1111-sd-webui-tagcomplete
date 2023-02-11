@@ -61,8 +61,9 @@ const autocompleteCSS = `
         display: flex;
     }
     .acListItem {
-        overflow: hidden;
-        white-space: nowrap;
+        /*overflow: hidden;
+        white-space: nowrap;*/
+        white-space: break-spaces;
     }
     .acMetaText {
         position: relative;
