@@ -20,9 +20,12 @@ TAGS_PATH = Path(scripts.basedir()).joinpath('tags')
 # The path to the folder containing the wildcards and embeddings
 WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
 EMB_PATH = Path(shared.cmd_opts.embeddings_dir)
-LORA_PATH = Path(shared.cmd_opts.lora_dir)
 HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir)
 
+try:
+    LORA_PATH = Path(shared.cmd_opts.lora_dir)
+except AttributeError:
+    LORA_PATH = None
 
 def find_ext_wildcard_paths():
     """Returns the path to the extension wildcards folder"""
@@ -71,8 +74,11 @@ def get_ext_wildcard_tags():
             with open(path, encoding="utf8") as file:
                 data = yaml.safe_load(file)
                 for item in data:
-                    wildcard_tags[count] = ','.join(data[item]['Tags'])
-                    count += 1
+                    if data[item] and 'Tags' in data[item]:
+                        wildcard_tags[count] = ','.join(data[item]['Tags'])
+                        count += 1
+                    else:
+                        print('Issue with tags found in ' + path.name + ' at item ' + item)
         except yaml.YAMLError as exc:
             print(exc)
     # Sort by count
@@ -228,7 +234,7 @@ if HYP_PATH.exists():
     if hypernets:
         write_to_temp_file('hyp.txt', hypernets)
 
-if LORA_PATH.exists():
+if LORA_PATH is not None and LORA_PATH.exists():
     lora = get_lora()
     if lora:
         write_to_temp_file('lora.txt', lora)
