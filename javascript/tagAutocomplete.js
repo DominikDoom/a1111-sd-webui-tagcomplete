@@ -35,6 +35,7 @@ const autocompleteCSS = `
     .autocompleteResults {
         position: absolute;
         z-index: 999;
+        max-width: calc(100% - 1.5em);
         margin: 5px 0 0 0;
         background-color: var(--results-bg) !important;
         border: var(--results-border-width) solid var(--results-border-color) !important;
@@ -60,8 +61,9 @@ const autocompleteCSS = `
         display: flex;
     }
     .acListItem {
-        overflow: hidden;
-        white-space: nowrap;
+        /*overflow: hidden;
+        white-space: nowrap;*/
+        white-space: break-spaces;
     }
     .acMetaText {
         position: relative;
@@ -1311,15 +1313,17 @@ async function setup() {
     }
     gradioApp().appendChild(acStyle);
 }
-
+let loading = false;
 onUiUpdate(async () => {
+    if (loading) return;
     if (Object.keys(opts).length === 0) return;
     if (CFG) return;
-
+    loading = true;
     // Get our tag base path from the temp file
     tagBasePath = await readFile(`tmp/tagAutocompletePath.txt?${new Date().getTime()}`);
     // Load config from webui opts
     await syncOptions();
     // Rest of setup
     setup();
+    loading = false;
 });
