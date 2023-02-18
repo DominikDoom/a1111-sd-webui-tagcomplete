@@ -685,7 +685,15 @@ function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI or the current model is excluded due to white/blacklist settings
     if (!isEnabled()) return;
 
-    validKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Enter", "Tab", "Escape"];
+    // Close window if Home or End is pressed while not a keybinding, since it would break completion on leaving the original tag
+    if ((event.key === "Home" || event.key === "End") && !Object.values(keymap).includes(event.key)) {
+        hideResults(textArea);
+        return;
+    }
+
+    // All set keys that are not None or empty are valid
+    // Default keys are: ArrowUp, ArrowDown, PageUp, PageDown, Home, End, Enter, Tab, Escape
+    validKeys = Object.values(keymap).filter(x => x !== "None" && x !== "");
 
     if (!validKeys.includes(event.key)) return;
     if (!isVisible(textArea)) return
@@ -695,63 +703,57 @@ function navigateInList(textArea, event) {
     oldSelectedTag = selectedTag;
 
     switch (event.key) {
-        case "ArrowUp":
+        case keymap["MoveUp"]:
             if (selectedTag === null) {
                 selectedTag = resultCount - 1;
             } else {
                 selectedTag = (selectedTag - 1 + resultCount) % resultCount;
             }
             break;
-        case "ArrowDown":
+        case keymap["MoveDown"]:
             if (selectedTag === null) {
                 selectedTag = 0;
             } else {
                 selectedTag = (selectedTag + 1) % resultCount;
             }
             break;
-        case "PageUp":
+        case keymap["JumpUp"]:
             if (selectedTag === null || selectedTag === 0) {
                 selectedTag = resultCount - 1;
             } else {
                 selectedTag = (Math.max(selectedTag - 5, 0) + resultCount) % resultCount;
             }
             break;
-        case "PageDown":
+        case keymap["JumpDown"]:
             if (selectedTag === null || selectedTag === resultCount - 1) {
                 selectedTag = 0;
             } else {
                 selectedTag = Math.min(selectedTag + 5, resultCount - 1) % resultCount;
             }
             break;
-        case "Home":
+        case keymap["JumpToStart"]:
             selectedTag = 0;
             break;
-        case "End":
+        case keymap["JumpToEnd"]:
             selectedTag = resultCount - 1;
             break;
-        case "ArrowLeft":
-            selectedTag = 0;
-            break;
-        case "ArrowRight":
-            selectedTag = resultCount - 1;
-            break;
-        case "Enter":
+        case keymap["ChooseSelected"]:
             if (selectedTag !== null) {
                 insertTextAtCursor(textArea, results[selectedTag], tagword);
             }
             break;
-        case "Tab":
+        case keymap["ChooseFirstOrSelected"]:
             if (selectedTag === null) {
                 selectedTag = 0;
             }
             insertTextAtCursor(textArea, results[selectedTag], tagword);
             break;
-        case "Escape":
+        case keymap["Close"]:
             hideResults(textArea);
             break;
     }
     if (selectedTag === resultCount - 1
-        && (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        && (event.key === keymap["MoveUp"] || event.key === keymap["MoveDown"] || event.key === keymap["JumpToStart"] || event.key === keymap["JumpToEnd"])) {
         addResultsToList(textArea, results, tagword, false);
     }
     // Update highlighting
@@ -765,6 +767,9 @@ function navigateInList(textArea, event) {
 
 // One-time setup, triggered from onUiUpdate
 async function setup() {
+    // Load key bindings
+    keymap = (await readFile(`${tagBasePath}/keymap.json`, true));
+    
     // Load colors
     CFG["colors"] = (await readFile(`${tagBasePath}/colors.json`, true));
 

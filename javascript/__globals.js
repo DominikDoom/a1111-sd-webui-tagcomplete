@@ -1,6 +1,7 @@
 // Core components
 var CFG = null;
 var tagBasePath = "";
+var keymap = null;
 
 // Tag completion data loaded from files
 var allTags = [];

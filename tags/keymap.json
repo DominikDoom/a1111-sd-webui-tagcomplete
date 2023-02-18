@@ -1,0 +1,13 @@
+{
+    "Usage": "For possible values, see https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values. To disable a keybinding, leave it empty or set it to 'None'.",
+
+    "MoveUp": "ArrowUp",
+    "MoveDown": "ArrowDown",
+    "JumpUp": "PageUp",
+    "JumpDown": "PageDown",
+    "JumpToStart": "Home",
+    "JumpToEnd": "End",
+    "ChooseSelected": "Enter",
+    "ChooseFirstOrSelected": "Tab",
+    "Close": "Escape"
+}
