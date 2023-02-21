@@ -312,9 +312,9 @@ async function insertTextAtCursor(textArea, result, tagword) {
     textArea.selectionStart = afterInsertCursorPos + optionalComma.length;
     textArea.selectionEnd = textArea.selectionStart
 
-    // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure its
-    // internal Svelte data binding remains in sync.
-    textArea.dispatchEvent(new Event("input", { bubbles: true }));
+    // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
+    // Uses a built-in method from the webui's ui.js which also already accounts for event target
+    updateInput(textArea);
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
     let weightedTags = [...newPrompt.matchAll(WEIGHT_REGEX)]
