@@ -5,8 +5,8 @@ class HypernetParser extends BaseTagParser {
     parse() {
         // Show hypernetworks
         let tempResults = [];
-        if (tagword !== "<" && tagword !== "<h:") {
-            let searchTerm = tagword.replace("<h:", "").replace("<", "");
+        if (tagword !== "<" && tagword !== "<h:" && tagword !== "<hypernet:") {
+            let searchTerm = tagword.replace("<hypernet:", "").replace("<h:", "").replace("<", "");
             tempResults = hypernetworks.filter(x => x.toLowerCase().includes(searchTerm)); // Filter by tagword
         } else {
             tempResults = hypernetworks;
