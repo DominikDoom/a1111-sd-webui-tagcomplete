@@ -151,7 +151,7 @@ def get_hypernetworks():
     # Get a list of all hypernetworks in the folder
     all_hypernetworks = [str(h.name) for h in HYP_PATH.rglob("*") if h.suffix in {".pt"}]
     # Remove file extensions
-    return [h[:h.rfind('.')] for h in all_hypernetworks]
+    return sorted([h[:h.rfind('.')] for h in all_hypernetworks], key=lambda x: x.lower())
 
 def get_lora():
     """Write a list of all lora"""
@@ -159,7 +159,7 @@ def get_lora():
     # Get a list of all lora in the folder
     all_lora = [str(l.name) for l in LORA_PATH.rglob("*") if l.suffix in {".safetensors", ".ckpt", ".pt"}]
     # Remove file extensions
-    return [l[:l.rfind('.')] for l in all_lora]
+    return sorted([l[:l.rfind('.')] for l in all_lora], key=lambda x: x.lower())
 
 
 def write_tag_base_path():
