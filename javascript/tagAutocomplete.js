@@ -137,6 +137,7 @@ async function syncOptions() {
             modelListMode: opts["tac_activeIn.modelListMode"]
         },
         // Results related settings
+        slidingPopup: opts["tac_slidingPopup"],
         maxResults: opts["tac_maxResults"],
         showAllResults: opts["tac_showAllResults"],
         resultStepLength: opts["tac_resultStepLength"],
@@ -224,22 +225,20 @@ function isVisible(textArea) {
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     return resultsDiv.style.display === "block";
 }
-function getTextWidth(text, font) {
-  // re-use canvas object for better performance
-  var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
-  var context = canvas.getContext("2d"); 
-  context.font = font;
-  var metrics = context.measureText(text);
-  return metrics.width;
-}
 function showResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     resultsDiv.style.display = "block";
-    let txt = textArea.value.slice(0,textArea.selectionEnd);
-    let width = getTextWidth(txt, document.fonts)*1.25;
-    let offset = width % textArea.clientWidth;
-    resultsDiv.style.left = offset+"px";
+
+    if (CFG.slidingPopup) {
+        let caretPosition = getCaretCoordinates(textArea, textArea.selectionEnd).left;
+        let offset = Math.min(textArea.offsetLeft - textArea.scrollLeft + caretPosition, textArea.offsetWidth - resultsDiv.offsetWidth);
+    
+        resultsDiv.style.left = `${offset}px`;
+    } else {
+        if (resultsDiv.style.left)
+            resultsDiv.style.removeProperty("left");
+    }
 }
 function hideResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
