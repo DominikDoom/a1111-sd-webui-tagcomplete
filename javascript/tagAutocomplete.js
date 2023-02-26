@@ -1,4 +1,4 @@
-const styleColors = {
+﻿const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
     "--results-border-width": ["1px", "1.5px"],
@@ -224,10 +224,22 @@ function isVisible(textArea) {
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     return resultsDiv.style.display === "block";
 }
+function getTextWidth(text, font) {
+  // re-use canvas object for better performance
+  var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+  var context = canvas.getContext("2d"); 
+  context.font = font;
+  var metrics = context.measureText(text);
+  return metrics.width;
+}
 function showResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     resultsDiv.style.display = "block";
+    let txt = textArea.value.slice(0,textArea.selectionEnd);
+    let width = getTextWidth(txt, document.fonts)*1.25;
+    let offset = width % textArea.clientWidth;
+    resultsDiv.style.left = offset+"px";
 }
 function hideResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
