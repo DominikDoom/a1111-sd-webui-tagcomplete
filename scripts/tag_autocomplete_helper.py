@@ -5,8 +5,6 @@ import gradio as gr
 from pathlib import Path
 from modules import scripts, script_callbacks, shared, sd_hijack
 import yaml
-import time
-import threading
 
 # Webui root path
 FILE_DIR = Path().absolute()
