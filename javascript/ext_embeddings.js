@@ -12,10 +12,13 @@ class EmbeddingParser extends BaseTagParser {
                 versionString = searchTerm.slice(0, 2);
                 searchTerm = searchTerm.slice(2);
             }
+
+            let filterCondition = x => x[0].toLowerCase().includes(searchTerm) || x[0].toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+
             if (versionString)
-                tempResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm) && x[1] && x[1] === versionString); // Filter by tagword
+                tempResults = embeddings.filter(x => filterCondition(x) && x[1] && x[1] === versionString); // Filter by tagword
             else
-                tempResults = embeddings.filter(x => x[0].toLowerCase().includes(searchTerm)); // Filter by tagword
+                tempResults = embeddings.filter(x => filterCondition(x)); // Filter by tagword
         } else {
             tempResults = embeddings;
         }
