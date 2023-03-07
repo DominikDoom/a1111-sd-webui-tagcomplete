@@ -15,11 +15,11 @@ You can install it using the inbuilt available extensions list, clone the files 
 
 ## Common Problems & Known Issues:
 - Depending on your browser settings, sometimes an old version of the script can get cached. Try `CTRL+F5` to force-reload the site without cache if e.g. a new feature doesn't appear for you after an update.
-- If `replaceUnderscores` is active, the script will currently only partially replace edited tags containing multiple words in brackets.
-For example, editing `atago (azur lane)`, it would be replaced with e.g. `taihou (azur lane), lane)`, since the script currently doesn't see the second part of the bracket as the same tag. So in those cases you should delete the old tag beforehand.
 
-## Screenshots
-Demo video (with keyboard navigation):
+## Screenshots & Demo videos
+<details>
+<summary>Click to expand</summary>
+Basic usage (with keyboard navigation):
 
 https://user-images.githubusercontent.com/34448969/200128020-10d9a8b2-cea6-4e3f-bcd2-8c40c8c73233.mp4
 
@@ -31,32 +31,52 @@ Dark and Light mode supported, including tag colors:
 
 ![results_dark](https://user-images.githubusercontent.com/34448969/200128214-3b6f21b4-9dda-4acf-820e-5df0285c30d6.png)
 ![results_light](https://user-images.githubusercontent.com/34448969/200128217-bfac8b60-6673-447b-90fd-dc6326f1618c.png)
+</details>
 
 ## Installation
-### As an extension (recommended)
-Either clone the repo into your extensions folder:
+### Using the built-in extension list
+1. Open the Extensions tab
+2. Open the Available sub-tab
+3. Click "Load from:"
+4. Find "Booru tag autocompletion" in the list
+   - The extension was one of the first available, so selecting "oldest first" will show it high up in the list.
+5. Click "Install" on the right side
+
+![Load from index](https://user-images.githubusercontent.com/34448969/223537209-24c7623e-7410-427e-857f-9da936aadb21.png)
+![Order by oldest](https://user-images.githubusercontent.com/34448969/223537231-48e982b8-0920-48c5-87e5-8c81ebbb5fe3.png)
+![Install](https://user-images.githubusercontent.com/34448969/223537336-5c02ccb1-233d-4e0d-9e73-d1b889252c49.png)
+
+
+### Manual clone
 ```bash
 git clone "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git" extensions/tag-autocomplete
 ```
 (The second argument specifies the name of the folder, you can choose whatever you like).
 
-Or create a folder there manually and place the `javascript`, `scripts` and `tags` folders in it.
+## Additional completion support
+### Wildcards
+Autocompletion also works with wildcard files used by https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards or other similar scripts/extensions.
+Completion is triggered by typing `__` (double underscore). It will first show a list of your wildcard files, and upon choosing one, the replacement options inside that file.
+This enables you to either insert categories to be replaced by the script, or directly choose one and use wildcards as a sort of categorized custom tag system.
 
-### In the root folder (legacy)
-This installation method is for old webui versions pre-extension system, it will not work on current versions!
+![Wildcard files](https://user-images.githubusercontent.com/34448969/223534518-8488c2e1-d9e5-4870-844f-adbf3bfb1eee.png)
+![Wildcard replacements](https://user-images.githubusercontent.com/34448969/223534534-69597907-59de-4ba8-ae83-b01386570124.png)
 
----
 
-In both configurations, the `tags` folder contains `colors.json` and the tag data the script uses for autocompletion. By default, Danbooru and e621 tags are included.
-After scanning for embeddings and wildcards, the script will also create a `temp` directory here which lists the found files so they can be accessed in the browser side of the script. You can delete the temp folder without consequences as it will be recreated on the next startup.
+Wildcards are searched for in every extension folder, as well as the `scripts/wildcards` folder to support legacy versions. This means that you can combine wildcards from multiple extensions. Nested folders are also supported if you have grouped your wildcards in that way.
 
-### Important:
-The script needs **all three folders** to work properly.
+### Embeddings, Lora & Hypernets
+Completion for these three types is triggered by typing `<`. By default it will show all three mixed together, but further filtering can be done in the following way:
+- `<e:` will only show embeddings
+- `<l:` or `<lora:` will only show Lora
+- `<h:` or `<hypernet:` will only show Hypernetworks
 
-## Wildcard & Embedding support
-Autocompletion also works with wildcard files used by [this script](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) of the same name or other similar scripts/extensions. This enables you to either insert categories to be replaced by the script, or even replace them with the actual wildcard file content in the same step. Wildcards are searched for in every extension folder as well as the `scripts/wildcards` folder to support legacy versions. This means that you can combine wildcards from multiple extensions. Nested folders are also supported if you have grouped your wildcards in that way.
+#### Embedding type filtering
+Embeddings trained for Stable Diffusion 1.x or 2.x models respectively are incompatible with the other type. To make it easier to find valid embeds, they are categorized by "v1 Embedding" and "v2 Embedding", including a slight color difference. You can also filter your search to include only v1 or v2 embeddings by typing `<v1/2` or `<e:v1/2` followed by the actual search term.
 
-It also scans the embeddings folder and displays completion hints for the names of all .pt, .bin and .png files inside if you start typing `<`. Note that some normal tags also use < in Kaomoji (like ">_<" for example), so the results will contain both.
+For example:
+
+![Embedding version filter](https://user-images.githubusercontent.com/34448969/223533883-d99c04b7-a199-4f56-a4e5-242eee9726a2.png)
 
 ## Settings
 
