@@ -626,55 +626,52 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
         } else {
             searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-        }    
-        // If onlyShowAlias is enabled, we don't need to include normal results
-        if (CFG.alias.onlyShowAlias) {
-            results = allTags.filter(x => x[3] && x[3].toLowerCase().search(searchRegex) > -1);
-        } else {
-            // Else both normal tags and aliases/translations are included depending on the config
-            let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) > -1;
-            let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) > -1;
-            let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) > -1)
-                || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) > -1);
-            
-            let fil;
-            if (CFG.alias.searchByAlias && CFG.translation.searchByTranslation)
-                fil = (x) => baseFilter(x) || aliasFilter(x) || translationFilter(x);
-            else if (CFG.alias.searchByAlias && !CFG.translation.searchByTranslation)
-                fil = (x) => baseFilter(x) || aliasFilter(x);
-            else if (CFG.translation.searchByTranslation && !CFG.alias.searchByAlias)
-                fil = (x) => baseFilter(x) || translationFilter(x);
-            else
-                fil = (x) => baseFilter(x);
+        }
 
-            // Add final results
-            allTags.filter(fil).forEach(t => {
-                let result = new AutocompleteResult(t[0].trim(), ResultType.tag)
-                result.category = t[1];
-                result.count = t[2];
-                result.aliases = t[3];
-                results.push(result);
+        // Both normal tags and aliases/translations are included depending on the config
+        let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) > -1;
+        let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) > -1;
+        let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) > -1)
+            || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) > -1);
+        
+        let fil;
+        if (CFG.alias.searchByAlias && CFG.translation.searchByTranslation)
+            fil = (x) => baseFilter(x) || aliasFilter(x) || translationFilter(x);
+        else if (CFG.alias.searchByAlias && !CFG.translation.searchByTranslation)
+            fil = (x) => baseFilter(x) || aliasFilter(x);
+        else if (CFG.translation.searchByTranslation && !CFG.alias.searchByAlias)
+            fil = (x) => baseFilter(x) || translationFilter(x);
+        else
+            fil = (x) => baseFilter(x);
+
+        // Add final results
+        allTags.filter(fil).forEach(t => {
+            let result = new AutocompleteResult(t[0].trim(), ResultType.tag)
+            result.category = t[1];
+            result.count = t[2];
+            result.aliases = t[3];
+            results.push(result);
+        });
+
+        // Add extras
+        if (CFG.extra.extraFile) {
+            let extraResults = [];
+
+            extras.filter(fil).forEach(e => {
+                let result = new AutocompleteResult(e[0].trim(), ResultType.extra)
+                result.category = e[1] || 0; // If no category is given, use 0 as the default
+                result.meta = e[2] || "Custom tag";
+                result.aliases = e[3] || "";
+                extraResults.push(result);
             });
 
-            // Add extras
-            if (CFG.extra.extraFile) {
-                let extraResults = [];
-
-                extras.filter(fil).forEach(e => {
-                    let result = new AutocompleteResult(e[0].trim(), ResultType.extra)
-                    result.category = e[1] || 0; // If no category is given, use 0 as the default
-                    result.meta = e[2] || "Custom tag";
-                    result.aliases = e[3] || "";
-                    extraResults.push(result);
-                });
-
-                if (CFG.extra.addMode === "Insert before") {
-                    results = extraResults.concat(results);
-                } else {
-                    results = results.concat(extraResults);
-                }
+            if (CFG.extra.addMode === "Insert before") {
+                results = extraResults.concat(results);
+            } else {
+                results = results.concat(extraResults);
             }
         }
+        
         // Slice if the user has set a max result count
         if (!CFG.showAllResults) {
             results = results.slice(0, CFG.maxResults);
