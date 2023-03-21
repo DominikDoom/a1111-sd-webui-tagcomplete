@@ -899,7 +899,7 @@ async function setup() {
     } else {
         acStyle.appendChild(document.createTextNode(css));
     }
-    gradioApp().getRootNode().body.appendChild(acStyle);
+    gradioApp().appendChild(acStyle);
 
     // Callback
     await processQueue(QUEUE_AFTER_SETUP, null);
