@@ -807,11 +807,11 @@ async function setup() {
     });
 
     // Add change listener to model dropdown to react to model changes
-    let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint select");
-    currentModelName = modelDropdown.value;
+    let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint span.single-select");
+    currentModelName = modelDropdown.textContent;
     modelDropdown?.addEventListener("change", () => {
         setTimeout(() => {
-            currentModelName = modelDropdown.value;
+            currentModelName = modelDropdown.textContent;
         }, 100);
     });
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
