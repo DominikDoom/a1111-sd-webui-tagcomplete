@@ -256,13 +256,14 @@ function isEnabled() {
             .filter(x => x.length > 0);
         
         let shortHash = currentModelHash.substring(0, 10);
+        let modelNameWithoutHash = currentModelName.replace(/\[.*\]$/g, "").trim();
         if (CFG.activeIn.modelListMode.toLowerCase() === "blacklist") {
             // If the current model is in the blacklist, disable
-            return modelList.filter(x => x === currentModelName || x === currentModelHash || x === shortHash).length === 0;
+            return modelList.filter(x => x === currentModelName || x === modelNameWithoutHash || x === currentModelHash || x === shortHash).length === 0;
         } else {
             // If the current model is in the whitelist, enable.
             // An empty whitelist is ignored.
-            return modelList.length === 0 || modelList.filter(x => x === currentModelName || x === currentModelHash || x === shortHash).length > 0;
+            return modelList.length === 0 || modelList.filter(x => x === currentModelName || x === modelNameWithoutHash || x === currentModelHash || x === shortHash).length > 0;
         }
     } else {
         return false;
@@ -806,14 +807,6 @@ async function setup() {
         });
     });
 
-    // Add change listener to model dropdown to react to model changes
-    let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint span.single-select");
-    currentModelName = modelDropdown.textContent;
-    modelDropdown?.addEventListener("change", () => {
-        setTimeout(() => {
-            currentModelName = modelDropdown.textContent;
-        }, 100);
-    });
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
     let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");
     if (modelHashText) {
@@ -822,6 +815,8 @@ async function setup() {
             for (const mutation of mutationList) {
                 if (mutation.type === "attributes" && mutation.attributeName === "title") {
                     currentModelHash = mutation.target.title;
+                    let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint span.single-select");
+                    currentModelName = modelDropdown?.textContent;
                 }
             }
         });
