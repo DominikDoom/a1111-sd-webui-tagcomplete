@@ -243,6 +243,9 @@ function showResults(textArea) {
 function hideResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
+    
+    if (!resultsDiv) return;
+    
     resultsDiv.style.display = "none";
     selectedTag = null;
 }
