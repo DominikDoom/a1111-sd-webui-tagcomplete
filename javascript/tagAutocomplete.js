@@ -212,7 +212,7 @@ function createResultsDiv(textArea) {
     let typeClass = textAreaId.replaceAll(".", " ");
 
     resultsDiv.style.maxHeight = `${CFG.maxResults * 50}px`;
-    resultsDiv.classList.add(`autocompleteResults ${typeClass}`, "notranslate");
+    resultsDiv.setAttribute("class", `autocompleteResults ${typeClass} notranslate`);
     resultsDiv.setAttribute("translate", "no");
     resultsList.setAttribute("class", "autocompleteResultsList");
     resultsDiv.appendChild(resultsList);
