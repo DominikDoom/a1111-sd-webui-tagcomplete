@@ -206,14 +206,15 @@ async function syncOptions() {
 // Create the result list div and necessary styling
 function createResultsDiv(textArea) {
     let resultsDiv = document.createElement("div");
-    let resultsList = document.createElement('ul');
+    let resultsList = document.createElement("ul");
 
     let textAreaId = getTextAreaIdentifier(textArea);
     let typeClass = textAreaId.replaceAll(".", " ");
 
     resultsDiv.style.maxHeight = `${CFG.maxResults * 50}px`;
-    resultsDiv.setAttribute('class', `autocompleteResults ${typeClass}`);
-    resultsList.setAttribute('class', 'autocompleteResultsList');
+    resultsDiv.classList.add(`autocompleteResults ${typeClass}`, "notranslate");
+    resultsDiv.setAttribute("translate", "no");
+    resultsList.setAttribute("class", "autocompleteResultsList");
     resultsDiv.appendChild(resultsList);
 
     return resultsDiv;
