@@ -753,6 +753,9 @@ function navigateInList(textArea, event) {
         case keymap["ChooseSelected"]:
             if (selectedTag !== null) {
                 insertTextAtCursor(textArea, results[selectedTag], tagword);
+            } else {
+                hideResults(textArea);
+                return;
             }
             break;
         case keymap["ChooseFirstOrSelected"]:
