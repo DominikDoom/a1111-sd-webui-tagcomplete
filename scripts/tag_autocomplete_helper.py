@@ -11,7 +11,7 @@ import yaml
 FILE_DIR = Path().absolute()
 
 # The extension base path
-EXT_PATH = Path(data_path).joinpath('extensions')
+EXT_PATH = Path(data_path).joinpath('extensions').absolute()
 
 # Tags base path
 TAGS_PATH = Path(scripts.basedir()).joinpath('tags').absolute()
