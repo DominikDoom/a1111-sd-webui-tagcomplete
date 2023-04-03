@@ -138,7 +138,7 @@ The first value in the square brackets is for dark, the second for light mode. C
 	}
 }
 ```
-This can also be used to add new color sets for custom tag files (same name as filename, without the .csv).
+This can also be used to add new color sets for custom tag files.
 The numbers are specifying the tag type, which is dependent on the tag source. For an example, see [CSV tag data](#csv-tag-data).
 
 ### Aliases, Translations & Extra tags
