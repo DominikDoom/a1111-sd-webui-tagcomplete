@@ -282,5 +282,41 @@ def on_ui_settings():
     # Extra file settings
     shared.opts.add_option("tac_extra.extraFile", shared.OptionInfo("extra-quality-tags.csv", "Extra filename (for small sets of custom tags)", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files, section=TAC_SECTION))
     shared.opts.add_option("tac_extra.addMode", shared.OptionInfo("Insert before", "Mode to add the extra tags to the main tag list", gr.Dropdown, lambda: {"choices": ["Insert before","Insert after"]}, section=TAC_SECTION))
+    # Custom mappings
+    shared.opts.add_option("tac_keymap", shared.OptionInfo(
+"""{
+    "MoveUp": "ArrowUp",
+    "MoveDown": "ArrowDown",
+    "JumpUp": "PageUp",
+    "JumpDown": "PageDown",
+    "JumpToStart": "Home",
+    "JumpToEnd": "End",
+    "ChooseSelected": "Enter",
+    "ChooseFirstOrSelected": "Tab",
+    "Close": "Escape"
+}""", """Configure Hotkeys. For possible values, see https://www.w3.org/TR/uievents-key, or leave empty / set to 'None' to disable. Must be valid JSON.""", gr.Code, lambda: {"language": "json", "interactive": True}, section=TAC_SECTION))
+    shared.opts.add_option("tac_colormap", shared.OptionInfo(
+"""{
+    "danbooru": {
+        "-1": ["red", "maroon"],
+        "0": ["lightblue", "dodgerblue"],
+        "1": ["indianred", "firebrick"],
+        "3": ["violet", "darkorchid"],
+        "4": ["lightgreen", "darkgreen"],
+        "5": ["orange", "darkorange"]
+    },
+    "e621": {
+        "-1": ["red", "maroon"],
+        "0": ["lightblue", "dodgerblue"],
+        "1": ["gold", "goldenrod"],
+        "3": ["violet", "darkorchid"],
+        "4": ["lightgreen", "darkgreen"],
+        "5": ["tomato", "darksalmon"],
+        "6": ["red", "maroon"],
+        "7": ["whitesmoke", "black"],
+        "8": ["seagreen", "darkseagreen"]
+    }
+}""", "Configure colors. See https://github.com/DominikDoom/a1111-sd-webui-tagcomplete#colors for info. Must be valid JSON.", gr.Code, lambda: {"language": "json", "interactive": True}, section=TAC_SECTION))
+
 
 script_callbacks.on_ui_settings(on_ui_settings)

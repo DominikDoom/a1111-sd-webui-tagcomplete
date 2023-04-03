@@ -25,11 +25,6 @@ const autocompleteCSS = `
     #quicksettings [id^=setting_tac] > label > span {
         margin-bottom: 0px;
     }
-    [id^=refresh_tac] {
-        max-width: 2.5em;
-        min-width: 2.5em;
-        height: 2.4em;
-    }
     .autocompleteResults {
         position: absolute;
         z-index: 999;
@@ -168,11 +163,10 @@ async function syncOptions() {
             addMode: opts["tac_extra.addMode"]
         },
         // Settings not from tac but still used by the script
-        extraNetworksDefaultMultiplier: opts["extra_networks_default_multiplier"]
-    }
-
-    if (CFG && CFG.colors) {
-        newCFG["colors"] = CFG.colors;
+        extraNetworksDefaultMultiplier: opts["extra_networks_default_multiplier"],
+        // Custom mapping settings
+        keymap: JSON.parse(opts["tac_keymap"]),
+        colorMap: JSON.parse(opts["tac_colormap"])
     }
     if (newCFG.alias.onlyShowAlias) {
         newCFG.alias.searchByAlias = true; // if only show translation, enable search by translation is necessary
@@ -372,7 +366,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
     // Find right colors from config
     let tagFileName = CFG.tagFile.split(".")[0];
-    let tagColors = CFG.colors;
+    let tagColors = CFG.colorMap;
     let mode = gradioApp().querySelector('.dark') ? 0 : 1;
     let nextLength = Math.min(results.length, resultCount + CFG.resultStepLength);
 
@@ -700,16 +694,18 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI or the current model is excluded due to white/blacklist settings
     if (!isEnabled()) return;
+    
+    let keys = CFG.keymap;
 
     // Close window if Home or End is pressed while not a keybinding, since it would break completion on leaving the original tag
-    if ((event.key === "Home" || event.key === "End") && !Object.values(keymap).includes(event.key)) {
+    if ((event.key === "Home" || event.key === "End") && !Object.values(keys).includes(event.key)) {
         hideResults(textArea);
         return;
     }
 
     // All set keys that are not None or empty are valid
     // Default keys are: ArrowUp, ArrowDown, PageUp, PageDown, Home, End, Enter, Tab, Escape
-    validKeys = Object.values(keymap).filter(x => x !== "None" && x !== "");
+    validKeys = Object.values(keys).filter(x => x !== "None" && x !== "");
 
     if (!validKeys.includes(event.key)) return;
     if (!isVisible(textArea)) return
@@ -719,41 +715,41 @@ function navigateInList(textArea, event) {
     oldSelectedTag = selectedTag;
 
     switch (event.key) {
-        case keymap["MoveUp"]:
+        case keys["MoveUp"]:
             if (selectedTag === null) {
                 selectedTag = resultCount - 1;
             } else {
                 selectedTag = (selectedTag - 1 + resultCount) % resultCount;
             }
             break;
-        case keymap["MoveDown"]:
+        case keys["MoveDown"]:
             if (selectedTag === null) {
                 selectedTag = 0;
             } else {
                 selectedTag = (selectedTag + 1) % resultCount;
             }
             break;
-        case keymap["JumpUp"]:
+        case keys["JumpUp"]:
             if (selectedTag === null || selectedTag === 0) {
                 selectedTag = resultCount - 1;
             } else {
                 selectedTag = (Math.max(selectedTag - 5, 0) + resultCount) % resultCount;
             }
             break;
-        case keymap["JumpDown"]:
+        case keys["JumpDown"]:
             if (selectedTag === null || selectedTag === resultCount - 1) {
                 selectedTag = 0;
             } else {
                 selectedTag = Math.min(selectedTag + 5, resultCount - 1) % resultCount;
             }
             break;
-        case keymap["JumpToStart"]:
+        case keys["JumpToStart"]:
             selectedTag = 0;
             break;
-        case keymap["JumpToEnd"]:
+        case keys["JumpToEnd"]:
             selectedTag = resultCount - 1;
             break;
-        case keymap["ChooseSelected"]:
+        case keys["ChooseSelected"]:
             if (selectedTag !== null) {
                 insertTextAtCursor(textArea, results[selectedTag], tagword);
             } else {
@@ -761,18 +757,18 @@ function navigateInList(textArea, event) {
                 return;
             }
             break;
-        case keymap["ChooseFirstOrSelected"]:
+        case keys["ChooseFirstOrSelected"]:
             if (selectedTag === null) {
                 selectedTag = 0;
             }
             insertTextAtCursor(textArea, results[selectedTag], tagword);
             break;
-        case keymap["Close"]:
+        case keys["Close"]:
             hideResults(textArea);
             break;
     }
     if (selectedTag === resultCount - 1
-        && (event.key === keymap["MoveUp"] || event.key === keymap["MoveDown"] || event.key === keymap["JumpToStart"] || event.key === keymap["JumpToEnd"])) {
+        && (event.key === keys["MoveUp"] || event.key === keys["MoveDown"] || event.key === keys["JumpToStart"] || event.key === keys["JumpToEnd"])) {
         addResultsToList(textArea, results, tagword, false);
     }
     // Update highlighting
@@ -786,12 +782,6 @@ function navigateInList(textArea, event) {
 
 // One-time setup, triggered from onUiUpdate
 async function setup() {
-    // Load key bindings
-    keymap = (await readFile(`${tagBasePath}/keymap.json`, true));
-    
-    // Load colors
-    CFG["colors"] = (await readFile(`${tagBasePath}/colors.json`, true));
-
     // Load external files needed by completion extensions
     await processQueue(QUEUE_FILE_LOAD, null);
 
