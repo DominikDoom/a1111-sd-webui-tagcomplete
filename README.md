@@ -108,11 +108,13 @@ The extension has a large amount of configuration & customizability built in:
 | useEmbeddings | Used to toggle the embedding completion functionality. |
 | alias | Options for aliases. More info in the section below. |
 | translation | Options for translations. More info in the section below.  |
-| extras | Options for additional tag files / aliases / translations. More info in the section below. |
-
-### colors.json
-Additionally, tag type colors can be specified using the separate `colors.json` file in the extension's `tags` folder.
-You can also add new ones here for custom tag files (same name as filename, without the .csv). The first value is for dark, the second for light mode. Color names and hex codes should both work.
+| extras | Options for additional tag files / aliases / translations. More info below. |
+| keymap | Customizable hotkeys. |
+| colors | Customizable tag colors. More info below. |
+### Colors
+Tag type colors can be specified by changing the JSON code in the tag autocomplete settings.
+The format is standard JSON, with the object names corresponding to the tag filenames (without the .csv) they should be used for.
+The first value in the square brackets is for dark, the second for light mode. Color names and hex codes should both work.
 ```json
 {
 	"danbooru": {
@@ -136,6 +138,7 @@ You can also add new ones here for custom tag files (same name as filename, with
 	}
 }
 ```
+This can also be used to add new color sets for custom tag files (same name as filename, without the .csv).
 The numbers are specifying the tag type, which is dependent on the tag source. For an example, see [CSV tag data](#csv-tag-data).
 
 ### Aliases, Translations & Extra tags
