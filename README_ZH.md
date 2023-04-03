@@ -81,9 +81,10 @@ git clone "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git" extens
 | translation | 用于翻译标签的选项。更多信息在下面的部分。 |
 | extras | 附加标签文件/翻译的选项。更多信息在下面的部分。|
 
-### colors.json (标签颜色)
-此外，标签类型的颜色可以使用扩展的`tags`文件夹中单独的`colors.json`文件来指定。
-你也可以在这里为自定义标签文件添加新的（与文件名相同，不带 .csv）。第一个值是暗模式，第二个值是亮模式。颜色名称和十六进制代码都被支持。
+### 标签颜色
+标签类型的颜色可以通过改变标签自动完成设置中的JSON代码来指定。格式是标准的JSON，对象名称对应于它们应该使用的标签文件名（没有.csv）
+
+方括号中的第一个值是指深色，第二个是指浅色模式。颜色名称和十六进制代码都应该有效。
 ```json
 {
 	"danbooru": {
@@ -107,7 +108,7 @@ git clone "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git" extens
 	}
 }
 ```
-数字是指定标签的类型，这取决于标签的来源。例如，见[CSV tag data](#csv-tag-data)。
+这也可以用来为自定义标签文件添加新的颜色集。数字是指定标签的类型，这取决于标签来源。关于例子，见[CSV tag data](#csv-tag-data)。
 
 ### 别名，翻译&新增Tag
 #### 别名
