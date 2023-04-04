@@ -283,8 +283,8 @@ def on_ui_settings():
     shared.opts.add_option("tac_extra.extraFile", shared.OptionInfo("extra-quality-tags.csv", "Extra filename (for small sets of custom tags)", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files, section=TAC_SECTION))
     shared.opts.add_option("tac_extra.addMode", shared.OptionInfo("Insert before", "Mode to add the extra tags to the main tag list", gr.Dropdown, lambda: {"choices": ["Insert before","Insert after"]}, section=TAC_SECTION))
     # Custom mappings
-    shared.opts.add_option("tac_keymap", shared.OptionInfo(
-"""{
+    keymapDefault = """\
+{
     "MoveUp": "ArrowUp",
     "MoveDown": "ArrowDown",
     "JumpUp": "PageUp",
@@ -294,9 +294,10 @@ def on_ui_settings():
     "ChooseSelected": "Enter",
     "ChooseFirstOrSelected": "Tab",
     "Close": "Escape"
-}""", """Configure Hotkeys. For possible values, see https://www.w3.org/TR/uievents-key, or leave empty / set to 'None' to disable. Must be valid JSON.""", gr.Code, lambda: {"language": "json", "interactive": True}, section=TAC_SECTION))
-    shared.opts.add_option("tac_colormap", shared.OptionInfo(
-"""{
+}\
+"""
+    colorDefault = """\
+{
     "danbooru": {
         "-1": ["red", "maroon"],
         "0": ["lightblue", "dodgerblue"],
@@ -316,7 +317,17 @@ def on_ui_settings():
         "7": ["whitesmoke", "black"],
         "8": ["seagreen", "darkseagreen"]
     }
-}""", "Configure colors. See https://github.com/DominikDoom/a1111-sd-webui-tagcomplete#colors for info. Must be valid JSON.", gr.Code, lambda: {"language": "json", "interactive": True}, section=TAC_SECTION))
+}\
+"""
+    keymapLabel = "Configure Hotkeys. For possible values, see https://www.w3.org/TR/uievents-key, or leave empty / set to 'None' to disable. Must be valid JSON."
+    colorLabel = "Configure colors. See https://github.com/DominikDoom/a1111-sd-webui-tagcomplete#colors for info. Must be valid JSON."
+
+    try:
+        shared.opts.add_option("tac_keymap", shared.OptionInfo(keymapDefault, keymapLabel, gr.Code, lambda: {"language": "json", "interactive": True}, section=TAC_SECTION))
+        shared.opts.add_option("tac_colormap", shared.OptionInfo(colorDefault, colorLabel, gr.Code, lambda: {"language": "json", "interactive": True}, section=TAC_SECTION))
+    except AttributeError:
+        shared.opts.add_option("tac_keymap", shared.OptionInfo(keymapDefault, keymapLabel, gr.Textbox, lambda: {"multiline": True}, section=TAC_SECTION))
+        shared.opts.add_option("tac_colormap", shared.OptionInfo(colorDefault, colorLabel, gr.Textbox, lambda: {"multiline": True}, section=TAC_SECTION))
 
 
 script_callbacks.on_ui_settings(on_ui_settings)
