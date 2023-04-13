@@ -164,6 +164,7 @@ async function syncOptions() {
         },
         // Settings not from tac but still used by the script
         extraNetworksDefaultMultiplier: opts["extra_networks_default_multiplier"],
+        extraNetworksSeparator: opts["extra_networks_add_text_separator"],
         // Custom mapping settings
         keymap: JSON.parse(opts["tac_keymap"]),
         colorMap: JSON.parse(opts["tac_colormap"])
@@ -311,18 +312,23 @@ async function insertTextAtCursor(textArea, result, tagword) {
     let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`), "i"));
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
-    var optionalComma = "";
-    if (CFG.appendComma && ![ResultType.wildcardFile, ResultType.yamlWildcard].includes(tagType)) {
-        optionalComma = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ", ";
+    var optionalSeparator = "";
+    let extraNetworkTypes = [ResultType.hypernetwork, ResultType.lora];
+    let noCommaTypes = [ResultType.wildcardFile, ResultType.yamlWildcard].concat(extraNetworkTypes);
+    if (CFG.appendComma && !noCommaTypes.includes(tagType)) {
+        optionalSeparator = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ", ";
+    } else if (extraNetworkTypes.includes(tagType)) {
+        // Use the dedicated separator for extra networks if it's defined, otherwise fall back to space
+        optionalSeparator = CFG.extraNetworksSeparator || " ";
     }
 
     // Replace partial tag word with new text, add comma if needed
-    let insert = surrounding.replace(match, sanitizedText + optionalComma);
+    let insert = surrounding.replace(match, sanitizedText + optionalSeparator);
 
     // Add back start
     var newPrompt = prompt.substring(0, editStart) + insert + prompt.substring(editEnd);
     textArea.value = newPrompt;
-    textArea.selectionStart = afterInsertCursorPos + optionalComma.length;
+    textArea.selectionStart = afterInsertCursorPos + optionalSeparator.length;
     textArea.selectionEnd = textArea.selectionStart
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
