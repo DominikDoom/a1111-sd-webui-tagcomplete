@@ -13,6 +13,7 @@ var yamlWildcards = [];
 var embeddings = [];
 var hypernetworks = [];
 var loras = [];
+var lycos = [];
 
 // Selected model info for black/whitelisting
 var currentModelHash = "";
