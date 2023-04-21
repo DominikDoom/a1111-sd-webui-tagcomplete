@@ -90,6 +90,10 @@ async function loadTags(c) {
             return;
         }
     }
+    await loadExtraTags(c);
+}
+
+async function loadExtraTags(c) {
     if (c.extra.extraFile && c.extra.extraFile !== "None") {
         try {
             extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
@@ -182,6 +186,7 @@ async function syncOptions() {
     if (!CFG || newCFG.translation.translationFile !== CFG.translation.translationFile) {
         translations.clear();
         await loadTranslations(newCFG);
+        await loadExtraTags(newCFG);
     }
     // Reload tags if the tag file changed (after translations so extra tag translations get re-added)
     if (!CFG || newCFG.tagFile !== CFG.tagFile || newCFG.extra.extraFile !== CFG.extra.extraFile) {
