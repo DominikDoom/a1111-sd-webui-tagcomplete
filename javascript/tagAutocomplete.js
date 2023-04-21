@@ -93,6 +93,10 @@ async function loadTags(c) {
     if (c.extra.extraFile && c.extra.extraFile !== "None") {
         try {
             extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
+            // Add translations to the main translation map for extra tags that have them
+            extras.forEach(e => {
+                if (e[4]) translations.set(e[0], e[4]);
+            });
         } catch (e) {
             console.error("Error loading extra file: " + e);
             return;
@@ -174,15 +178,15 @@ async function syncOptions() {
         newCFG.alias.searchByAlias = true; // if only show translation, enable search by translation is necessary
     }
 
-    // Reload tags if the tag file changed
-    if (!CFG || newCFG.tagFile !== CFG.tagFile || newCFG.extra.extraFile !== CFG.extra.extraFile) {
-        allTags = [];
-        await loadTags(newCFG);
-    }
     // Reload translations if the translation file changed
     if (!CFG || newCFG.translation.translationFile !== CFG.translation.translationFile) {
         translations.clear();
         await loadTranslations(newCFG);
+    }
+    // Reload tags if the tag file changed (after translations so extra tag translations get re-added)
+    if (!CFG || newCFG.tagFile !== CFG.tagFile || newCFG.extra.extraFile !== CFG.extra.extraFile) {
+        allTags = [];
+        await loadTags(newCFG);
     }
 
     // Update CSS if maxResults changed
