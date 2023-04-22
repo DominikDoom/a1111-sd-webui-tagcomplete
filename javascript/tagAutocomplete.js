@@ -611,8 +611,41 @@ async function updateRuby(textArea, prompt) {
         }
         escapedTag = escapeRegExp(escapedTag);
 
-        if (translation)
-            ruby.innerHTML = ruby.innerHTML.replaceAll(new RegExp(`${escapedTag}(?:\\)|\\b)`, "g"), `<ruby>${translation}<rt>${tag}</rt></ruby>`);
+        if (translation) {
+            ruby.innerHTML = ruby.innerHTML.replaceAll(new RegExp(`(?<!<ruby>)${escapedTag}(?:\\)|\\b)(?!<rt>)`, "g"), `<ruby>${tag}<rt>${translation}</rt></ruby>`);
+        } else {
+            // No direct match, but we can try to find matches in 2 or 1 word windows
+            let subTags = tag.split(" ");
+            // Return if there is only one word
+            if (subTags.length === 1) return;
+
+            const translateWindows = function (windows) {
+                windows.forEach(window => {
+                    let windowTag = window.join(" ");
+                    let unsanitizedWindowTag = windowTag
+                        .replaceAll(" ", "_")
+                        .replaceAll("\\(", "(")
+                        .replaceAll("\\)", ")");
+    
+                    let translation = translations?.get(windowTag) || translations?.get(unsanitizedWindowTag);
+    
+                    let escapedWindowTag = windowTag;
+                    if (windowTag.endsWith("\\)")) {
+                        escapedWindowTag = escapedWindowTag.substring(0, escapedWindowTag.length - 1);
+                    }
+                    escapedWindowTag = escapeRegExp(escapedWindowTag);
+    
+                    if (translation) {
+                        ruby.innerHTML = ruby.innerHTML.replaceAll(new RegExp(`(?<!<ruby>)${escapedWindowTag}(?:\\)|\\b)(?!<rt>)`, "g"), `<ruby>${windowTag}<rt>${translation}</rt></ruby>`);
+                        subTags = subTags.filter(tag => !window.includes(tag));
+                    }
+                });
+            }
+
+            // Get sliding windows of 2 words and each word individually
+            translateWindows(toWindows(subTags, 2), subTags);
+            translateWindows(toWindows(subTags, 1), subTags);
+        }
     });
 }
 
