@@ -8,6 +8,9 @@
     "--meta-text-color": ["#6b6f7b", "#a2a9b4"],
     "--embedding-v1-color": ["lightsteelblue", "#2b5797"],
     "--embedding-v2-color": ["skyblue", "#2d89ef"],
+    "--live-translation-color-1": ["lightskyblue", "#2d89ef"],
+    "--live-translation-color-2": ["palegoldenrod", "#eb5700"],
+    "--live-translation-color-3": ["darkseagreen", "darkgreen"],
 }
 const browserVars = {
     "--results-overflow-y": {
@@ -77,6 +80,26 @@ const autocompleteCSS = `
     }
     .acListItem.acEmbeddingV2 {
         color: var(--embedding-v2-color);
+    }
+    .acRuby {
+        margin-top: 0.5rem;
+        padding: var(--input-padding);
+        color: #888;
+    }
+    .acRuby > :nth-child(3n+1) {
+        color: var(--live-translation-color-1);
+    }
+    .acRuby > :nth-child(3n+2) {
+        color: var(--live-translation-color-2);
+    }
+    .acRuby > :nth-child(3n+3) {
+        color: var(--live-translation-color-3);
+    }
+    .acRuby > ruby > rt {
+        overflow: hidden;
+        padding: 0px 5px;
+        text-align: center;
+        font-size: 0.8em;
     }
 `;
 
@@ -217,7 +240,7 @@ function createResultsDiv(textArea) {
     let typeClass = textAreaId.replaceAll(".", " ");
 
     resultsDiv.style.maxHeight = `${CFG.maxResults * 50}px`;
-    resultsDiv.setAttribute("class", `autocompleteResults ${typeClass} notranslate`);
+    resultsDiv.setAttribute("class", `autocompleteResults${typeClass} notranslate`);
     resultsDiv.setAttribute("translate", "no");
     resultsList.setAttribute("class", "autocompleteResultsList");
     resultsDiv.appendChild(resultsList);
@@ -286,6 +309,7 @@ const WEIGHT_REGEX = /[([]([^()[\]:|]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const POINTY_REGEX = /<[^\s,<](?:[^\t\n\r,<>]*>|[^\t\n\r,> ]*)/g;
 const COMPLETED_WILDCARD_REGEX = /__[^\s,_][^\t\n\r,_]*[^\s,_]__[^\s,_]*/g;
 const NORMAL_TAG_REGEX = /[^\s,|<>)\]]+|</g;
+const RUBY_TAG_REGEX = /(?<![<:])[\w\d(][\w\d' \-()?!/\\]{2,}/g;
 const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -546,6 +570,50 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
         let selected = items[newIndex];
         resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
     }
+}
+
+async function updateRuby(textArea, prompt) {
+    let ruby = gradioApp().querySelector('.acRuby' + getTextAreaIdentifier(textArea));
+    if (!ruby) {
+        let textAreaId = getTextAreaIdentifier(textArea);
+        let typeClass = textAreaId.replaceAll(".", " ");
+        ruby = document.createElement("div");
+        ruby.setAttribute("class", `acRuby${typeClass} notranslate`);
+        textArea.parentNode.appendChild(ruby);
+    }
+
+    ruby.innerText = prompt;
+    
+    let rubyTags = prompt.match(RUBY_TAG_REGEX);
+    if (!rubyTags) return;
+
+    rubyTags = new Set(rubyTags);
+    rubyTags.forEach(tag => {
+        tag = tag.trim();
+        // Cut off opening bracket for weighted tags
+        if (tag.startsWith("(")) {
+            tag = tag.substring(1);
+            // Cut off closing bracket if left over from a single word weighted tag
+            if (tag.endsWith(")"))
+                tag = tag.substring(0, tag.length - 1);
+        }
+
+        let unsanitizedTag = tag
+            .replaceAll(" ", "_")
+            .replaceAll("\\(", "(")
+            .replaceAll("\\)", ")");
+        
+        const translation = translations?.get(tag) || translations?.get(unsanitizedTag);
+        
+        let escapedTag = tag;
+        if (tag.endsWith("\\)")) {
+            escapedTag = escapedTag.substring(0, escapedTag.length - 1);
+        }
+        escapedTag = escapeRegExp(escapedTag);
+
+        if (translation)
+            ruby.innerHTML = ruby.innerHTML.replaceAll(new RegExp(`${escapedTag}(?:\\)|\\b)`, "g"), `<ruby>${translation}<rt>${tag}</rt></ruby>`);
+    });
 }
 
 async function autocomplete(textArea, prompt, fixedTag = null) {
@@ -875,7 +943,10 @@ async function setup() {
             hideResults(area);
 
             // Add autocomplete event listener
-            area.addEventListener('input', debounce(() => autocomplete(area, area.value), CFG.delayTime));
+            area.addEventListener('input', debounce(() => {
+                autocomplete(area, area.value);
+                updateRuby(area, area.value);
+            }, CFG.delayTime));
             // Add focusout event listener
             area.addEventListener('focusout', debounce(() => hideResults(area), 400));
             // Add up and down arrow event listener
@@ -903,10 +974,10 @@ async function setup() {
     let css = autocompleteCSS;
     // Replace vars with actual values (can't use actual css vars because of the way we inject the css)
     Object.keys(styleColors).forEach((key) => {
-        css = css.replace(`var(${key})`, styleColors[key][mode]);
+        css = css.replaceAll(`var(${key})`, styleColors[key][mode]);
     })
     Object.keys(browserVars).forEach((key) => {
-        css = css.replace(`var(${key})`, browserVars[key][browser]);
+        css = css.replaceAll(`var(${key})`, browserVars[key][browser]);
     })
     
     if (acStyle.styleSheet) {
