@@ -86,6 +86,12 @@ const autocompleteCSS = `
         padding: var(--input-padding);
         color: #888;
     }
+    .acRuby > ruby {
+        display: inline-flex;
+        flex-direction: column-reverse;
+        font-size: 0.8rem;
+        vertical-align: text-bottom;
+    }
     .acRuby > :nth-child(3n+1) {
         color: var(--live-translation-color-1);
     }
@@ -96,10 +102,11 @@ const autocompleteCSS = `
         color: var(--live-translation-color-3);
     }
     .acRuby > ruby > rt {
-        overflow: hidden;
-        padding: 0px 5px;
-        text-align: center;
-        font-size: 0.8em;
+        line-height: 1rem;
+        padding: 0px 5px 0px 0px;
+        text-align: left;
+        font-size: 1rem;
+        color: var(--block-title-text-color);
     }
 `;
 
