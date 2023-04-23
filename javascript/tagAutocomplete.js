@@ -85,12 +85,18 @@ const autocompleteCSS = `
         margin-top: 0.5rem;
         padding: var(--input-padding);
         color: #888;
+        font-size: 0.8rem;
+        user-select: none;
     }
     .acRuby > ruby {
         display: inline-flex;
         flex-direction: column-reverse;
-        font-size: 0.8rem;
-        vertical-align: text-bottom;
+        vertical-align: bottom;
+        cursor: pointer;
+    }
+    .acRuby > ruby::hover {
+        text-decoration: underline;
+        text-shadow: 0 0 10px var(--live-translation-color-1);
     }
     .acRuby > :nth-child(3n+1) {
         color: var(--live-translation-color-1);
@@ -579,7 +585,7 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
     }
 }
 
-async function updateRuby(textArea, prompt) {
+function updateRuby(textArea, prompt) {
     let ruby = gradioApp().querySelector('.acRuby' + getTextAreaIdentifier(textArea));
     if (!ruby) {
         let textAreaId = getTextAreaIdentifier(textArea);
@@ -594,8 +600,10 @@ async function updateRuby(textArea, prompt) {
     let rubyTags = prompt.match(RUBY_TAG_REGEX);
     if (!rubyTags) return;
 
+    //rubyTags.sort((a, b) => b.length - a.length);
     rubyTags = new Set(rubyTags);
-    rubyTags.forEach(tag => {
+
+    const prepareTag = function (tag) {
         tag = tag.trim();
         // Cut off opening bracket for weighted tags
         if (tag.startsWith("(")) {
@@ -610,7 +618,7 @@ async function updateRuby(textArea, prompt) {
             .replaceAll("\\(", "(")
             .replaceAll("\\)", ")");
         
-        const translation = translations?.get(tag) || translations?.get(unsanitizedTag);
+        const translation = translations?.get(unsanitizedTag) || translations?.get(tag) 
         
         let escapedTag = tag;
         if (tag.endsWith("\\)")) {
@@ -618,42 +626,70 @@ async function updateRuby(textArea, prompt) {
         }
         escapedTag = escapeRegExp(escapedTag);
 
-        if (translation) {
-            ruby.innerHTML = ruby.innerHTML.replaceAll(new RegExp(`(?<!<ruby>)${escapedTag}(?:\\)|\\b)(?!<rt>)`, "g"), `<ruby>${tag}<rt>${translation}</rt></ruby>`);
-        } else {
-            // No direct match, but we can try to find matches in 2 or 1 word windows
-            let subTags = tag.split(" ");
-            // Return if there is only one word
-            if (subTags.length === 1) return;
+        return { tag, escapedTag, translation };
+    }
 
-            const translateWindows = function (windows) {
-                windows.forEach(window => {
-                    let windowTag = window.join(" ");
-                    let unsanitizedWindowTag = windowTag
-                        .replaceAll(" ", "_")
-                        .replaceAll("\\(", "(")
-                        .replaceAll("\\)", ")");
-    
-                    let translation = translations?.get(windowTag) || translations?.get(unsanitizedWindowTag);
-    
-                    let escapedWindowTag = windowTag;
-                    if (windowTag.endsWith("\\)")) {
-                        escapedWindowTag = escapedWindowTag.substring(0, escapedWindowTag.length - 1);
-                    }
-                    escapedWindowTag = escapeRegExp(escapedWindowTag);
-    
-                    if (translation) {
-                        ruby.innerHTML = ruby.innerHTML.replaceAll(new RegExp(`(?<!<ruby>)${escapedWindowTag}(?:\\)|\\b)(?!<rt>)`, "g"), `<ruby>${windowTag}<rt>${translation}</rt></ruby>`);
-                        subTags = subTags.filter(tag => !window.includes(tag));
-                    }
-                });
-            }
+    const replaceOccurences = (text, tuple) => {
+        let { tag, escapedTag, translation } = tuple;
+        let searchRegex = new RegExp(`(?<!<ruby>)(?:\\(|\\b)${escapedTag}(?:\\)|\\b)(?!<rt>)`, "g");
+        return text.replaceAll(searchRegex, `<ruby>${tag}<rt>${translation}</rt></ruby>`);
+    }
 
-            // Get sliding windows of 2 words and each word individually
-            translateWindows(toWindows(subTags, 2), subTags);
-            translateWindows(toWindows(subTags, 1), subTags);
+    let html = ruby.innerHTML;
+
+    // First do n-gram search to cover all 3-1 word combinations
+    rubyTags.forEach(tag => {
+        let subTags = tag.split(" ").filter(x => x.trim().length > 0);
+        // Return if there is only one word
+        //if (subTags.length === 1) return;
+
+        const translateWindows = (windows) => {
+            windows.forEach(window => {
+                let combinedTag = window.join(" ");
+                let tuple = prepareTag(combinedTag);
+                if (tuple.translation) {
+                    html = replaceOccurences(html, tuple);
+                }
+            });
+        }
+
+        // Perform n-gram sliding window search
+        translateWindows(toWindows(subTags, 3));
+        // Looks ugly, but is needed to ensure the DOM updated before we translate the next window
+        requestAnimationFrame(() => translateWindows(toWindows(subTags, 2)));
+        requestAnimationFrame(() => translateWindows(toWindows(subTags, 1)));
+    });
+
+    // Then try direct matches for all that are still untranslated
+    let preparedTags = [...rubyTags].map(prepareTag);
+    preparedTags.forEach(tuple => {
+        if (tuple.translation) {
+            html = replaceOccurences(html, tuple);
         }
     });
+
+    ruby.innerHTML = html;
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        // Add listeners for auto selection
+        const childNodes = [...ruby.childNodes];
+        [...ruby.children].forEach(child => {
+            const textBefore = childNodes.slice(0, childNodes.indexOf(child)).map(x => x.childNodes[0]?.textContent || x.textContent).join("")
+            child.onclick = () => rubyTagClicked(child, textBefore, prompt, textArea);
+        });
+    }))
+}
+
+function rubyTagClicked(node, textBefore, prompt, textArea) {
+    let selectionText = node.childNodes[0].textContent;
+
+    // Find start and end position of the tag in the prompt
+    let startPos = prompt.indexOf(textBefore) + textBefore.length;
+    let endPos = startPos + selectionText.length;
+
+    // Select in text area
+    textArea.focus();
+    textArea.setSelectionRange(startPos, endPos);
 }
 
 async function autocomplete(textArea, prompt, fixedTag = null) {
