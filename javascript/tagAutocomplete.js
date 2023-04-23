@@ -82,7 +82,6 @@ const autocompleteCSS = `
         color: var(--embedding-v2-color);
     }
     .acRuby {
-        margin-top: 0.5rem;
         padding: var(--input-padding);
         color: #888;
         font-size: 0.8rem;
@@ -91,6 +90,7 @@ const autocompleteCSS = `
     .acRuby > ruby {
         display: inline-flex;
         flex-direction: column-reverse;
+        margin-top: 0.5rem;
         vertical-align: bottom;
         cursor: pointer;
     }
@@ -594,23 +594,34 @@ function updateRuby(textArea, prompt) {
         ruby.setAttribute("class", `acRuby${typeClass} notranslate`);
         textArea.parentNode.appendChild(ruby);
     }
-
+    
     ruby.innerText = prompt;
     
     let rubyTags = prompt.match(RUBY_TAG_REGEX);
     if (!rubyTags) return;
 
-    //rubyTags.sort((a, b) => b.length - a.length);
+    rubyTags.sort((a, b) => b.length - a.length);
     rubyTags = new Set(rubyTags);
 
-    const prepareTag = function (tag) {
+    const prepareTag = (tag) => {
         tag = tag.trim();
         // Cut off opening bracket for weighted tags
         if (tag.startsWith("(")) {
-            tag = tag.substring(1);
+            // Find index of last opening bracket
+            let openIndex = 0;
+            while (tag.charAt(openIndex) === "(") {
+                openIndex++;
+                tag = tag.substring(openIndex);
+            }
+
             // Cut off closing bracket if left over from a single word weighted tag
-            if (tag.endsWith(")"))
-                tag = tag.substring(0, tag.length - 1);
+            if (tag.endsWith(")")) {
+                let closeIndex = tag.length - 1;
+                while (tag.charAt(closeIndex) === ")") {
+                    closeIndex--;
+                    tag = tag.substring(0, closeIndex + 1);
+                }
+            }
         }
 
         let unsanitizedTag = tag
@@ -618,7 +629,7 @@ function updateRuby(textArea, prompt) {
             .replaceAll("\\(", "(")
             .replaceAll("\\)", ")");
         
-        const translation = translations?.get(unsanitizedTag) || translations?.get(tag) 
+        const translation = translations?.get(tag) || translations?.get(unsanitizedTag); 
         
         let escapedTag = tag;
         if (tag.endsWith("\\)")) {
@@ -631,53 +642,56 @@ function updateRuby(textArea, prompt) {
 
     const replaceOccurences = (text, tuple) => {
         let { tag, escapedTag, translation } = tuple;
-        let searchRegex = new RegExp(`(?<!<ruby>)(?:\\(|\\b)${escapedTag}(?:\\)|\\b)(?!<rt>)`, "g");
-        return text.replaceAll(searchRegex, `<ruby>${tag}<rt>${translation}</rt></ruby>`);
+        let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\)|\\b)(?!<rt>)`, "g");
+        return text.replaceAll(searchRegex, `<ruby>${escapeHTML(tag)}<rt>${translation}</rt></ruby>`);
     }
 
-    let html = ruby.innerHTML;
+    let html = escapeHTML(prompt);
 
-    // First do n-gram search to cover all 3-1 word combinations
-    rubyTags.forEach(tag => {
-        let subTags = tag.split(" ").filter(x => x.trim().length > 0);
-        // Return if there is only one word
-        //if (subTags.length === 1) return;
-
-        const translateWindows = (windows) => {
-            windows.forEach(window => {
-                let combinedTag = window.join(" ");
-                let tuple = prepareTag(combinedTag);
-                if (tuple.translation) {
-                    html = replaceOccurences(html, tuple);
-                }
-            });
-        }
-
-        // Perform n-gram sliding window search
-        translateWindows(toWindows(subTags, 3));
-        // Looks ugly, but is needed to ensure the DOM updated before we translate the next window
-        requestAnimationFrame(() => translateWindows(toWindows(subTags, 2)));
-        requestAnimationFrame(() => translateWindows(toWindows(subTags, 1)));
-    });
-
-    // Then try direct matches for all that are still untranslated
-    let preparedTags = [...rubyTags].map(prepareTag);
-    preparedTags.forEach(tuple => {
+    // First try to find direct matches
+    [...rubyTags].forEach(tag => {
+        let tuple = prepareTag(tag);
+        
         if (tuple.translation) {
             html = replaceOccurences(html, tuple);
+        } else {
+            let subTags = tuple.tag.split(" ").filter(x => x.trim().length > 0);
+            // Return if there is only one word
+            if (subTags.length === 1) return;
+            
+            let subHtml = tag;
+
+            let translateNgram = (windows) => {
+                windows.forEach(window => {
+                    let combinedTag = window.join(" ");
+                    let subTuple = prepareTag(combinedTag);
+
+                    if (subTuple.tag.length <= 2) return;
+
+                    if (subTuple.translation) {
+                        subHtml = replaceOccurences(subHtml, subTuple);
+                    }
+                });
+            }
+    
+            // Perform n-gram sliding window search
+            translateNgram(toNgrams(subTags, 3));
+            translateNgram(toNgrams(subTags, 2));
+            translateNgram(toNgrams(subTags, 1));
+
+            let searchRegex = new RegExp(`(?<!<ruby>)(?:\\(|\\b)+${escapeRegExp(tuple.tag)}(?:\\)|\\b)+(?!<rt>)`, "g");
+            html = html.replaceAll(searchRegex, subHtml);
         }
     });
 
     ruby.innerHTML = html;
 
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        // Add listeners for auto selection
-        const childNodes = [...ruby.childNodes];
-        [...ruby.children].forEach(child => {
-            const textBefore = childNodes.slice(0, childNodes.indexOf(child)).map(x => x.childNodes[0]?.textContent || x.textContent).join("")
-            child.onclick = () => rubyTagClicked(child, textBefore, prompt, textArea);
-        });
-    }))
+    // Add listeners for auto selection
+    const childNodes = [...ruby.childNodes];
+    [...ruby.children].forEach(child => {
+        const textBefore = childNodes.slice(0, childNodes.indexOf(child)).map(x => x.childNodes[0]?.textContent || x.textContent).join("")
+        child.onclick = () => rubyTagClicked(child, textBefore, prompt, textArea);
+    });
 }
 
 function rubyTagClicked(node, textBefore, prompt, textArea) {
@@ -1019,10 +1033,10 @@ async function setup() {
             hideResults(area);
 
             // Add autocomplete event listener
-            area.addEventListener('input', debounce(() => {
-                autocomplete(area, area.value);
+            area.addEventListener('input', () => {
+                debounce(autocomplete(area, area.value), CFG.delayTime);
                 updateRuby(area, area.value);
-            }, CFG.delayTime));
+            });
             // Add focusout event listener
             area.addEventListener('focusout', debounce(() => hideResults(area), 400));
             // Add up and down arrow event listener

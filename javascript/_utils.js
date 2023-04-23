@@ -90,12 +90,12 @@ function difference(a, b) {
 }
 
 // Sliding window function to get possible combination groups of an array
-function toWindows(inputArray, size) {
+function toNgrams(inputArray, size) {
     return Array.from(
-      {length: inputArray.length - (size - 1)}, //get the appropriate length
-      (_, index) => inputArray.slice(index, index+size) //create the windows
-    )
-  }
+        { length: inputArray.length - (size - 1) }, //get the appropriate length
+        (_, index) => inputArray.slice(index, index + size) //create the windows
+    );
+}
 
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
