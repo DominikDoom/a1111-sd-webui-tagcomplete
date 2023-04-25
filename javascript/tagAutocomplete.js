@@ -8,6 +8,7 @@
     "--meta-text-color": ["#6b6f7b", "#a2a9b4"],
     "--embedding-v1-color": ["lightsteelblue", "#2b5797"],
     "--embedding-v2-color": ["skyblue", "#2d89ef"],
+    "--live-translation-rt": ["whitesmoke", "#222"],
     "--live-translation-color-1": ["lightskyblue", "#2d89ef"],
     "--live-translation-color-2": ["palegoldenrod", "#eb5700"],
     "--live-translation-color-3": ["darkseagreen", "darkgreen"],
@@ -112,7 +113,7 @@ const autocompleteCSS = `
         padding: 0px 5px 0px 0px;
         text-align: left;
         font-size: 1rem;
-        color: var(--block-title-text-color);
+        color: var(--live-translation-rt);
     }
 `;
 
