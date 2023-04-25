@@ -621,7 +621,7 @@ function updateRuby(textArea, prompt) {
 
     const replaceOccurences = (text, tuple) => {
         let { tag, escapedTag, translation } = tuple;
-        let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?!<rt>)`, "g");
+        let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,| \\t\\n\\r]))(?!<rt>)`, "g");
         return text.replaceAll(searchRegex, `<ruby>${escapeHTML(tag)}<rt>${translation}</rt></ruby>`);
     }
 
@@ -658,8 +658,9 @@ function updateRuby(textArea, prompt) {
             translateNgram(toNgrams(subTags, 2));
             translateNgram(toNgrams(subTags, 1));
 
-            let escapedTag = escapeRegExp(tuple.tag.replaceAll("$", "(").replaceAll("%", ")"));
-            let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?!<rt>)`, "g");
+            let escapedTag = escapeRegExp(tuple.tag);
+            
+            let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,| \\t\\n\\r]))(?!<rt>)`, "g");
             html = html.replaceAll(searchRegex, subHtml);
         }
     });
