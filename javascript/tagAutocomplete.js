@@ -322,7 +322,7 @@ const WEIGHT_REGEX = /[([]([^()[\]:|]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const POINTY_REGEX = /<[^\s,<](?:[^\t\n\r,<>]*>|[^\t\n\r,> ]*)/g;
 const COMPLETED_WILDCARD_REGEX = /__[^\s,_][^\t\n\r,_]*[^\s,_]__[^\s,_]*/g;
 const NORMAL_TAG_REGEX = /[^\s,|<>)\]]+|</g;
-const RUBY_TAG_REGEX = /(?<![<:])[\w\d(][\w\d' \-()?!/\\]{2,}/g;
+const RUBY_TAG_REGEX = /[\w\d<][\w\d' \-?!/$%]{2,}>?/g;
 const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -596,33 +596,17 @@ function updateRuby(textArea, prompt) {
     }
     
     ruby.innerText = prompt;
-    
-    let rubyTags = prompt.match(RUBY_TAG_REGEX);
+
+    let bracketEscapedPrompt = prompt.replaceAll("\\(", "$").replaceAll("\\)", "%");
+
+    let rubyTags = bracketEscapedPrompt.match(RUBY_TAG_REGEX);
     if (!rubyTags) return;
 
     rubyTags.sort((a, b) => b.length - a.length);
     rubyTags = new Set(rubyTags);
 
     const prepareTag = (tag) => {
-        tag = tag.trim();
-        // Cut off opening bracket for weighted tags
-        if (tag.startsWith("(")) {
-            // Find index of last opening bracket
-            let openIndex = 0;
-            while (tag.charAt(openIndex) === "(") {
-                openIndex++;
-                tag = tag.substring(openIndex);
-            }
-
-            // Cut off closing bracket if left over from a single word weighted tag
-            if (tag.endsWith(")")) {
-                let closeIndex = tag.length - 1;
-                while (tag.charAt(closeIndex) === ")") {
-                    closeIndex--;
-                    tag = tag.substring(0, closeIndex + 1);
-                }
-            }
-        }
+        tag = tag.replaceAll("$", "\\(").replaceAll("%", "\\)");
 
         let unsanitizedTag = tag
             .replaceAll(" ", "_")
@@ -631,18 +615,13 @@ function updateRuby(textArea, prompt) {
         
         const translation = translations?.get(tag) || translations?.get(unsanitizedTag); 
         
-        let escapedTag = tag;
-        if (tag.endsWith("\\)")) {
-            escapedTag = escapedTag.substring(0, escapedTag.length - 1);
-        }
-        escapedTag = escapeRegExp(escapedTag);
-
+        let escapedTag = escapeRegExp(tag);
         return { tag, escapedTag, translation };
     }
 
     const replaceOccurences = (text, tuple) => {
         let { tag, escapedTag, translation } = tuple;
-        let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\)|\\b)(?!<rt>)`, "g");
+        let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?!<rt>)`, "g");
         return text.replaceAll(searchRegex, `<ruby>${escapeHTML(tag)}<rt>${translation}</rt></ruby>`);
     }
 
@@ -659,7 +638,7 @@ function updateRuby(textArea, prompt) {
             // Return if there is only one word
             if (subTags.length === 1) return;
             
-            let subHtml = tag;
+            let subHtml = tag.replaceAll("$", "\\(").replaceAll("%", "\\)");
 
             let translateNgram = (windows) => {
                 windows.forEach(window => {
@@ -679,7 +658,8 @@ function updateRuby(textArea, prompt) {
             translateNgram(toNgrams(subTags, 2));
             translateNgram(toNgrams(subTags, 1));
 
-            let searchRegex = new RegExp(`(?<!<ruby>)(?:\\(|\\b)+${escapeRegExp(tuple.tag)}(?:\\)|\\b)+(?!<rt>)`, "g");
+            let escapedTag = escapeRegExp(tuple.tag.replaceAll("$", "(").replaceAll("%", ")"));
+            let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?!<rt>)`, "g");
             html = html.replaceAll(searchRegex, subHtml);
         }
     });
