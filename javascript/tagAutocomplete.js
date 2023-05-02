@@ -895,7 +895,8 @@ async function setup() {
     // Add style to dom
     let acStyle = document.createElement('style');
     //let css = gradioApp().querySelector('.dark') ? autocompleteCSS_dark : autocompleteCSS_light;
-    let mode = gradioApp().querySelector('.dark') ? 0 : 1;
+    //let mode = gradioApp().querySelector(".dark") ? 0 : 1;
+    let mode = document.querySelector(".dark") ? 0 : 1;
     // Check if we are on webkit
     let browser = navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? "firefox" : "other";
     
