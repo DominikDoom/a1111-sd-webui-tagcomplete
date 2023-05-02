@@ -202,6 +202,7 @@ async function syncOptions() {
             translationFile: opts["tac_translation.translationFile"],
             oldFormat: opts["tac_translation.oldFormat"],
             searchByTranslation: opts["tac_translation.searchByTranslation"],
+            liveTranslation: opts["tac_translation.liveTranslation"],
         },
         // Extra file settings
         extra: {
@@ -235,6 +236,13 @@ async function syncOptions() {
     if (CFG && newCFG.maxResults !== CFG.maxResults) {
         gradioApp().querySelectorAll(".autocompleteResults").forEach(r => {
             r.style.maxHeight = `${newCFG.maxResults * 50}px`;
+        });
+    }
+
+    // Remove ruby div if live preview was disabled
+    if (newCFG.translation.liveTranslation === false) {
+        [...gradioApp().querySelectorAll('.acRuby')].forEach(r => {
+            r.remove();
         });
     }
 
@@ -587,6 +595,8 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
 }
 
 function updateRuby(textArea, prompt) {
+    if (!CFG.translation.liveTranslation) return;
+
     let ruby = gradioApp().querySelector('.acRuby' + getTextAreaIdentifier(textArea));
     if (!ruby) {
         let textAreaId = getTextAreaIdentifier(textArea);
