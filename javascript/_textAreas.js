@@ -30,6 +30,14 @@ const thirdParty = {
             "Filename keyword search",
             "EXIF keyword search"
         ]
+    },
+    "tab_tagger": {
+        "base": "#tab_tagger",
+        "hasIds": false,
+        "selectors": [
+            "Additional tags (split by comma)",
+            "Exclude tags (split by comma)"
+        ]
     }
 }
 
