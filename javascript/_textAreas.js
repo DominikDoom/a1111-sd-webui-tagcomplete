@@ -22,24 +22,40 @@ const thirdParty = {
             "Edit Caption",
             "Edit Tags"
         ]
+    },
+    "image browser": {
+        "base": "#tab_image_browser",
+        "hasIds": false,
+        "selectors": [
+            "Filename keyword search",
+            "EXIF keyword search"
+        ]
+    },
+    "tab_tagger": {
+        "base": "#tab_tagger",
+        "hasIds": false,
+        "selectors": [
+            "Additional tags (split by comma)",
+            "Exclude tags (split by comma)"
+        ]
     }
 }
 
 function getTextAreas() {
     // First get all core text areas
     let textAreas = [...gradioApp().querySelectorAll(core.join(", "))];
-    
+
     for (const [key, entry] of Object.entries(thirdParty)) {
         if (entry.hasIds) { // If the entry has proper ids, we can just select them
             textAreas = textAreas.concat([...gradioApp().querySelectorAll(entry.selectors.join(", "))]);
         } else { // Otherwise, we have to find the text areas by their adjacent labels
             let base = gradioApp().querySelector(entry.base);
-			
+
             // Safety check
             if (!base) continue;
-			
-            let allTextAreas =  [...base.querySelectorAll("textarea")];
-            
+
+            let allTextAreas = [...base.querySelectorAll("textarea")];
+
             // Filter the text areas where the adjacent label matches one of the selectors
             let matchingTextAreas = allTextAreas.filter(ta => [...ta.parentElement.childNodes].some(x => entry.selectors.includes(x.innerText)));
             textAreas = textAreas.concat(matchingTextAreas);
