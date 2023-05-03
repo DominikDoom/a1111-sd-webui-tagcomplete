@@ -162,7 +162,7 @@ def get_hypernetworks():
     """Write a list of all hypernetworks"""
 
     # Get a list of all hypernetworks in the folder
-    hyp_paths = [Path(l) for l in glob.glob(HYP_PATH.joinpath("**/*").as_posix(), recursive=True)]
+    hyp_paths = [Path(h) for h in glob.glob(HYP_PATH.joinpath("**/*").as_posix(), recursive=True)]
     all_hypernetworks = [str(h.name) for h in hyp_paths if h.suffix in {".pt"}]
     # Remove file extensions
     return sorted([h[:h.rfind('.')] for h in all_hypernetworks], key=lambda x: x.lower())
@@ -180,8 +180,8 @@ def get_lyco():
     """Write a list of all LyCORIS/LOHA from https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris"""
 
     # Get a list of all LyCORIS in the folder
-    lyco_paths = [Path(l) for l in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)]
-    all_lyco = [str(l.name) for l in lyco_paths if l.suffix in {".safetensors", ".ckpt", ".pt"}]
+    lyco_paths = [Path(ly) for ly in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)]
+    all_lyco = [str(ly.name) for ly in lyco_paths if ly.suffix in {".safetensors", ".ckpt", ".pt"}]
     # Remove file extensions
     return sorted([ly[:ly.rfind('.')] for ly in all_lyco], key=lambda x: x.lower())
 
