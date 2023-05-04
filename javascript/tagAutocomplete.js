@@ -796,6 +796,42 @@ function navigateInList(textArea, event) {
     event.stopPropagation();
 }
 
+function addAutocompleteToArea(area) {
+    // Return if autocomplete is disabled for the current area type in config
+    let textAreaId = getTextAreaIdentifier(area);
+    if ((!CFG.activeIn.img2img && textAreaId.includes("img2img"))
+        || (!CFG.activeIn.txt2img && textAreaId.includes("txt2img"))
+        || (!CFG.activeIn.negativePrompts && textAreaId.includes("n"))
+        || (!CFG.activeIn.thirdParty && textAreaId.includes("thirdParty"))) {
+        return;
+    }
+
+    // Only add listeners once
+    if (!area.classList.contains('autocomplete')) {
+        // Add our new element
+        var resultsDiv = createResultsDiv(area);
+        area.parentNode.insertBefore(resultsDiv, area.nextSibling);
+        // Hide by default so it doesn't show up on page load
+        hideResults(area);
+
+        // Add autocomplete event listener
+        area.addEventListener('input', debounce(() => autocomplete(area, area.value), CFG.delayTime));
+        // Add focusout event listener
+        area.addEventListener('focusout', debounce(() => hideResults(area), 400));
+        // Add up and down arrow event listener
+        area.addEventListener('keydown', (e) => navigateInList(area, e));
+        // CompositionEnd fires after the user has finished IME composing
+        // We need to block hide here to prevent the enter key from insta-closing the results
+        area.addEventListener('compositionend', () => {
+            hideBlocked = true;
+            setTimeout(() => { hideBlocked = false; }, 100);
+        });
+
+        // Add class so we know we've already added the listeners
+        area.classList.add('autocomplete');
+    }
+}
+
 // One-time setup, triggered from onUiUpdate
 async function setup() {
     // Load external files needed by completion extensions
@@ -803,6 +839,9 @@ async function setup() {
 
     // Find all textareas
     let textAreas = getTextAreas();
+
+    // Add mutation observer to accordions inside a base that has onDemand set to true
+    addOnDemandObservers(addAutocompleteToArea);
 
     // Add event listener to apply settings button so we can mirror the changes to our internal config
     let applySettingsButton = gradioApp().querySelector("#tab_settings #settings_submit") || gradioApp().querySelector("#tab_settings > div > .gr-button-primary");
@@ -856,41 +895,7 @@ async function setup() {
         return;
     }
 
-    textAreas.forEach(area => {
-        // Return if autocomplete is disabled for the current area type in config
-        let textAreaId = getTextAreaIdentifier(area);
-        if ((!CFG.activeIn.img2img && textAreaId.includes("img2img"))
-            || (!CFG.activeIn.txt2img && textAreaId.includes("txt2img"))
-            || (!CFG.activeIn.negativePrompts && textAreaId.includes("n"))
-            || (!CFG.activeIn.thirdParty && textAreaId.includes("thirdParty"))) {
-            return;
-        }
-
-        // Only add listeners once
-        if (!area.classList.contains('autocomplete')) {
-            // Add our new element
-            var resultsDiv = createResultsDiv(area);
-            area.parentNode.insertBefore(resultsDiv, area.nextSibling);
-            // Hide by default so it doesn't show up on page load
-            hideResults(area);
-
-            // Add autocomplete event listener
-            area.addEventListener('input', debounce(() => autocomplete(area, area.value), CFG.delayTime));
-            // Add focusout event listener
-            area.addEventListener('focusout', debounce(() => hideResults(area), 400));
-            // Add up and down arrow event listener
-            area.addEventListener('keydown', (e) => navigateInList(area, e));
-            // CompositionEnd fires after the user has finished IME composing
-            // We need to block hide here to prevent the enter key from insta-closing the results
-            area.addEventListener('compositionend', () => {
-                hideBlocked = true;
-                setTimeout(() => { hideBlocked = false; }, 100);
-            });
-
-            // Add class so we know we've already added the listeners
-            area.classList.add('autocomplete');
-        }
-    });
+    textAreas.forEach(area => addAutocompleteToArea(area));
 
     // Add style to dom
     let acStyle = document.createElement('style');
