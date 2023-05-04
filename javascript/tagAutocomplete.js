@@ -383,7 +383,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
     // Find right colors from config
     let tagFileName = CFG.tagFile.split(".")[0];
     let tagColors = CFG.colorMap;
-    let mode = document.querySelector('.dark') ? 0 : 1;
+    let mode = (document.querySelector(".dark") || gradioApp().querySelector(".dark")) ? 0 : 1;
     let nextLength = Math.min(results.length, resultCount + CFG.resultStepLength);
 
     for (let i = resultCount; i < nextLength; i++) {
@@ -899,9 +899,7 @@ async function setup() {
 
     // Add style to dom
     let acStyle = document.createElement('style');
-    //let css = gradioApp().querySelector('.dark') ? autocompleteCSS_dark : autocompleteCSS_light;
-    //let mode = gradioApp().querySelector(".dark") ? 0 : 1;
-    let mode = document.querySelector(".dark") ? 0 : 1;
+    let mode = (document.querySelector(".dark") || gradioApp().querySelector(".dark")) ? 0 : 1;
     // Check if we are on webkit
     let browser = navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? "firefox" : "other";
     
