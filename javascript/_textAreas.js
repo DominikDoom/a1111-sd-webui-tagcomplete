@@ -38,6 +38,24 @@ const thirdParty = {
             "Additional tags (split by comma)",
             "Exclude tags (split by comma)"
         ]
+    },
+    "tiled-diffusion-t2i": {
+        "base": "#txt2img_script_container",
+        "hasIds": true,
+        "onDemand": true,
+        "selectors": [
+            "[id^=MD-t2i][id$=prompt] textarea",
+            "[id^=MD-t2i][id$=prompt] input[type='text']"
+        ]
+    },
+    "tiled-diffusion-i2i": {
+        "base": "#img2img_script_container",
+        "hasIds": true,
+        "onDemand": true,
+        "selectors": [
+            "[id^=MD-i2i][id$=prompt] textarea",
+            "[id^=MD-i2i][id$=prompt] input[type='text']"
+        ]
     }
 }
 
