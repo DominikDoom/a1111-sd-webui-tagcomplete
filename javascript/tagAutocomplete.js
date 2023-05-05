@@ -870,12 +870,13 @@ async function setup() {
             for (const mutation of mutationList) {
                 if (mutation.type === "attributes" && mutation.attributeName === "title") {
                     currentModelHash = mutation.target.title;
-                    let modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint input") || gradioApp().querySelector("#setting_sd_model_checkpoint select");
+                    let sdm = gradioApp().querySelector("#setting_sd_model_checkpoint");
+                    let modelDropdown =  sdm.querySelector("input") || sdm.querySelector("#select");
                     if (modelDropdown) {
                         currentModelName = modelDropdown.value;
                     } else {
                         // Fallback for intermediate versions
-                        modelDropdown = gradioApp().querySelector("#setting_sd_model_checkpoint span.single-select");
+                        modelDropdown = sdm.querySelector("span.single-select");
                         currentModelName = modelDropdown.textContent;
                     }
                 }
