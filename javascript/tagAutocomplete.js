@@ -20,10 +20,6 @@ const autocompleteCSS = `
     #quicksettings [id^=setting_tac] {
         background-color: transparent;
         min-width: fit-content;
-        align-self: center;
-    }
-    #quicksettings [id^=setting_tac] > label > span {
-        margin-bottom: 0px;
     }
     .autocompleteResults {
         position: absolute;
