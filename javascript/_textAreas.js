@@ -88,8 +88,9 @@ function addOnDemandObservers(setupFunction) {
         if (!entry.onDemand) continue;
 
         let base = gradioApp().querySelector(entry.base);
-        let accordions = [...base.querySelectorAll(".gradio-accordion")];
-
+        if (!base) continue;
+        
+        let accordions = [...base?.querySelectorAll(".gradio-accordion")];
         if (!accordions) continue;
 
         accordions.forEach(acc => {
