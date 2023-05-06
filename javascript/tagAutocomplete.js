@@ -860,21 +860,14 @@ async function setup() {
 
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
     let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");
+    updateModelName();
     if (modelHashText) {
         currentModelHash = modelHashText.title
         let modelHashObserver = new MutationObserver((mutationList, observer) => {
             for (const mutation of mutationList) {
                 if (mutation.type === "attributes" && mutation.attributeName === "title") {
                     currentModelHash = mutation.target.title;
-                    let sdm = gradioApp().querySelector("#setting_sd_model_checkpoint");
-                    let modelDropdown =  sdm.querySelector("input") || sdm.querySelector("#select");
-                    if (modelDropdown) {
-                        currentModelName = modelDropdown.value;
-                    } else {
-                        // Fallback for intermediate versions
-                        modelDropdown = sdm.querySelector("span.single-select");
-                        currentModelName = modelDropdown.textContent;
-                    }
+                    updateModelName();
                 }
             }
         });
