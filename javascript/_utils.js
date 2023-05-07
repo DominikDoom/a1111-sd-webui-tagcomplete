@@ -101,13 +101,13 @@ function escapeHTML(unsafeText) {
 // For black/whitelisting
 function updateModelName() {
     let sdm = gradioApp().querySelector("#setting_sd_model_checkpoint");
-    let modelDropdown =  sdm.querySelector("input") || sdm.querySelector("#select");
+    let modelDropdown =  sdm?.querySelector("input") || sdm?.querySelector("select");
     if (modelDropdown) {
         currentModelName = modelDropdown.value;
     } else {
         // Fallback for intermediate versions
-        modelDropdown = sdm.querySelector("span.single-select");
-        currentModelName = modelDropdown.textContent;
+        modelDropdown = sdm?.querySelector("span.single-select");
+        currentModelName = modelDropdown?.textContent || "";
     }
 }
 
