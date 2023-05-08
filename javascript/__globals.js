@@ -1,5 +1,5 @@
 // Core components
-var CFG = null;
+var TAC_CFG = null;
 var tagBasePath = "";
 
 // Tag completion data loaded from files

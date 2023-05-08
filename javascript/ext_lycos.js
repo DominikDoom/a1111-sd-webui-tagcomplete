@@ -1,5 +1,5 @@
 const LYCO_REGEX = /<(?!e:|h:)[^,> ]*>?/g;
-const LYCO_TRIGGER = () => CFG.useLycos && tagword.match(LYCO_REGEX);
+const LYCO_TRIGGER = () => TAC_CFG.useLycos && tagword.match(LYCO_REGEX);
 
 class LycoParser extends BaseTagParser {
     parse() {
@@ -39,7 +39,7 @@ async function load() {
 
 function sanitize(tagType, text) {
     if (tagType === ResultType.lyco) {
-        return `<lyco:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
+        return `<lyco:${text}:${TAC_CFG.extraNetworksDefaultMultiplier}>`;
     }
     return null;
 }

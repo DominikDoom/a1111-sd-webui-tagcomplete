@@ -1,5 +1,5 @@
 const LORA_REGEX = /<(?!e:|h:)[^,> ]*>?/g;
-const LORA_TRIGGER = () => CFG.useLoras && tagword.match(LORA_REGEX);
+const LORA_TRIGGER = () => TAC_CFG.useLoras && tagword.match(LORA_REGEX);
 
 class LoraParser extends BaseTagParser {
     parse() {
@@ -39,7 +39,7 @@ async function load() {
 
 function sanitize(tagType, text) {
     if (tagType === ResultType.lora) {
-        return `<lora:${text}:${CFG.extraNetworksDefaultMultiplier}>`;
+        return `<lora:${text}:${TAC_CFG.extraNetworksDefaultMultiplier}>`;
     }
     return null;
 }

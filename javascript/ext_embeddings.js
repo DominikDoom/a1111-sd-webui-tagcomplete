@@ -1,5 +1,5 @@
 const EMB_REGEX = /<(?!l:|h:)[^,> ]*>?/g;
-const EMB_TRIGGER = () => CFG.useEmbeddings && tagword.match(EMB_REGEX);
+const EMB_TRIGGER = () => TAC_CFG.useEmbeddings && tagword.match(EMB_REGEX);
 
 class EmbeddingParser extends BaseTagParser {
     parse() {
