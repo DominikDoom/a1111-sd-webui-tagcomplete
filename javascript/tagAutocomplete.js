@@ -241,6 +241,8 @@ function showResults(textArea) {
         if (resultsDiv.style.left)
             resultsDiv.style.removeProperty("left");
     }
+    // Reset here too to make absolutely sure the browser registers it
+    resultsDiv.scrollTop = 0;
 }
 function hideResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
@@ -372,6 +374,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
     if (resetList) {
         resultsList.innerHTML = "";
         selectedTag = null;
+        oldSelectedTag = null;
         resultDiv.scrollTop = 0;
         resultCount = 0;
     }
@@ -518,8 +521,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
     }
     resultCount = nextLength;
 
-    if (resetList)
+    if (resetList) {
+        selectedTag = null;
+        oldSelectedTag = null;
         resultDiv.scrollTop = 0;
+    }
 }
 
 function updateSelectionStyle(textArea, newIndex, oldIndex) {
@@ -779,8 +785,8 @@ function navigateInList(textArea, event) {
             hideResults(textArea);
             break;
     }
-    if (selectedTag === resultCount - 1
-        && (event.key === keys["MoveUp"] || event.key === keys["MoveDown"] || event.key === keys["JumpToStart"] || event.key === keys["JumpToEnd"])) {
+    let moveKeys = [keys["MoveUp"], keys["MoveDown"], keys["JumpUp"], keys["JumpDown"], keys["JumpToStart"], keys["JumpToEnd"]];
+    if (selectedTag === resultCount - 1 && moveKeys.includes(event.key)) {
         addResultsToList(textArea, results, tagword, false);
     }
     // Update highlighting
