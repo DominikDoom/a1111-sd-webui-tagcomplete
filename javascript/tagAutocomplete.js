@@ -855,13 +855,20 @@ async function setup() {
     });
     // Add change listener to our quicksettings to change our internal config without the apply button for them
     let quicksettings = gradioApp().querySelector('#quicksettings');
-    let commonQueryPart = "[id^=setting_tac] > label >";
+    let commonQueryPart = "[id^=setting_tac] > label";
     quicksettings?.querySelectorAll(`${commonQueryPart} input, ${commonQueryPart} textarea, ${commonQueryPart} select`).forEach(e => {
         e.addEventListener("change", () => {
             setTimeout(async () => { 
                 await syncOptions();
             }, 500);
         });
+    });
+    quicksettings?.querySelectorAll(`[id^=setting_tac].gradio-dropdown input`).forEach(e => {
+        observeElement(e, "value", () => {
+            setTimeout(async () => { 
+                await syncOptions();
+            }, 500);
+        })
     });
 
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
