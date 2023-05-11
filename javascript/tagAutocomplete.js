@@ -146,7 +146,7 @@ async function syncOptions() {
         useHypernetworks: opts["tac_useHypernetworks"],
         useLoras: opts["tac_useLoras"],
         useChants: opts["tac_useChants"],
-	useLycos: opts["tac_useLycos"],
+	    useLycos: opts["tac_useLycos"],
         showWikiLinks: opts["tac_showWikiLinks"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
@@ -175,6 +175,7 @@ async function syncOptions() {
         keymap: JSON.parse(opts["tac_keymap"]),
         colorMap: JSON.parse(opts["tac_colormap"])
     }
+    
     if (newCFG.alias.onlyShowAlias) {
         newCFG.alias.searchByAlias = true; // if only show translation, enable search by translation is necessary
     }
@@ -403,11 +404,10 @@ function addResultsToList(textArea, results, tagword, resetList) {
         itemText.classList.add("acListItem");
 
         let displayText = "";
+        // If the tag matches the tagword, we don't need to display the alias
         if(result.type === ResultType.chant) {
             displayText = escapeHTML(result.aliases);
-        }
-        // If the tag matches the tagword, we don't need to display the alias
-        else if (result.aliases && !result.text.includes(tagword)) { // Alias
+        } else if (result.aliases && !result.text.includes(tagword)) { // Alias
             let splitAliases = result.aliases.split(",");
             let bestAlias = splitAliases.find(a => a.toLowerCase().includes(tagword));
 
