@@ -78,6 +78,48 @@ For example:
 
 ![Embedding version filter](https://user-images.githubusercontent.com/34448969/223533883-d99c04b7-a199-4f56-a4e5-242eee9726a2.png)
 
+### Chants
+Chants are longer prompt presets. The name is inspired by some early prompt collections from Chinese users, which often were called along the lines of "Spellbook", "Codex", etc. The prompt snippets from such documents were fittingly called spells or chants for this reason.
+
+Similar to embeddings and loras, this feature is triggered by typing the `<`, `<c:` or `<chant:` commands. For instance, when you enter `<c:High Quality` in the prompt box and select it, the following prompt text will be inserted:
+```
+(extremely detailed CG unity 8k wallpaper, masterpiece, best quality, ultra-detailed),
+```
+
+
+Chants can be added in JSON files following this format:
+```json
+[
+    {
+        "name": "Basic-NegitivePrompt",
+        "terms": "Negitive,Low,Quality",
+        "content": "(worst quality, low quality, normal quality)",
+        "color": 3
+    },
+    {
+        "name": "Basic-HighQuality",
+        "terms": "Best,Quality",
+        "content": "(masterpiece, best quality, high quality, highres, ultra-detailed)",
+        "color": 1
+    },
+    {
+        "name": "Basic-Start",
+        "terms": "Basic, Start, Simple, Demo",
+        "content": "(masterpiece, best quality, high quality, highres), 1girl, extremely beautiful detailed face, ...",
+        "color": 5
+    },
+
+	[...]
+]
+```
+The file can then be selected using the "Chant file" settings dropdown if it is located inside the extension's `tags` folder.
+
+A chant object has four fields:
+`name` - Display name
+`terms` - Search terms
+`content` - The actual prompt content
+`color` - Color, using the same category color system as normal tags
+
 ### Umi AI tags
 https://github.com/Klokinator/Umi-AI is a feature-rich wildcard extension similar to Unprompted or Dynamic Wildcards.
 In recent releases, it uses YAML-based wildcard tags to enable a complex chaining system,for example `<[preset][--female][sfw][species]>` will choose the preset category, exclude female related tags, further narrow it down with the following categories, and then choose one random fill-in matching all these criteria at runtime. Completion is triggered by `<[` and then each following new unclosed bracket, e.g. `<[xyz][`, until closed by `>`.
@@ -109,6 +151,7 @@ The extension has a large amount of configuration & customizability built in:
 | alias | Options for aliases. More info in the section below. |
 | translation | Options for translations. More info in the section below.  |
 | extras | Options for additional tag files / aliases / translations. More info below. |
+| chantFile | The file to use for chants (longer prompt presets / shortcuts). |
 | keymap | Customizable hotkeys. |
 | colors | Customizable tag colors. More info below. |
 ### Colors
