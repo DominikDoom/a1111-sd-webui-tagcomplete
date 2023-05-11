@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Basic-NegativePrompt",
+        "terms": "Basic,Negative,Low,Quality",
+        "content": "(worst quality, low quality, normal quality)",
+        "color": 3
+    },
+    {
+        "name": "Basic-HighQuality",
+        "terms": "Basic,Best,High,Quality",
+        "content": "(masterpiece, best quality, high quality, highres, ultra-detailed)",
+        "color": 1
+    },
+    {
+        "name": "Basic-Start",
+        "terms": "Basic, Start, Simple, Demo",
+        "content": "(masterpiece, best quality, high quality, highres), 1girl, extremely beautiful detailed face, short curly hair, light smile, flower dress, outdoors, leaf, tree, best shadow",
+        "color": 5
+    },
+    {
+        "name": "Fancy-FireMagic",
+        "terms": "Fire, Magic, Fancy",
+        "content": "(extremely detailed CG unity 8k wallpaper), (masterpiece), (best quality), (ultra-detailed), (best illustration),(best shadow), (an extremely delicate and beautiful), dynamic angle, floating, fine detail, (bloom), (shine), glinting stars, classic, (painting), (sketch),\n\na girl, solo, bare shoulders, flat_chest, diamond and glaring eyes, beautiful detailed cold face, very long blue and sliver hair, floating black feathers, wavy hair, extremely delicate and beautiful girls, beautiful detailed eyes, glowing eyes,\n\npalace, the best building, ((Fire butterflies, Flying sparks, Flames))",
+        "color": 5
+    },
+    {
+        "name": "Fancy-WaterMagic",
+        "terms": "Water, Magic, Fancy",
+        "content": "(extremely detailed CG unity 8k wallpaper), (masterpiece), (best quality), (ultra-detailed), (best illustration),(best shadow), (an extremely delicate and beautiful), classic, dynamic angle, floating, fine detail, Depth of field, classic, (painting), (sketch), (bloom), (shine), glinting stars,\n\na girl, solo, bare shoulders, flat chest, diamond and glaring eyes, beautiful detailed cold face, very long blue and sliver hair, floating black feathers, wavy hair, extremely delicate and beautiful girls, beautiful detailed eyes, glowing eyes,\n\nriver, (forest),palace, (fairyland,feather,flowers, nature),(sunlight),Hazy fog, mist",
+        "color": 5
+    }
+]

@@ -206,6 +206,14 @@ def update_tag_files():
     csv_files = files
     csv_files_withnone = ["None"] + files
 
+json_files = []
+json_files_withnone = []
+def update_json_files():
+    """Returns a list of all potential json files"""
+    global json_files, json_files_withnone
+    files = [str(j.relative_to(TAGS_PATH)) for j in TAGS_PATH.glob("*.json")]
+    json_files = files
+    json_files_withnone = ["None"] + files
 
 
 # Write the tag base path to a fixed location temporary file
@@ -215,6 +223,7 @@ if not STATIC_TEMP_PATH.exists():
 
 write_tag_base_path()
 update_tag_files()
+update_json_files()
 
 # Check if the temp path exists and create it if not
 if not TEMP_PATH.exists():
@@ -307,6 +316,8 @@ def on_ui_settings():
     # Extra file settings
     shared.opts.add_option("tac_extra.extraFile", shared.OptionInfo("extra-quality-tags.csv", "Extra filename (for small sets of custom tags)", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files, section=TAC_SECTION))
     shared.opts.add_option("tac_extra.addMode", shared.OptionInfo("Insert before", "Mode to add the extra tags to the main tag list", gr.Dropdown, lambda: {"choices": ["Insert before","Insert after"]}, section=TAC_SECTION))
+    # Chant settings
+    shared.opts.add_option("tac_chantFile", shared.OptionInfo("demo-chants.json", "Chant filename (Chants are longer prompt presets)", gr.Dropdown, lambda: {"choices": json_files_withnone}, refresh=update_json_files, section=TAC_SECTION))
     # Custom mappings
     keymapDefault = """\
 {

@@ -10,7 +10,8 @@ const ResultType = Object.freeze({
     "yamlWildcard": 6,
     "hypernetwork": 7,
     "lora": 8,
-    "lyco": 9
+    "lyco": 9,
+    "chant": 10
 });
 
 // Class to hold result data and annotations to make it clearer to use
