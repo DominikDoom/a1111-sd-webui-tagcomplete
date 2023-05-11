@@ -17,7 +17,10 @@ class ChantParser extends BaseTagParser {
         let finalResults = [];
         tempResults.forEach(t => {
             let result = new AutocompleteResult(t.content.trim(), ResultType.chant)
-            result.meta = t.name + " Chant";
+            result.meta = " Chant";
+            result.type = ResultType.chant;
+            result.aliases = t.name;
+            result.category = t.color;
             finalResults.push(result);
         });
 

@@ -403,8 +403,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
         itemText.classList.add("acListItem");
 
         let displayText = "";
+        if(result.type === ResultType.chant) {
+            displayText = escapeHTML(result.aliases);
+        }
         // If the tag matches the tagword, we don't need to display the alias
-        if (result.aliases && !result.text.includes(tagword)) { // Alias
+        else if (result.aliases && !result.text.includes(tagword)) { // Alias
             let splitAliases = result.aliases.split(",");
             let bestAlias = splitAliases.find(a => a.toLowerCase().includes(tagword));
 
