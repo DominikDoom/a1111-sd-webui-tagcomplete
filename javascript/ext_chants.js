@@ -8,7 +8,7 @@ class ChantParser extends BaseTagParser {
         if (tagword !== "<" && tagword !== "<c:") {
             let searchTerm = tagword.replace("<c:", "").replace("<", "");
             let filterCondition = x => x.term.toLowerCase().includes(searchTerm);
-            tempResults = loras.filter(x => filterCondition(x)); // Filter by tagword
+            tempResults = chants.filter(x => filterCondition(x)); // Filter by tagword
         } else {
             tempResults = chants;
         }
