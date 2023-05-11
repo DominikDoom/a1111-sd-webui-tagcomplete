@@ -115,10 +115,10 @@ Chants can be added in JSON files following this format:
 The file can then be selected using the "Chant file" settings dropdown if it is located inside the extension's `tags` folder.
 
 A chant object has four fields:
-`name` - Display name
-`terms` - Search terms
-`content` - The actual prompt content
-`color` - Color, using the same category color system as normal tags
+- `name` - Display name
+- `terms` - Search terms
+- `content` - The actual prompt content
+- `color` - Color, using the same category color system as normal tags
 
 ### Umi AI tags
 https://github.com/Klokinator/Umi-AI is a feature-rich wildcard extension similar to Unprompted or Dynamic Wildcards.
