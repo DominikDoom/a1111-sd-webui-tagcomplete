@@ -107,9 +107,7 @@ Chants can be added in JSON files following this format:
         "terms": "Basic, Start, Simple, Demo",
         "content": "(masterpiece, best quality, high quality, highres), 1girl, extremely beautiful detailed face, ...",
         "color": 5
-    },
-
-    (...)
+    }
 ]
 ```
 The file can then be selected using the "Chant file" settings dropdown if it is located inside the extension's `tags` folder.
