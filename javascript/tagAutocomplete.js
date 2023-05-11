@@ -145,6 +145,7 @@ async function syncOptions() {
         useEmbeddings: opts["tac_useEmbeddings"],
         useHypernetworks: opts["tac_useHypernetworks"],
         useLoras: opts["tac_useLoras"],
+        useChants: opts["tac_useChants"],
 	useLycos: opts["tac_useLycos"],
         showWikiLinks: opts["tac_showWikiLinks"],
         // Insertion related settings
