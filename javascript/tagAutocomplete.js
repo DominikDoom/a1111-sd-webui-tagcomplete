@@ -145,7 +145,6 @@ async function syncOptions() {
         useEmbeddings: opts["tac_useEmbeddings"],
         useHypernetworks: opts["tac_useHypernetworks"],
         useLoras: opts["tac_useLoras"],
-        useChants: opts["tac_useChants"],
 	    useLycos: opts["tac_useLycos"],
         showWikiLinks: opts["tac_showWikiLinks"],
         // Insertion related settings
@@ -168,6 +167,8 @@ async function syncOptions() {
             extraFile: opts["tac_extra.extraFile"],
             addMode: opts["tac_extra.addMode"]
         },
+        // Chant file settings
+        chantFile: opts["tac_chantFile"],
         // Settings not from tac but still used by the script
         extraNetworksDefaultMultiplier: opts["extra_networks_default_multiplier"],
         extraNetworksSeparator: opts["extra_networks_add_text_separator"],
@@ -175,7 +176,7 @@ async function syncOptions() {
         keymap: JSON.parse(opts["tac_keymap"]),
         colorMap: JSON.parse(opts["tac_colormap"])
     }
-    
+
     if (newCFG.alias.onlyShowAlias) {
         newCFG.alias.searchByAlias = true; // if only show translation, enable search by translation is necessary
     }
@@ -619,7 +620,11 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // instead of having them added in the order of the parsers
         let shouldSort = resultCandidates.length > 1;
         if (shouldSort) {
-            results = results.sort((a, b) => a.text.localeCompare(b.text));
+            results = results.sort((a, b) => {
+                let sortByA = a.type === ResultType.chant ? a.aliases : a.text;
+                let sortByB = b.type === ResultType.chant ? b.aliases : b.text;
+                return sortByA.localeCompare(sortByB);
+            });
 
             // Since some tags are kaomoji, we have to add the normal results in some cases
             if (tagword.startsWith("<") || tagword.startsWith("*<")) {
