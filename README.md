@@ -109,7 +109,7 @@ Chants can be added in JSON files following this format:
         "color": 5
     },
 
-	[...]
+    (...)
 ]
 ```
 The file can then be selected using the "Chant file" settings dropdown if it is located inside the extension's `tags` folder.
