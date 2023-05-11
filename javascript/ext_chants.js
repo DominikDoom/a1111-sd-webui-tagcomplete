@@ -7,7 +7,7 @@ class ChantParser extends BaseTagParser {
         let tempResults = [];
         if (tagword !== "<" && tagword !== "<c:") {
             let searchTerm = tagword.replace("<c:", "").replace("<", "");
-            let filterCondition = x => x.term.toLowerCase().includes(searchTerm);
+            let filterCondition = x => x.terms.toLowerCase().includes(searchTerm);
             tempResults = chants.filter(x => filterCondition(x)); // Filter by tagword
         } else {
             tempResults = chants;
@@ -17,7 +17,7 @@ class ChantParser extends BaseTagParser {
         let finalResults = [];
         tempResults.forEach(t => {
             let result = new AutocompleteResult(t.content.trim(), ResultType.chant)
-            result.meta = " Chant";
+            result.meta = "Chant";
             result.type = ResultType.chant;
             result.aliases = t.name;
             result.category = t.color;
