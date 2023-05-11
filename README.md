@@ -81,9 +81,9 @@ For example:
 ### Chants
 Chants are longer prompt presets. The name is inspired by some early prompt collections from Chinese users, which often were called along the lines of "Spellbook", "Codex", etc. The prompt snippets from such documents were fittingly called spells or chants for this reason.
 
-Similar to embeddings and loras, this feature is triggered by typing the `<`, `<c:` or `<chant:` commands. For instance, when you enter `<c:High Quality` in the prompt box and select it, the following prompt text will be inserted:
+Similar to embeddings and loras, this feature is triggered by typing the `<`, `<c:` or `<chant:` commands. For instance, when you enter `<c:HighQuality` in the prompt box and select it, the following prompt text will be inserted:
 ```
-(extremely detailed CG unity 8k wallpaper, masterpiece, best quality, ultra-detailed),
+(masterpiece, best quality, high quality, highres, ultra-detailed),
 ```
 
 
@@ -91,14 +91,14 @@ Chants can be added in JSON files following this format:
 ```json
 [
     {
-        "name": "Basic-NegitivePrompt",
-        "terms": "Negitive,Low,Quality",
+        "name": "Basic-NegativePrompt",
+        "terms": "Negative,Low,Quality",
         "content": "(worst quality, low quality, normal quality)",
         "color": 3
     },
     {
         "name": "Basic-HighQuality",
-        "terms": "Best,Quality",
+        "terms": "Best,High,Quality",
         "content": "(masterpiece, best quality, high quality, highres, ultra-detailed)",
         "color": 1
     },
