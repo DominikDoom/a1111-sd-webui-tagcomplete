@@ -1,12 +1,12 @@
-const CHANT_REGEX = /%(?!c:)[^,> ]*>?/gg;
+const CHANT_REGEX = /<(?!e:|h:|l:)[^,> ]*>?/g;
 const CHANT_TRIGGER = () => TAC_CFG.useChants && tagword.match(CHANT_REGEX);
 
 class ChantParser extends BaseTagParser {
     parse() {
         // Show Chant
         let tempResults = [];
-        if (tagword !== "%" && tagword !== "%c:") {
-            let searchTerm = tagword.replace("%c:", "").replace("%", "");
+        if (tagword !== "<" && tagword !== "<c:") {
+            let searchTerm = tagword.replace("<c:", "").replace("<", "");
             let filterCondition = x => x.term.toLowerCase().includes(searchTerm);
             tempResults = loras.filter(x => filterCondition(x)); // Filter by tagword
         } else {
@@ -16,8 +16,8 @@ class ChantParser extends BaseTagParser {
         // Add final results
         let finalResults = [];
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t.content.trim(), ResultType.json)
-            result.meta = t.name;
+            let result = new AutocompleteResult(t.content.trim(), ResultType.chant)
+            result.meta = t.name + " Chant";
             finalResults.push(result);
         });
 
@@ -37,8 +37,7 @@ async function load() {
 
 function sanitize(tagType, text) {
     if (tagType === ResultType.chant) {
-        let selected = chants.find(x => x.content === text);
-        return `%c:${selected.term}:${TAC_CFG.extraNetworksDefaultMultiplier}>`;
+        return text.replace(/^.*?: /g, "");
     }
     return null;
 }

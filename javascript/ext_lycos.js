@@ -1,4 +1,4 @@
-const LYCO_REGEX = /<(?!e:|h:)[^,> ]*>?/g;
+const LYCO_REGEX = /<(?!e:|h:|c:)[^,> ]*>?/g;
 const LYCO_TRIGGER = () => TAC_CFG.useLycos && tagword.match(LYCO_REGEX);
 
 class LycoParser extends BaseTagParser {

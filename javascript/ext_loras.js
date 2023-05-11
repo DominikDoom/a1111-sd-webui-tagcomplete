@@ -1,4 +1,4 @@
-const LORA_REGEX = /<(?!e:|h:)[^,> ]*>?/g;
+const LORA_REGEX = /<(?!e:|h:|c:)[^,> ]*>?/g;
 const LORA_TRIGGER = () => TAC_CFG.useLoras && tagword.match(LORA_REGEX);
 
 class LoraParser extends BaseTagParser {

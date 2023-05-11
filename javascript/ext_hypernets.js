@@ -1,4 +1,4 @@
-const HYP_REGEX = /<(?!e:|l:)[^,> ]*>?/g;
+const HYP_REGEX = /<(?!e:|l:|c:)[^,> ]*>?/g;
 const HYP_TRIGGER = () => TAC_CFG.useHypernetworks && tagword.match(HYP_REGEX);
 
 class HypernetParser extends BaseTagParser {
