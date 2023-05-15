@@ -89,6 +89,14 @@ function difference(a, b) {
     )].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
 }
 
+// Sliding window function to get possible combination groups of an array
+function toNgrams(inputArray, size) {
+    return Array.from(
+        { length: inputArray.length - (size - 1) }, //get the appropriate length
+        (_, index) => inputArray.slice(index, index + size) //create the windows
+    );
+}
+
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }

@@ -8,6 +8,10 @@
     "--meta-text-color": ["#6b6f7b", "#a2a9b4"],
     "--embedding-v1-color": ["lightsteelblue", "#2b5797"],
     "--embedding-v2-color": ["skyblue", "#2d89ef"],
+    "--live-translation-rt": ["whitesmoke", "#222"],
+    "--live-translation-color-1": ["lightskyblue", "#2d89ef"],
+    "--live-translation-color-2": ["palegoldenrod", "#eb5700"],
+    "--live-translation-color-3": ["darkseagreen", "darkgreen"],
 }
 const browserVars = {
     "--results-overflow-y": {
@@ -73,6 +77,39 @@ const autocompleteCSS = `
     }
     .acListItem.acEmbeddingV2 {
         color: var(--embedding-v2-color);
+    }
+    .acRuby {
+        padding: var(--input-padding);
+        color: #888;
+        font-size: 0.8rem;
+        user-select: none;
+    }
+    .acRuby > ruby {
+        display: inline-flex;
+        flex-direction: column-reverse;
+        margin-top: 0.5rem;
+        vertical-align: bottom;
+        cursor: pointer;
+    }
+    .acRuby > ruby::hover {
+        text-decoration: underline;
+        text-shadow: 0 0 10px var(--live-translation-color-1);
+    }
+    .acRuby > :nth-child(3n+1) {
+        color: var(--live-translation-color-1);
+    }
+    .acRuby > :nth-child(3n+2) {
+        color: var(--live-translation-color-2);
+    }
+    .acRuby > :nth-child(3n+3) {
+        color: var(--live-translation-color-3);
+    }
+    .acRuby > ruby > rt {
+        line-height: 1rem;
+        padding: 0px 5px 0px 0px;
+        text-align: left;
+        font-size: 1rem;
+        color: var(--live-translation-rt);
     }
 `;
 
@@ -161,6 +198,7 @@ async function syncOptions() {
             translationFile: opts["tac_translation.translationFile"],
             oldFormat: opts["tac_translation.oldFormat"],
             searchByTranslation: opts["tac_translation.searchByTranslation"],
+            liveTranslation: opts["tac_translation.liveTranslation"],
         },
         // Extra file settings
         extra: {
@@ -197,6 +235,13 @@ async function syncOptions() {
     if (TAC_CFG && newCFG.maxResults !== TAC_CFG.maxResults) {
         gradioApp().querySelectorAll(".autocompleteResults").forEach(r => {
             r.style.maxHeight = `${newCFG.maxResults * 50}px`;
+        });
+    }
+
+    // Remove ruby div if live preview was disabled
+    if (newCFG.translation.liveTranslation === false) {
+        [...gradioApp().querySelectorAll('.acRuby')].forEach(r => {
+            r.remove();
         });
     }
 
@@ -287,6 +332,7 @@ const WEIGHT_REGEX = /[([]([^()[\]:|]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const POINTY_REGEX = /<[^\s,<](?:[^\t\n\r,<>]*>|[^\t\n\r,> ]*)/g;
 const COMPLETED_WILDCARD_REGEX = /__[^\s,_][^\t\n\r,_]*[^\s,_]__[^\s,_]*/g;
 const NORMAL_TAG_REGEX = /[^\s,|<>)\]]+|</g;
+const RUBY_TAG_REGEX = /[\w\d<][\w\d' \-?!/$%]{2,}>?/g;
 const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
@@ -553,6 +599,111 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
         let selected = items[newIndex];
         resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
     }
+}
+
+function updateRuby(textArea, prompt) {
+    if (!TAC_CFG.translation.liveTranslation) return;
+    if (!TAC_CFG.translation.translationFile || TAC_CFG.translation.translationFile === "None") return;
+
+    let ruby = gradioApp().querySelector('.acRuby' + getTextAreaIdentifier(textArea));
+    if (!ruby) {
+        let textAreaId = getTextAreaIdentifier(textArea);
+        let typeClass = textAreaId.replaceAll(".", " ");
+        ruby = document.createElement("div");
+        ruby.setAttribute("class", `acRuby${typeClass} notranslate`);
+        textArea.parentNode.appendChild(ruby);
+    }
+    
+    ruby.innerText = prompt;
+
+    let bracketEscapedPrompt = prompt.replaceAll("\\(", "$").replaceAll("\\)", "%");
+
+    let rubyTags = bracketEscapedPrompt.match(RUBY_TAG_REGEX);
+    if (!rubyTags) return;
+
+    rubyTags.sort((a, b) => b.length - a.length);
+    rubyTags = new Set(rubyTags);
+
+    const prepareTag = (tag) => {
+        tag = tag.replaceAll("$", "\\(").replaceAll("%", "\\)");
+
+        let unsanitizedTag = tag
+            .replaceAll(" ", "_")
+            .replaceAll("\\(", "(")
+            .replaceAll("\\)", ")");
+        
+        const translation = translations?.get(tag) || translations?.get(unsanitizedTag); 
+        
+        let escapedTag = escapeRegExp(tag);
+        return { tag, escapedTag, translation };
+    }
+
+    const replaceOccurences = (text, tuple) => {
+        let { tag, escapedTag, translation } = tuple;
+        let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,|: \\t\\n\\r]))(?!<rt>)`, "g");
+        return text.replaceAll(searchRegex, `<ruby>${escapeHTML(tag)}<rt>${translation}</rt></ruby>`);
+    }
+
+    let html = escapeHTML(prompt);
+
+    // First try to find direct matches
+    [...rubyTags].forEach(tag => {
+        let tuple = prepareTag(tag);
+        
+        if (tuple.translation) {
+            html = replaceOccurences(html, tuple);
+        } else {
+            let subTags = tuple.tag.split(" ").filter(x => x.trim().length > 0);
+            // Return if there is only one word
+            if (subTags.length === 1) return;
+            
+            let subHtml = tag.replaceAll("$", "\\(").replaceAll("%", "\\)");
+
+            let translateNgram = (windows) => {
+                windows.forEach(window => {
+                    let combinedTag = window.join(" ");
+                    let subTuple = prepareTag(combinedTag);
+
+                    if (subTuple.tag.length <= 2) return;
+
+                    if (subTuple.translation) {
+                        subHtml = replaceOccurences(subHtml, subTuple);
+                    }
+                });
+            }
+    
+            // Perform n-gram sliding window search
+            translateNgram(toNgrams(subTags, 3));
+            translateNgram(toNgrams(subTags, 2));
+            translateNgram(toNgrams(subTags, 1));
+
+            let escapedTag = escapeRegExp(tuple.tag);
+            
+            let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,|: \\t\\n\\r]))(?!<rt>)`, "g");
+            html = html.replaceAll(searchRegex, subHtml);
+        }
+    });
+
+    ruby.innerHTML = html;
+
+    // Add listeners for auto selection
+    const childNodes = [...ruby.childNodes];
+    [...ruby.children].forEach(child => {
+        const textBefore = childNodes.slice(0, childNodes.indexOf(child)).map(x => x.childNodes[0]?.textContent || x.textContent).join("")
+        child.onclick = () => rubyTagClicked(child, textBefore, prompt, textArea);
+    });
+}
+
+function rubyTagClicked(node, textBefore, prompt, textArea) {
+    let selectionText = node.childNodes[0].textContent;
+
+    // Find start and end position of the tag in the prompt
+    let startPos = prompt.indexOf(textBefore) + textBefore.length;
+    let endPos = startPos + selectionText.length;
+
+    // Select in text area
+    textArea.focus();
+    textArea.setSelectionRange(startPos, endPos);
 }
 
 async function autocomplete(textArea, prompt, fixedTag = null) {
@@ -826,7 +977,10 @@ function addAutocompleteToArea(area) {
         hideResults(area);
 
         // Add autocomplete event listener
-        area.addEventListener('input', debounce(() => autocomplete(area, area.value), TAC_CFG.delayTime));
+        area.addEventListener('input', () => {
+            debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
+            updateRuby(area, area.value);
+        });
         // Add focusout event listener
         area.addEventListener('focusout', debounce(() => hideResults(area), 400));
         // Add up and down arrow event listener
@@ -918,10 +1072,10 @@ async function setup() {
     let css = autocompleteCSS;
     // Replace vars with actual values (can't use actual css vars because of the way we inject the css)
     Object.keys(styleColors).forEach((key) => {
-        css = css.replace(`var(${key})`, styleColors[key][mode]);
+        css = css.replaceAll(`var(${key})`, styleColors[key][mode]);
     })
     Object.keys(browserVars).forEach((key) => {
-        css = css.replace(`var(${key})`, browserVars[key][browser]);
+        css = css.replaceAll(`var(${key})`, browserVars[key][browser]);
     })
     
     if (acStyle.styleSheet) {
