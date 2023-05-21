@@ -8,7 +8,8 @@ const core = [
     "#txt2img_prompt > label > textarea",
     "#img2img_prompt > label > textarea",
     "#txt2img_neg_prompt > label > textarea",
-    "#img2img_neg_prompt > label > textarea"
+    "#img2img_neg_prompt > label > textarea",
+    ".prompt > label > textarea"
 ];
 
 // Third party text area selectors
