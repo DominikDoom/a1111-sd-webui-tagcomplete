@@ -15,6 +15,7 @@ You can install it using the inbuilt available extensions list, clone the files 
 
 ## Common Problems & Known Issues:
 - Depending on your browser settings, sometimes an old version of the script can get cached. Try `CTRL+F5` to force-reload the site without cache if e.g. a new feature doesn't appear for you after an update.
+- If the prompt popup has broken styling for you or doesn't appear at all (like [this](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/7bbfdd54-fc23-4bfc-85af-24704b139b3a)), make sure to update your openpose-editor extension if you have it installed. It is known to cause issues with other extensions in older versions.
 
 ## Screenshots & Demo videos
 <details>
