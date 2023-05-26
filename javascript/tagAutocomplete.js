@@ -968,6 +968,8 @@ async function refreshTacTempFiles() {
         loras = [];
         lycos = [];
         await processQueue(QUEUE_FILE_LOAD, null);
+
+        console.log("TAC: Refreshed temp files");
     }, 2000);
 }
 
@@ -1047,7 +1049,7 @@ async function setup() {
         })
     });
     // Listener for internal temp files refresh button
-    gradioApp().querySelector("#tac_refreshTempFiles")?.addEventListener("click", refreshTacTempFiles);
+    gradioApp().querySelector("#refresh_tac_refreshTempFiles")?.addEventListener("click", refreshTacTempFiles);
 
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
     let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");

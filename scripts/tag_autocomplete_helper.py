@@ -248,7 +248,7 @@ if EMB_PATH.exists():
 
 def refresh_temp_files():
     write_temp_files()
-    get_embeddings()
+    get_embeddings(shared.sd_model)
 
 def write_temp_files():
     # Write wildcards to wc.txt if found
