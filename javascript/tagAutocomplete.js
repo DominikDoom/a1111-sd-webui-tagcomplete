@@ -963,6 +963,7 @@ async function refreshTacTempFiles() {
         wildcardFiles = [];
         wildcardExtFiles = [];
         yamlWildcards = [];
+        embeddings = [];
         hypernetworks = [];
         loras = [];
         lycos = [];
