@@ -247,6 +247,10 @@ if EMB_PATH.exists():
     script_callbacks.on_model_loaded(get_embeddings)
 
 def refresh_temp_files():
+    write_temp_files()
+    get_embeddings()
+
+def write_temp_files():
     # Write wildcards to wc.txt if found
     if WILDCARD_PATH.exists():
         wildcards = [WILDCARD_PATH.relative_to(FILE_DIR).as_posix()] + get_wildcards()
@@ -279,7 +283,7 @@ def refresh_temp_files():
             write_to_temp_file('lyco.txt', lyco)
 
 
-refresh_temp_files()
+write_temp_files()
 
 # Register autocomplete options
 def on_ui_settings():
