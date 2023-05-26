@@ -241,41 +241,45 @@ write_to_temp_file('lyco.txt', [])
 if not TEMP_PATH.joinpath("emb.txt").exists():
     write_to_temp_file('emb.txt', [])
 
-# Write wildcards to wc.txt if found
-if WILDCARD_PATH.exists():
-    wildcards = [WILDCARD_PATH.relative_to(FILE_DIR).as_posix()] + get_wildcards()
-    if wildcards:
-        write_to_temp_file('wc.txt', wildcards)
-
-# Write extension wildcards to wce.txt if found
-if WILDCARD_EXT_PATHS is not None:
-    wildcards_ext = get_ext_wildcards()
-    if wildcards_ext:
-        write_to_temp_file('wce.txt', wildcards_ext)
-    # Write yaml extension wildcards to wcet.txt if found
-    wildcards_yaml_ext = get_ext_wildcard_tags()
-    if wildcards_yaml_ext:
-        write_to_temp_file('wcet.txt', wildcards_yaml_ext)
-
 # Write embeddings to emb.txt if found
 if EMB_PATH.exists():
     # Get embeddings after the model loaded callback
     script_callbacks.on_model_loaded(get_embeddings)
 
-if HYP_PATH.exists():
-    hypernets = get_hypernetworks()
-    if hypernets:
-        write_to_temp_file('hyp.txt', hypernets)
+def refresh_temp_files():
+    # Write wildcards to wc.txt if found
+    if WILDCARD_PATH.exists():
+        wildcards = [WILDCARD_PATH.relative_to(FILE_DIR).as_posix()] + get_wildcards()
+        if wildcards:
+            write_to_temp_file('wc.txt', wildcards)
 
-if LORA_PATH is not None and LORA_PATH.exists():
-    lora = get_lora()
-    if lora:
-        write_to_temp_file('lora.txt', lora)
+    # Write extension wildcards to wce.txt if found
+    if WILDCARD_EXT_PATHS is not None:
+        wildcards_ext = get_ext_wildcards()
+        if wildcards_ext:
+            write_to_temp_file('wce.txt', wildcards_ext)
+        # Write yaml extension wildcards to wcet.txt if found
+        wildcards_yaml_ext = get_ext_wildcard_tags()
+        if wildcards_yaml_ext:
+            write_to_temp_file('wcet.txt', wildcards_yaml_ext)
 
-if LYCO_PATH is not None and LYCO_PATH.exists():
-    lyco = get_lyco()
-    if lyco:
-        write_to_temp_file('lyco.txt', lyco)
+    if HYP_PATH.exists():
+        hypernets = get_hypernetworks()
+        if hypernets:
+            write_to_temp_file('hyp.txt', hypernets)
+
+    if LORA_PATH is not None and LORA_PATH.exists():
+        lora = get_lora()
+        if lora:
+            write_to_temp_file('lora.txt', lora)
+
+    if LYCO_PATH is not None and LYCO_PATH.exists():
+        lyco = get_lyco()
+        if lyco:
+            write_to_temp_file('lyco.txt', lyco)
+
+
+refresh_temp_files()
 
 # Register autocomplete options
 def on_ui_settings():
@@ -366,5 +370,6 @@ def on_ui_settings():
         shared.opts.add_option("tac_keymap", shared.OptionInfo(keymapDefault, keymapLabel, gr.Textbox, section=TAC_SECTION))
         shared.opts.add_option("tac_colormap", shared.OptionInfo(colorDefault, colorLabel, gr.Textbox, section=TAC_SECTION))
 
-
+    shared.opts.add_option("tac_refreshTempFiles", shared.OptionInfo("Refresh TAC temp files", "Refresh internal temp files", gr.HTML, {}, refresh=refresh_temp_files, section=TAC_SECTION))
+    
 script_callbacks.on_ui_settings(on_ui_settings)

@@ -958,6 +958,18 @@ function navigateInList(textArea, event) {
     event.stopPropagation();
 }
 
+async function refreshTacTempFiles() {
+    setTimeout(async () => {
+        wildcardFiles = [];
+        wildcardExtFiles = [];
+        yamlWildcards = [];
+        hypernetworks = [];
+        loras = [];
+        lycos = [];
+        await processQueue(QUEUE_FILE_LOAD, null);
+    }, 2000);
+}
+
 function addAutocompleteToArea(area) {
     // Return if autocomplete is disabled for the current area type in config
     let textAreaId = getTextAreaIdentifier(area);
@@ -1033,6 +1045,8 @@ async function setup() {
             }, 500);
         })
     });
+    // Listener for internal temp files refresh button
+    gradioApp().querySelector("#tac_refreshTempFiles")?.addEventListener("click", refreshTacTempFiles);
 
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
     let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");
