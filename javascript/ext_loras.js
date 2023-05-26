@@ -37,6 +37,16 @@ async function load() {
     }
 }
 
+async function lora_reload() {
+    try {
+        loras = (await readFile(`${tagBasePath}/temp/lora.txt`)).split("\n")
+            .filter(x => x.trim().length > 0) // Remove empty lines
+            .map(x => x.trim()); // Remove carriage returns and padding if it exists
+    } catch (e) {
+        console.error("Error loading lora.txt: " + e);
+    }
+}
+
 function sanitize(tagType, text) {
     if (tagType === ResultType.lora) {
         return `<lora:${text}:${TAC_CFG.extraNetworksDefaultMultiplier}>`;

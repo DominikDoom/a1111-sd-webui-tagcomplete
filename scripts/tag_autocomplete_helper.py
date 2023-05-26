@@ -7,6 +7,7 @@ from pathlib import Path
 import gradio as gr
 import yaml
 from modules import script_callbacks, scripts, sd_hijack, shared
+import modules # SBM Reload lora ui.
 
 try:
     from modules.paths import extensions_dir, script_path
@@ -39,6 +40,37 @@ try:
     LYCO_PATH = Path(shared.cmd_opts.lyco_dir)
 except AttributeError:
     LYCO_PATH = None
+
+def lora_update():
+    if LORA_PATH is not None and LORA_PATH.exists():
+        lora = get_lora()
+        if lora:
+            write_to_temp_file('lora.txt', lora)
+        
+class Script(modules.scripts.Script):
+    def __init__(self):
+        self.spam = True
+
+    def title(self):
+        return "Tag autocomplete"
+
+    def show(self, is_img2img):
+        return modules.scripts.AlwaysVisible
+
+    infotext_fields = None
+    paste_field_names = []
+
+    def ui(self, is_img2img):
+        with gr.Accordion("Autocomplete", open=False, elem_id="AC_main"):
+            with gr.Row():
+                btnrelora1 = gr.Button("Update loras")
+                btnrelora2 = gr.Button("Reload loras")
+                btnrelora3 = gr.Button("Update + reload - js needs to wait?")
+            btnrelora1.click(lora_update, inputs = [], outputs = [])
+            btnrelora2.click(lambda x: x, _js = "lora_reload", inputs = [], outputs = [])
+            btnrelora3.click(lora_update, _js = "lora_reload", inputs = [], outputs = [])
+        
+        return [btnrelora1, btnrelora2, btnrelora3]
 
 def find_ext_wildcard_paths():
     """Returns the path to the extension wildcards folder"""
