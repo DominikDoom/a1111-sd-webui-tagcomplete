@@ -3,7 +3,7 @@
 # Booru tag autocompletion for A1111
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/DominikDoom/a1111-sd-webui-tagcomplete)](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)
-## [English Document](./README.md)
+## [English Document](./README.md), [日本語ドキュメント](./README_JA.md)
 
 ## 功能概述
 
