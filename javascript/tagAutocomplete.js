@@ -997,7 +997,10 @@ function addAutocompleteToArea(area) {
             updateRuby(area, area.value);
         });
         // Add focusout event listener
-        area.addEventListener('focusout', debounce(() => hideResults(area), 400));
+        area.addEventListener('focusout', debounce(() => {
+            if (!hideBlocked)
+                hideResults(area);
+        }, 400));
         // Add up and down arrow event listener
         area.addEventListener('keydown', (e) => navigateInList(area, e));
         // CompositionEnd fires after the user has finished IME composing

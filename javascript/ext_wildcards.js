@@ -107,7 +107,7 @@ function keepOpenIfWildcard(tagType, sanitizedText, newPrompt, textArea) {
     if (tagType === ResultType.wildcardFile) {
         hideBlocked = true;
         autocomplete(textArea, newPrompt, sanitizedText);
-        setTimeout(() => { hideBlocked = false; }, 100);
+        setTimeout(() => { hideBlocked = false; }, 450);
         return true;
     }
     return false;
