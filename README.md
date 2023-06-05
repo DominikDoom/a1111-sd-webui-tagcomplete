@@ -4,7 +4,7 @@
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/DominikDoom/a1111-sd-webui-tagcomplete)](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)
 
-## [中文文档](./README_ZH.md)
+## [中文文档](./README_ZH.md), [日本語ドキュメント](./README_JA.md)
 
 This custom script serves as a drop-in extension for the popular [AUTOMATIC1111 web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) for Stable Diffusion.
 
