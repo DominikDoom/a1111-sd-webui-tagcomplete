@@ -80,7 +80,7 @@ Stable Diffusion 1.xまたは2.xモデル用にそれぞれトレーニングさ
 ![Embedding version filter](https://user-images.githubusercontent.com/34448969/223533883-d99c04b7-a199-4f56-a4e5-242eee9726a2.png)
 
 ### Chants（詠唱）
-Chants（詠唱）は、より長いプロンプトプリセットです。この名前は、中国のユーザーによる初期のプロンプト集からヒントを得たもので、しばしば「Spellbook」「Codex」などと呼ばれていました（※呪文書のような意味）。  
+Chants（詠唱）は、より長いプロンプトプリセットです。この名前は、中国のユーザーによる初期のプロンプト集からヒントを得たもので、しばしば「呪文書」（原文は「Spellbook」「Codex」）などと呼ばれていました。  
 このような文書から得られるプロンプトのスニペットは、このような理由から呪文や詠唱と呼ばれるにふさわしいものでした。
 
 EmbeddingsやLoraと同様に、この機能は `<`, `<c:`, `<chant:` コマンドを入力することで発動します。例えば、プロンプトボックスに `<c:HighQuality` と入力して選択すると、次のようなプロンプトテキストが挿入されます：
@@ -146,7 +146,7 @@ https://github.com/Klokinator/Umi-AI は、Unprompted や Dynamic Wildcards に�
 | showAllResults | trueの場合、maxResultsを無視し、すべての結果をスクロール可能なリストで表示します。**警告:** 長いリストの場合、ブラウザが遅くなることがあります。 |
 | replaceUnderscores | trueにした場合、タグをクリックしたときに `_`（アンダースコア）が ` `（スペース）に置き換えられます。モデルによっては便利になるかもしれません。 |
 | escapeParentheses | trueの場合、()を含むタグをエスケープして、Web UIのプロンプトの重み付け機能に影響を与えないようにします。 |
-| appendComma | UIスイッチ "Append commas "の開始される値を指定することができます。UIのオプションが無効の場合、常にこの値が使用されます。 |
+| appendComma | UIスイッチ "Append commas"の開始される値を指定することができます。UIのオプションが無効の場合、常にこの値が使用されます。 |
 | useWildcards | ワイルドカード補完機能の切り替えに使用します。 |
 | useEmbeddings | embedding補完機能の切り替えに使用します。 |
 | alias | エイリアスに関するオプションです。詳しくは下のセクションをご覧ください。 |
