@@ -37,7 +37,7 @@ You can install it using the inbuilt available extensions list, clone the files 
 - 🌒 Dark & Light mode support
 - 🛠️ Many [settings](#%EF%B8%8F-settings) and customizability
 - 🌍 [Translation support](#translations) for tags, with optional live preview for the full prompt
-   - **Note:** Translation files are provided by the community, so far only [Chinese ones](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/23) have been made as far as I know
+   - **Note:** Translation files are provided by the community, see [here](#list-of-translations) for a list of translations I know of.
 
 Tag autocomplete supports built-in completion for:
 - 🏷️ **Danbooru & e621 tags** (Top 100k by post count, as of November 2022)
@@ -386,6 +386,10 @@ Example with Chinese translation:
 ## List of translations
 - [🇨🇳 Chinese tags](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/23) by @HalfMAI, using machine translation and manual correction for the most common tags (uses legacy format)
 - [🇨🇳 Chinese tags](https://github.com/sgmklp/tag-for-autocompletion-with-translation) by @sgmklp, smaller set of manual translations based on https://github.com/zcyzcy88/TagTable
+
+> ### 🫵 I need your help!
+> Translations are a community effort. If you have translated a tag file or want to create one, please open a Pull Request or Issue so your link can be added here.
+> Please make sure the quality is alright though, machine translation gets a lot of stuff wrong even for the most common tags.
 
 ## Live preview
 > ⚠️ Warning:
