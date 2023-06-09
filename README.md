@@ -14,7 +14,7 @@ Booru style tag autocompletion for the AUTOMATIC1111 Stable Diffusion WebUI
 [![issues][issues-shield]][issues-url]
 
 [Changelog][release-url] •
-[Known Issues](#-common-problems--known-issues) •
+[Known Issues](#%EF%B8%8F-common-problems--known-issues) •
 [Report Bug][issues-url] •
 [Request Feature][issues-url]
 </div>
@@ -35,7 +35,7 @@ You can install it using the inbuilt available extensions list, clone the files 
 - 🚀 Instant completion hints while typing (under normal circumstances)
 - ⌨️ Keyboard navigation
 - 🌒 Dark & Light mode support
-- 🛠️ Many [settings](#-settings) and customizability
+- 🛠️ Many [settings](#%EF%B8%8F-settings) and customizability
 - 🌍 [Translation support](#translations) for tags, with optional live preview for the full prompt
    - **Note:** Translation files are provided by the community, so far only [Chinese ones](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/23) have been made as far as I know
 
@@ -91,7 +91,7 @@ Dark and Light mode supported, including tag colors:
    - Alternatively, use <kbd>CRTL</kbd> + <kbd>F</kbd> to search for the text on the page
 5. Click **Install** on the right side
 
-![Load from index](https://user-images.githubusercontent.com/34448969/223537209-24c7623e-7410-427e-857f-9da936aadb21.png)
+![Load from index](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/b9b860c1-2e77-41b1-aa5c-a44e252f1a40)
 ![Order by oldest](https://user-images.githubusercontent.com/34448969/223537231-48e982b8-0920-48c5-87e5-8c81ebbb5fe3.png)
 ![Install](https://user-images.githubusercontent.com/34448969/223537336-5c02ccb1-233d-4e0d-9e73-d1b889252c49.png)
 
@@ -196,6 +196,8 @@ The extension has a large amount of configuration & customizability built in. Mo
 The main tag file the script uses. Included by default are `danbooru.csv` and `e621.csv`. While you can add custom tags here, the vast majority of models are not trained on anything other than these two (mostly danbooru), so it will not have much benefit.
 
 You can also set it to `None` if you want to use other functionality of the extension (e.g. Wildcard or LoRA completion), but aren't interested in the normal tags.
+
+![tagfile](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/2b37c581-aeb1-4642-b0a4-c93c4c059a7a)
 </details>
 <!-- Active In -->
 <details>
@@ -203,6 +205,8 @@ You can also set it to `None` if you want to use other functionality of the exte
 
 Specifies where tag autocomplete should attach itself to and listen for changes.
 Negative prompts follow the settings for txt2img & img2img, so they will only be active if their "parent" is active.
+
+![activeIn](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/936538c9-2ed0-4254-8e91-9f2ed1af0ccf)
 </details>
 <!-- Blacklist -->
 <details>
@@ -211,12 +215,19 @@ Negative prompts follow the settings for txt2img & img2img, so they will only be
 While the above options can turn off tag autocomplete globally, sometimes you might want to enable or disable it only for specific models. For example, if most of your models are Anime ones, you could add your photorealistic models, that weren't trained on booru tags and don't benefit from it, to the blacklist, which will automatically disable it after you switch to these models. You can use both the model name (including file extension) and their webui hashes (both short and long form).
 
 `Blacklist` will exclude all specified models, while `Whitelist` will only activate it for these and stay off by default. One exception is an empty whitelist, which will be ignored (making it the same as an empty blacklist).
+
+![blacklist](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/13e46ce5-fe6d-4d15-98ac-cfe30ca419e9)
 </details>
 <!-- Move Popup -->
 <details>
 <summary>Move completion popup with cursor</summary>
 
 This option enables or disables the floating popup to follow the position of your cursor, like it would do in an IDE. The script tries to reserve enough room for the popup to prevent squishing on the right side, but that doesn't always work for longer tags. If disabled, the popup will stay on the left.
+
+![movePopup](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/26e6050f-a70e-49a3-add0-2b58cdef37a2)
+	
+![movePopup_on](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/f10a3c16-ce49-4bdb-a106-2810d5343bd7)
+![movePopup_off](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/469f0a79-3839-4ad2-8dc0-4a1298ffff05)
 </details>
 <!-- Results Count -->
 <details>
@@ -226,6 +237,8 @@ Settings for the amount of results to show at once.
 If `Show all results` is active, it will show a scrollable list instead of cutting it off after the number specified in `Maximum results`. For performance reasons, in that case not all are loaded at once, but instead in blocks. The block size is dictated by `How many results to load at once`. Once you reach the bottom, the next block will load (but that should rarely happen).
 
 Notably, `Maximum results` will still have an influence if `Show all results` is used, since it dictates the height of the popup before scrolling begins.
+
+![resultsCount](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/f9ffeb4b-6c82-48ed-a204-f4658e335f7e)
 </details>
 <!-- Delay time -->
 <details>
@@ -233,6 +246,8 @@ Notably, `Maximum results` will still have an influence if `Show all results` is
 
 Depending on the configuration, real time tag completion can get computationally expensive.
 This option sets a "debounce" delay in milliseconds (1000ms = 1s), during which no second completion will get queried. This might especially be useful if you type very fast.
+
+![delay](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/d1718dc1-32c3-4075-80aa-b6caebcafa05)
 </details>
 <!-- Search for -->
 <details>
@@ -241,6 +256,8 @@ This option sets a "debounce" delay in milliseconds (1000ms = 1s), during which 
 Pretty self explanatory, enables or disables certain completion types.
 
 Umi AI wildcards are included in the normal wildcard option here, although they use a different format, since their usage intention is similar.
+
+![searchFor](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/9e7c27eb-68fb-47cd-a7c7-333476374c58)
 </details>
 <!-- Wiki links -->
 <details>
@@ -251,6 +268,8 @@ If this option is turned on, it will show a `?` link next to the tag. Clicking t
 > ⚠️ Warning:
 >
 > Danbooru and e621 are external sites and include a lot of NSFW content, which might show in the list of examples for a tag on its wiki page. Because of this, the option is disabled by default.
+
+![wikiLink](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/733e1ba8-89e1-4c2b-8c4e-2d23352bd3d7)
 </details>
 <!-- Insertion -->
 <details>
@@ -263,6 +282,8 @@ Booru sites mostly use underscores in tags instead of spaces, but during preproc
 Parentheses are used as control characters in the webui to give more attention / weight to a specific part of the prompt, so tags including parentheses are escaped (`\( \)`) by default to not influence that.
 
 Depending on the last setting, tag autocomplete will append a comma and space after inserting a tag, which may help for rapid completion of multiple tags in a row.
+
+![insertEscape](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/d28557be-6c75-43fd-bf17-c0609223b384)
 </details>
 <!-- Alias -->
 <details>
@@ -272,6 +293,8 @@ Tags often are referred to with multiple aliases. If `Search by alias` is turned
 
 `Only show alias` sets if you want to see only the alias or also the tag it maps to
 (shown as `<alias> ➝ <actual>`)
+
+![alias](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/f2087510-67cf-448d-88f7-81eb677412b5)
 </details>
 <!-- Translations -->
 <details>
@@ -282,6 +305,8 @@ Tag Autocomplete has support for tag translations specified in a separate file (
 It also has a legacy format option for some old files used in the community, as well as an experimental live translation preview for the whole prompt so you can easily find and edit tags afterwards.
 
 For more details, see the [section on translations](#translations) below.
+
+![translation](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/a860c5dc-7428-46ac-a8a8-5d1b2b773a60)
 </details>
 <!-- Extra file -->
 <details>
@@ -290,6 +315,8 @@ For more details, see the [section on translations](#translations) below.
 Specifies a set of extra tags that get appended either before or after the regular results, as specified here. Mostly useful for small custom tag sets such as the commonly used quality tags (masterpiece, best quality, etc.)
 
 If you want completion for longer presets or even whole prompts, have a look at [Chants](#chants) instead.
+
+![extraFile](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/14c28af2-b3cb-42b1-a13e-ee0c688a4a5d)
 </details>
 <!-- Chants -->
 <details>
@@ -298,6 +325,8 @@ If you want completion for longer presets or even whole prompts, have a look at 
 Chants are longer presets or even whole prompts that can be selected & inserted at once, similar to the built in styles dropdown of the webui. They do offer some additional features though, and are faster to use.
 
 For more info, see the section on [Chants](#chants) above.
+	
+![chants](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/e8045d41-a776-49b3-8298-c879097661a4)
 </details>
 <!-- Hotkeys -->
 <details>
@@ -313,6 +342,8 @@ Function explanation:
 - ChooseSelected: Select the highlighted tag, or close popup if nothing was selected
 - ChooseSelectedOrFirst: Same as above, but default to the first result if nothing was selected
 - Close: Closes the popup
+
+![hotkeys](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/7e9bafd7-d5bd-4e1f-a1eb-f08bebba1423)
 </details>
 <!-- Colors -->
 <details>
@@ -325,30 +356,9 @@ The format is standard JSON
 - The numbers are specifying the tag type, which is dependent on the tag source. For more info, see [CSV tag data](#csv-tag-data).
 - The first value in the square brackets is for dark, the second for light mode. HTML color names and hex codes should both work.
 
-```json
-{
-	"danbooru": {
-		"-1": ["red", "maroon"],
-		"0": ["lightblue", "dodgerblue"],
-		"1": ["indianred", "firebrick"],
-		"3": ["violet", "darkorchid"],
-		"4": ["lightgreen", "darkgreen"],
-		"5": ["orange", "darkorange"]
-	},
-	"e621": {
-		"-1": ["red", "maroon"],
-		"0": ["lightblue", "dodgerblue"],
-		"1": ["gold", "goldenrod"],
-		"3": ["violet", "darkorchid"],
-		"4": ["lightgreen", "darkgreen"],
-		"5": ["tomato", "darksalmon"],
-		"6": ["red", "maroon"],
-		"7": ["whitesmoke", "black"],
-		"8": ["seagreen", "darkseagreen"]
-	}
-}
-```
 This can also be used to add new color sets for custom tag files.
+	
+![colors](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/b9b66d8d-5619-4bd3-bdb6-053a01540d71)
 </details>
 <!-- Temp files refresh -->
 <details>
@@ -359,6 +369,8 @@ This is a "fake" setting, meaning it doesn't actually configure anything. Rather
 Tag autocomplete depends on these files for various functionality, especially related to extra networks and wildcard completion. This setting can be used to rebuild the lists if you have, for example, added a few new LoRAs into the folder and don't want to restart the UI to get tag autocomplete to list them.
 
 You can also add this to your quicksettings bar to have the refresh button available at all times.
+
+![fakeRefresh](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/9eb87446-a635-4623-89b5-a76ab39e879a)
 </details>
 <br/>
 
