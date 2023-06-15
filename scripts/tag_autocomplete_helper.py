@@ -67,7 +67,7 @@ def get_ext_wildcards():
     wildcard_files = []
 
     for path in WILDCARD_EXT_PATHS:
-        wildcard_files.append(path.relative_to(FILE_DIR).as_posix())
+        wildcard_files.append(path.as_posix())
         wildcard_files.extend(p.relative_to(path).as_posix() for p in path.rglob("*.txt") if p.name != "put wildcards here.txt")
         wildcard_files.append("-----")
 
@@ -192,7 +192,7 @@ def get_lyco():
 def write_tag_base_path():
     """Writes the tag base path to a fixed location temporary file"""
     with open(STATIC_TEMP_PATH.joinpath('tagAutocompletePath.txt'), 'w', encoding="utf-8") as f:
-        f.write(TAGS_PATH.relative_to(FILE_DIR).as_posix())
+        f.write(TAGS_PATH.as_posix())
 
 
 def write_to_temp_file(name, data):
