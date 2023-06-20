@@ -318,6 +318,7 @@ def on_ui_settings():
     shared.opts.add_option("tac_replaceUnderscores", shared.OptionInfo(True, "Replace underscores with spaces on insertion", section=TAC_SECTION))
     shared.opts.add_option("tac_escapeParentheses", shared.OptionInfo(True, "Escape parentheses on insertion", section=TAC_SECTION))
     shared.opts.add_option("tac_appendComma", shared.OptionInfo(True, "Append comma on tag autocompletion", section=TAC_SECTION))
+    shared.opts.add_option("tac_wildcardCompletionMode", shared.OptionInfo("To next folder level", "How to complete nested wildcard paths (e.g. \"hair/colours/light/...\")", gr.Dropdown, lambda: {"choices": ["To next folder level","To first difference","Always fully"]}, section=TAC_SECTION))
     # Alias settings
     shared.opts.add_option("tac_alias.searchByAlias", shared.OptionInfo(True, "Search by alias", section=TAC_SECTION))
     shared.opts.add_option("tac_alias.onlyShowAlias", shared.OptionInfo(False, "Only show alias", section=TAC_SECTION))

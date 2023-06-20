@@ -199,6 +199,7 @@ async function syncOptions() {
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
         appendComma: opts["tac_appendComma"],
+        wildcardCompletionMode: opts["tac_wildcardCompletionMode"],
         // Alias settings
         alias: {
             searchByAlias: opts["tac_alias.searchByAlias"],
@@ -347,7 +348,7 @@ const RUBY_TAG_REGEX = /[\w\d<][\w\d' \-?!/$%]{2,}>?/g;
 const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
-async function insertTextAtCursor(textArea, result, tagword, tabCompleted = false) {
+async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithoutChoice = false) {
     let text = result.text;
     let tagType = result.type;
 
@@ -371,16 +372,37 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompleted = fals
         }
     }
 
-    if (tagType === ResultType.wildcardFile && tabCompleted && sanitizedText.includes("/")) {
-        let regexMatch = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}([^/]*\\/?)`, "i"));
-        
-        if (regexMatch) {
-            let pathPart = regexMatch[0];
-            // In case the completion would have just added a slash, try again one level deeper
-            if (pathPart === `${tagword}/`) {
-                pathPart = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}\\/([^/]*\\/?)`, "i"))[0];
+    if (tagType === ResultType.wildcardFile
+        && tabCompletedWithoutChoice
+        && TAC_CFG.wildcardCompletionMode !== "Always fully"
+        && sanitizedText.includes("/")) {
+        if (TAC_CFG.wildcardCompletionMode === "To next folder level") {
+            let regexMatch = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}([^/]*\\/?)`, "i"));
+            if (regexMatch) {
+                let pathPart = regexMatch[0];
+                // In case the completion would have just added a slash, try again one level deeper
+                if (pathPart === `${tagword}/`) {
+                    pathPart = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}\\/([^/]*\\/?)`, "i"))[0];
+                }
+                sanitizedText = pathPart;
             }
-            sanitizedText = pathPart;
+        } else if (TAC_CFG.wildcardCompletionMode === "To first difference") {
+            let firstDifference = 0;
+            let longestResult = results.map(x => x.text.length).reduce((a, b) => Math.max(a, b));
+            // Compare the results to each other to find the first point where they differ
+            for (let i = 0; i < longestResult; i++) {
+                let char = results[0].text[i];
+                if (results.every(x => x.text[i] === char)) {
+                    firstDifference++;
+                } else {
+                    break;
+                }
+            }
+            // Don't cut off the __ at the end if it is already the full path
+            if (firstDifference < longestResult) {
+                // +2 because the sanitized text already has the __ at the start but the matched text doesn't
+                sanitizedText = sanitizedText.substring(0, firstDifference + 2);
+            }
         }
     }
 
@@ -968,10 +990,14 @@ function navigateInList(textArea, event) {
             }
             break;
         case keys["ChooseFirstOrSelected"]:
+            let withoutChoice = false;
             if (selectedTag === null) {
                 selectedTag = 0;
+                withoutChoice = true;
+            } else if (TAC_CFG.wildcardCompletionMode === "To next folder level") {
+                withoutChoice = true;
             }
-            insertTextAtCursor(textArea, results[selectedTag], tagword, true);
+            insertTextAtCursor(textArea, results[selectedTag], tagword, withoutChoice);
             break;
         case keys["Close"]:
             hideResults(textArea);
