@@ -1,4 +1,4 @@
-﻿const styleColors = {
+const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
     "--results-border-width": ["1px", "1.5px"],
@@ -110,6 +110,15 @@ const autocompleteCSS = `
         text-align: left;
         font-size: 1rem;
         color: var(--live-translation-rt);
+    }
+    .acListItem .acPathPart:nth-child(3n+1) {
+        color: var(--live-translation-color-1);
+    }
+    .acListItem .acPathPart:nth-child(3n+2) {
+        color: var(--live-translation-color-2);
+    }
+    .acListItem .acPathPart:nth-child(3n+3) {
+        color: var(--live-translation-color-3);
     }
 `;
 
@@ -336,7 +345,7 @@ const RUBY_TAG_REGEX = /[\w\d<][\w\d' \-?!/$%]{2,}>?/g;
 const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
-async function insertTextAtCursor(textArea, result, tagword) {
+async function insertTextAtCursor(textArea, result, tagword, tabCompleted = false) {
     let text = result.text;
     let tagType = result.type;
 
@@ -357,6 +366,19 @@ async function insertTextAtCursor(textArea, result, tagword) {
                 .replaceAll(")", "\\)")
                 .replaceAll("[", "\\[")
                 .replaceAll("]", "\\]");
+        }
+    }
+
+    if (tagType === ResultType.wildcardFile && tabCompleted && sanitizedText.includes("/")) {
+        let regexMatch = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}([^/]*\\/?)`, "i"));
+        
+        if (regexMatch) {
+            let pathPart = regexMatch[0];
+        // In case the completion would have just added a slash, try again one level deeper
+            if (pathPart === `${tagword}/`) {
+                pathPart = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}\\/([^/]*\\/?)`, "i"))[0];
+        }
+            sanitizedText = pathPart;
         }
     }
 
@@ -487,6 +509,14 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         // Print search term bolded in result
         itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
+
+        if (result.type === ResultType.wildcardFile && itemText.innerHTML.includes("/")) {
+            let parts = itemText.innerHTML.split("/");
+            let lastPart = parts[parts.length - 1];
+            parts = parts.slice(0, parts.length - 1);
+
+            itemText.innerHTML = "<span class='acPathPart'>" + parts.join("</span><span class='acPathPart'>/") + "</span>" + "/" + lastPart;
+        }
 
         // Add wiki link if the setting is enabled and a supported tag set loaded
         if (TAC_CFG.showWikiLinks
@@ -939,7 +969,7 @@ function navigateInList(textArea, event) {
             if (selectedTag === null) {
                 selectedTag = 0;
             }
-            insertTextAtCursor(textArea, results[selectedTag], tagword);
+            insertTextAtCursor(textArea, results[selectedTag], tagword, true);
             break;
         case keys["Close"]:
             hideResults(textArea);
