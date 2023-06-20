@@ -285,6 +285,29 @@ Depending on the last setting, tag autocomplete will append a comma and space af
 
 ![insertEscape](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/d28557be-6c75-43fd-bf17-c0609223b384)
 </details>
+<!-- Wildcard path mode -->
+<details>
+<summary>Wildcard path completion</summary>
+
+Some collections of wildcards are organized in nested subfolders.
+They are listed with the full path to the file, like "hair/colors/light/..." or "clothing/male/casual/..." etc.
+
+In these cases it is often hard to type the full path manually, but you still want to narrow the selection before further scrolling in the list.
+For this, a partial completion of the path can be triggered with <kbd>Tab</kbd> (or the custom hotkey for `ChooseSelectedOrFirst`) if the results to choose from are all paths. 
+
+This setting determines the mode it should use for completion:
+- To next folder level:
+   - Completes until the next `/` in the path, preferring your selection as the way forward
+   - If you want to directly choose an option, <kbd>Enter</kbd> / the `ChooseSelected` hotkey will skip it and fully complete.
+- To first difference:
+   - Completes until the first difference in the results and waits for additional info
+   - E.g. if you have "/sub/folder_a/..." and "/sub/folder_b/...", completing after typing "su" will insert everything up to "/sub/folder_" and stop there until you type a or b to clarify.
+   - If you selected something with the arrow keys (regardless of pressing Enter or Tab), it will skip it and fully complete.
+- Always fully:
+   - As the name suggests, disables the partial completion behavior and inserts the full path under all circumstances like with normal tags.
+
+![insertWildcardPath](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/ed354bd1-3f23-4fb1-a638-ac3b7a213fc5)
+</details>
 <!-- Alias -->
 <details>
 <summary>Alias settings</summary>
