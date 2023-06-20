@@ -1,4 +1,4 @@
-const styleColors = {
+﻿const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
     "--results-border-width": ["1px", "1.5px"],
@@ -155,10 +155,12 @@ async function loadTranslations(c) {
         try {
             let tArray = await loadCSV(`${tagBasePath}/${c.translation.translationFile}`);
             tArray.forEach(t => {
-                if (c.translation.oldFormat)
+                if (c.translation.oldFormat && t[2]) // if 2 doesn't exist, it's probably a new format file and the setting is on by mistake
                     translations.set(t[0], t[2]);
-                else
+                else if (t[1])
                     translations.set(t[0], t[1]);
+                else
+                    translations.set(t[0], "Not found");
             });
         } catch (e) {
             console.error("Error loading translations file: " + e);
@@ -374,10 +376,10 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompleted = fals
         
         if (regexMatch) {
             let pathPart = regexMatch[0];
-        // In case the completion would have just added a slash, try again one level deeper
+            // In case the completion would have just added a slash, try again one level deeper
             if (pathPart === `${tagword}/`) {
                 pathPart = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}\\/([^/]*\\/?)`, "i"))[0];
-        }
+            }
             sanitizedText = pathPart;
         }
     }
