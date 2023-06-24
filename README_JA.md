@@ -27,7 +27,7 @@ Tag AutocompleteはStable Diffusion向けの人気のweb UIである、[AUTOMATI
 主にアニメ系イラストを閲覧するための掲示板「Danbooru」などで利用されているタグの自動補完ヒントを表示するための拡張機能となります。  
 例えば[Waifu Diffusion](https://github.com/harubaru/waifu-diffusion)やNAIから派生した多くのモデルやマージなど、Stable Diffusionモデルの中にはこの情報を使って学習されたものもあるため、プロンプトに正確なタグを使用することで、多くのケースで構図を改善した思い通りの画像が生成できるようになります。
 
-組み込みの利用可能な拡張機能リストを使ってインストールしたり、[下記](#-installation)の説明に従って手動でファイルをcloneしたり、[Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)にあるパッケージ済みのバージョンを使うことができます。
+組み込みの利用可能な拡張機能リストを使ってインストールしたり、[下記](#-インストール)の説明に従って手動でファイルをcloneしたり、[Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)にあるパッケージ済みのバージョンを使うことができます。
 
 <br/>
 
