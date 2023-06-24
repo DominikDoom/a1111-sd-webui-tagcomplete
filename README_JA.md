@@ -14,7 +14,7 @@ Booruスタイルタグを自動補完するためのAUTOMATIC1111 Stable Diffus
 [![issues][issues-shield]][issues-url]
 
 [変更内容][release-url] •
-[確認されている問題](#%EF%B8%8F-common-problems--known-issues) •
+[確認されている問題](#%EF%B8%8F-よくある問題また現在確認されている問題) •
 [バグを報告する][issues-url] •
 [機能追加に関する要望][issues-url]
 </div>
@@ -35,20 +35,20 @@ Tag AutocompleteはStable Diffusion向けの人気のweb UIである、[AUTOMATI
 - 🚀 タイピング中に補完のためのヒントを表示 (通常時)
 - ⌨️ キーボードナビゲーション
 - 🌒 ダーク＆ライトモードのサポート
-- 🛠️ 多くの[設定](#%EF%B8%8F-settings)とカスタマイズ性を提供
-- 🌍 [翻訳サポート](#translations)タグ、オプションでプロンプトのライブ プレビュー付き
-   - 私が知っている翻訳のリストは[こちら](#list-of-translations)を参照してください。
+- 🛠️ 多くの[設定](#%EF%B8%8F-設定)とカスタマイズ性を提供
+- 🌍 [翻訳サポート](#翻訳)タグ、オプションでプロンプトのライブ プレビュー付き
+   - 私が知っている翻訳のリストは[こちら](#翻訳リスト)を参照してください。
 
 タグの自動補完は組み込まれている補完内容をサポートしています：
 - 🏷️ **Danbooru & e621 tags** (投稿数上位100k、2022年11月現在)
 - ✳️ [**ワイルドカード**](#ワイルドカード)
-- ➕ [**エクストラネットワーク**](#extra-networks-embeddings-hypernets-lora) filenames, including
-   - Textual Inversion embeddings[(readmeセクションへジャンプ)]。
+- ➕ [**Extra networks**](#extra-networks-embeddings-hypernets-lora-) filenames, including
+   - Textual Inversion embeddings
    - Hypernetworks
    - LoRA
    - LyCORIS / LoHA
-- 🪄 [**Chants**](#chants) (長いプロンプトプリセット用のカスタムフォーマット)
-- 🏷️ "[**エクストラファイル**](#extra-file)", カスタマイズ可能なextra tagsセット
+- 🪄 [**Chants（詠唱）**](#chants詠唱) (長いプロンプトプリセット用のカスタムフォーマット)
+- 🏷️ "[**Extra file**](#extra-file)", カスタマイズ可能なextra tagsセット
 
 
 さらに、サードパーティの拡張機能にも対応しています：
@@ -184,7 +184,7 @@ https://github.com/Klokinator/Umi-AI は、Unprompted や Dynamic Wildcards に�
 
 ほとんどの功績は[@ctwrs](https://github.com/ctwrs)によるものです。この方はUmiの開発者の一人として多くの貢献をしています。
 
-# 🛠️ Settings
+# 🛠️ 設定
 
 この拡張機能には多くの設定とカスタマイズ機能が組み込まれています。ほとんどのことははっきりしていますが、詳細な説明は以下のセクションをクリックしてください。
 
@@ -329,7 +329,7 @@ Tag Autocompleteは、別のファイル（`Translation filename`）で指定さ
 
 また、コミュニティで使用されている古いファイルのためのレガシーフォーマットオプションや、プロンプト全体のライブ翻訳プレビューなど実験的な機能もあります。
 
-詳細については、以下の [翻訳に関するセクション](#translations) を参照してください。
+詳細については、以下の [翻訳に関するセクション](#翻訳) を参照してください。
 
 ![translation](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/a860c5dc-7428-46ac-a8a8-5d1b2b773a60)
 </details>
@@ -339,7 +339,7 @@ Tag Autocompleteは、別のファイル（`Translation filename`）で指定さ
 
 ここで指定したように、通常の結果の前後に追加される追加タグのセットを指定します。一般的に使用される品質タグ (`masterpiece, best quality,` など) のような小さなカスタムタグセットに便利です。
 
-長いプリセットやプロンプト全体を補完したい場合は、代わりに [Chants](#chants) を参照してください。
+長いプリセットやプロンプト全体を補完したい場合は、代わりに [Chants（詠唱）](#chants詠唱) を参照してください。
 
 ![extraFile](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/14c28af2-b3cb-42b1-a13e-ee0c688a4a5d)
 </details>
@@ -349,7 +349,7 @@ Tag Autocompleteは、別のファイル（`Translation filename`）で指定さ
 
 Chantとは、長いプリセット、あるいはプロンプト全体を一度に選択して挿入できるもので、Webuiに内蔵されているスタイルのドロップダウンに似ています。Chantにはいくつかの追加機能があり、より速く使用することができます。
 
-詳しくは上記の[Chants](#chants)のセクションを参照してください。
+詳しくは上記の[Chants（詠唱）](#chants詠唱)のセクションを参照してください。
 	
 ![chants](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/e8045d41-a776-49b3-8298-c879097661a4)
 </details>
@@ -357,7 +357,7 @@ Chantとは、長いプリセット、あるいはプロンプト全体を一度
 <details>
 <summary>Hotkeys</summary>
 
-ほとんどのキーボードナビゲーション機能のホットキーをここで指定できます。
+ほとんどのキーボードナビゲーション機能のホットキーをここで指定できます。  
 https://www.w3.org/TR/uievents-key/#named-key-attribute-value
 
 機能の説明
@@ -378,7 +378,7 @@ https://www.w3.org/TR/uievents-key/#named-key-attribute-value
 
 フォーマットは標準的なJSON
 - オブジェクト名は、タグのファイル名に対応しています。
-- 数字はタグの種類を表し、タグのソースに依存します。詳細については、[CSVタグデータ](#csv-tag-data)を参照してください。
+- 数字はタグの種類を表し、タグのソースに依存します。詳細については、[CSV tag data](#csv-tag-data)を参照してください。
 - 角括弧内の最初の値はダークモード、2番目の値はライトモードです。HTMLの色名と16進数コードのどちらでも使えます。
 
 これは、カスタムタグ・ファイルに新しいカラーセットを追加するためにも使用できます。
@@ -389,7 +389,7 @@ https://www.w3.org/TR/uievents-key/#named-key-attribute-value
 <details>
 <summary>TACの一時作成ファイルのリフレッシュ</summary>
 
-これは "偽"の設定で、実際には何も設定しません。むしろ、開発者がwebuiのオプションに追加できる更新ボタンを悪用するための小さなハックです。この設定の隣にある更新ボタンをクリックすると、タグオートコンプリートにいくつかの一時的な内部ファイルを再作成・再読み込みさせます。
+これは "フェイク"設定で、実際には何も設定しません。むしろ、開発者がwebuiのオプションに追加できる更新ボタンを悪用するための小さなハックです。この設定の隣にある更新ボタンをクリックすると、タグオートコンプリートにいくつかの一時的な内部ファイルを再作成・再読み込みさせます。
 
 タグオートコンプリートは様々な機能、特に余分なネットワークとワイルドカード補完に関連するこれらのファイルに依存しています。この設定は、例えば新しいLoRAをいくつかフォルダに追加し、タグ・オートコンプリートにリストを表示させるためにUIを再起動したくない場合に、リストを再構築するために使用できます。
 
@@ -414,7 +414,7 @@ https://www.w3.org/TR/uievents-key/#named-key-attribute-value
 - [🇨🇳 Chinese tags](https://github.com/sgmklp/tag-for-autocompletion-with-translation) by @sgmklp, [こちら](https://github.com/zcyzcy88/TagTable)をベースにして、より小さくした手動での翻訳セット。
 
 > ### 🫵 I need your help!
-> 翻訳はコミュニティの努力です。もしあなたがタグファイルを翻訳したことがある場合、または作成したい場合は、あなたのリンクをここに追加できるように、Pull RequestまたはIssueを開いてください。
+> 翻訳はコミュニティの努力により支えられています。もしあなたがタグファイルを翻訳したことがある場合、または作成したい場合は、あなたの成果をここに追加できるように、Pull RequestまたはIssueを開いてください。
 > 機械翻訳は、最も一般的なタグであっても、多くのことを間違えてしまいます。
 
 ## ライブ・プレビュー
