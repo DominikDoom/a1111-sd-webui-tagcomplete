@@ -413,7 +413,7 @@ https://www.w3.org/TR/uievents-key/#named-key-attribute-value
 - [🇨🇳 Chinese tags](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/23) by @HalfMAI, 最も一般的なタグを機械翻訳と手作業で修正（レガシーフォーマットを使用）
 - [🇨🇳 Chinese tags](https://github.com/sgmklp/tag-for-autocompletion-with-translation) by @sgmklp, [こちら](https://github.com/zcyzcy88/TagTable)をベースにして、より小さくした手動での翻訳セット。
 
-> ### 🫵 I need your help!
+> ### 🫵 あなたの助けが必要です！
 > 翻訳はコミュニティの努力により支えられています。もしあなたがタグファイルを翻訳したことがある場合、または作成したい場合は、あなたの成果をここに追加できるように、Pull RequestまたはIssueを開いてください。
 > 機械翻訳は、最も一般的なタグであっても、多くのことを間違えてしまいます。
 
@@ -437,7 +437,7 @@ https://www.w3.org/TR/uievents-key/#named-key-attribute-value
 
 ![image](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/c6380106-e1e2-4da9-a819-7808ff30e8f5)
 
-#### ⚠️ ライブ翻訳に関する確認させている問題：
+#### ⚠️ ライブ翻訳に関する確認されている問題：
 ユーザーがテキストを入力または貼り付けると翻訳が更新されますが、プログラムによる操作（スタイルの適用やPNG Info / Image Browserからの読み込みなど）では更新されません。これは、プログラムによる編集の後に手動で何かを入力することで回避できます。
 
 # Extra file
