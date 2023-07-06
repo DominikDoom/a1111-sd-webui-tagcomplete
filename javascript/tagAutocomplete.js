@@ -199,6 +199,7 @@ async function syncOptions() {
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
         appendComma: opts["tac_appendComma"],
+        appendSpace: opts["tac_appendSpace"],
         wildcardCompletionMode: opts["tac_wildcardCompletionMode"],
         // Alias settings
         alias: {
@@ -418,8 +419,12 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     var optionalSeparator = "";
     let extraNetworkTypes = [ResultType.hypernetwork, ResultType.lora];
     let noCommaTypes = [ResultType.wildcardFile, ResultType.yamlWildcard].concat(extraNetworkTypes);
-    if (TAC_CFG.appendComma && !noCommaTypes.includes(tagType)) {
-        optionalSeparator = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ", ";
+    if (!noCommaTypes.includes(tagType)) {
+        if (TAC_CFG.appendComma)
+            optionalSeparator = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ",";
+        
+        if (TAC_CFG.appendSpace)
+            optionalSeparator += " ";
     } else if (extraNetworkTypes.includes(tagType)) {
         // Use the dedicated separator for extra networks if it's defined, otherwise fall back to space
         optionalSeparator = TAC_CFG.extraNetworksSeparator || " ";

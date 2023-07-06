@@ -292,46 +292,57 @@ write_temp_files()
 # Register autocomplete options
 def on_ui_settings():
     TAC_SECTION = ("tac", "Tag Autocomplete")
-    # Main tag file
-    shared.opts.add_option("tac_tagFile", shared.OptionInfo("danbooru.csv", "Tag filename", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files, section=TAC_SECTION))
-    # Active in settings
-    shared.opts.add_option("tac_active", shared.OptionInfo(True, "Enable Tag Autocompletion", section=TAC_SECTION))
-    shared.opts.add_option("tac_activeIn.txt2img", shared.OptionInfo(True, "Active in txt2img (Requires restart)", section=TAC_SECTION))
-    shared.opts.add_option("tac_activeIn.img2img", shared.OptionInfo(True, "Active in img2img (Requires restart)", section=TAC_SECTION))
-    shared.opts.add_option("tac_activeIn.negativePrompts", shared.OptionInfo(True, "Active in negative prompts (Requires restart)", section=TAC_SECTION))
-    shared.opts.add_option("tac_activeIn.thirdParty", shared.OptionInfo(True, "Active in third party textboxes [Dataset Tag Editor] [Image Browser] [Tagger] [Multidiffusion Upscaler] (Requires restart)", section=TAC_SECTION))
-    shared.opts.add_option("tac_activeIn.modelList", shared.OptionInfo("", "List of model names (with file extension) or their hashes to use as black/whitelist, separated by commas.", section=TAC_SECTION))
-    shared.opts.add_option("tac_activeIn.modelListMode", shared.OptionInfo("Blacklist", "Mode to use for model list", gr.Dropdown, lambda: {"choices": ["Blacklist","Whitelist"]}, section=TAC_SECTION))
-    # Results related settings
-    shared.opts.add_option("tac_slidingPopup", shared.OptionInfo(True, "Move completion popup together with text cursor", section=TAC_SECTION))
-    shared.opts.add_option("tac_maxResults", shared.OptionInfo(5, "Maximum results", section=TAC_SECTION))
-    shared.opts.add_option("tac_showAllResults", shared.OptionInfo(False, "Show all results", section=TAC_SECTION))
-    shared.opts.add_option("tac_resultStepLength", shared.OptionInfo(100, "How many results to load at once", section=TAC_SECTION))
-    shared.opts.add_option("tac_delayTime", shared.OptionInfo(100, "Time in ms to wait before triggering completion again (Requires restart)", section=TAC_SECTION))
-    shared.opts.add_option("tac_useWildcards", shared.OptionInfo(True, "Search for wildcards", section=TAC_SECTION))
-    shared.opts.add_option("tac_useEmbeddings", shared.OptionInfo(True, "Search for embeddings", section=TAC_SECTION))
-    shared.opts.add_option("tac_useHypernetworks", shared.OptionInfo(True, "Search for hypernetworks", section=TAC_SECTION))
-    shared.opts.add_option("tac_useLoras", shared.OptionInfo(True, "Search for Loras", section=TAC_SECTION))
-    shared.opts.add_option("tac_useLycos", shared.OptionInfo(True, "Search for LyCORIS/LoHa", section=TAC_SECTION))
-    shared.opts.add_option("tac_showWikiLinks", shared.OptionInfo(False, "Show '?' next to tags, linking to its Danbooru or e621 wiki page (Warning: This is an external site and very likely contains NSFW examples!)", section=TAC_SECTION))
-    # Insertion related settings
-    shared.opts.add_option("tac_replaceUnderscores", shared.OptionInfo(True, "Replace underscores with spaces on insertion", section=TAC_SECTION))
-    shared.opts.add_option("tac_escapeParentheses", shared.OptionInfo(True, "Escape parentheses on insertion", section=TAC_SECTION))
-    shared.opts.add_option("tac_appendComma", shared.OptionInfo(True, "Append comma on tag autocompletion", section=TAC_SECTION))
-    shared.opts.add_option("tac_wildcardCompletionMode", shared.OptionInfo("To next folder level", "How to complete nested wildcard paths (e.g. \"hair/colours/light/...\")", gr.Dropdown, lambda: {"choices": ["To next folder level","To first difference","Always fully"]}, section=TAC_SECTION))
-    # Alias settings
-    shared.opts.add_option("tac_alias.searchByAlias", shared.OptionInfo(True, "Search by alias", section=TAC_SECTION))
-    shared.opts.add_option("tac_alias.onlyShowAlias", shared.OptionInfo(False, "Only show alias", section=TAC_SECTION))
-    # Translation settings
-    shared.opts.add_option("tac_translation.translationFile", shared.OptionInfo("None", "Translation filename", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files, section=TAC_SECTION))
-    shared.opts.add_option("tac_translation.oldFormat", shared.OptionInfo(False, "Translation file uses old 3-column translation format instead of the new 2-column one", section=TAC_SECTION))
-    shared.opts.add_option("tac_translation.searchByTranslation", shared.OptionInfo(True, "Search by translation", section=TAC_SECTION))
-    shared.opts.add_option("tac_translation.liveTranslation", shared.OptionInfo(False, "Show live tag translation below prompt (WIP, expect some bugs)", section=TAC_SECTION))
-    # Extra file settings
-    shared.opts.add_option("tac_extra.extraFile", shared.OptionInfo("extra-quality-tags.csv", "Extra filename (for small sets of custom tags)", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files, section=TAC_SECTION))
-    shared.opts.add_option("tac_extra.addMode", shared.OptionInfo("Insert before", "Mode to add the extra tags to the main tag list", gr.Dropdown, lambda: {"choices": ["Insert before","Insert after"]}, section=TAC_SECTION))
-    # Chant settings
-    shared.opts.add_option("tac_chantFile", shared.OptionInfo("demo-chants.json", "Chant filename (Chants are longer prompt presets)", gr.Dropdown, lambda: {"choices": json_files_withnone}, refresh=update_json_files, section=TAC_SECTION))
+
+    tac_options = {
+        # Main tag file
+        "tac_tagFile": shared.OptionInfo("danbooru.csv", "Tag filename", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files),
+        # Active in settings
+        "tac_active": shared.OptionInfo(True, "Enable Tag Autocompletion"),
+        "tac_activeIn.txt2img": shared.OptionInfo(True, "Active in txt2img").needs_restart(),
+        "tac_activeIn.img2img": shared.OptionInfo(True, "Active in img2img").needs_restart(),
+        "tac_activeIn.negativePrompts": shared.OptionInfo(True, "Active in negative prompts").needs_restart(),
+        "tac_activeIn.thirdParty": shared.OptionInfo(True, "Active in third party textboxes").html("<span class=\"info\">See <a href=\"https://github.com/DominikDoom/a1111-sd-webui-tagcomplete#-features\" target=\"_blank\">README</a> for supported extensions</span>").needs_restart(),
+        "tac_activeIn.modelList": shared.OptionInfo("", "Black/Whitelist models").info("Model names [with file extension] or their hashes, separated by commas"),
+        "tac_activeIn.modelListMode": shared.OptionInfo("Blacklist", "Mode to use for model list", gr.Dropdown, lambda: {"choices": ["Blacklist","Whitelist"]}),
+        # Results related settings
+        "tac_slidingPopup": shared.OptionInfo(True, "Move completion popup together with text cursor"),
+        "tac_maxResults": shared.OptionInfo(5, "Maximum results"),
+        "tac_showAllResults": shared.OptionInfo(False, "Show all results"),
+        "tac_resultStepLength": shared.OptionInfo(100, "How many results to load at once"),
+        "tac_delayTime": shared.OptionInfo(100, "Time in ms to wait before triggering completion again").needs_restart(),
+        "tac_useWildcards": shared.OptionInfo(True, "Search for wildcards"),
+        "tac_useEmbeddings": shared.OptionInfo(True, "Search for embeddings"),
+        "tac_useHypernetworks": shared.OptionInfo(True, "Search for hypernetworks"),
+        "tac_useLoras": shared.OptionInfo(True, "Search for Loras"),
+        "tac_useLycos": shared.OptionInfo(True, "Search for LyCORIS/LoHa"),
+        "tac_showWikiLinks": shared.OptionInfo(False, "Show '?' next to tags, linking to its Danbooru or e621 wiki page").info("Warning: This is an external site and very likely contains NSFW examples!"),
+        # Insertion related settings
+        "tac_replaceUnderscores": shared.OptionInfo(True, "Replace underscores with spaces on insertion"),
+        "tac_escapeParentheses": shared.OptionInfo(True, "Escape parentheses on insertion"),
+        "tac_appendComma": shared.OptionInfo(True, "Append comma on tag autocompletion"),
+        "tac_appendSpace": shared.OptionInfo(True, "Append space on tag autocompletion").info("will append after comma if the above is enabled"),
+        "tac_wildcardCompletionMode": shared.OptionInfo("To next folder level", "How to complete nested wildcard paths", gr.Dropdown, lambda: {"choices": ["To next folder level","To first difference","Always fully"]}).info("e.g. \"hair/colours/light/...\""),
+        # Alias settings
+        "tac_alias.searchByAlias": shared.OptionInfo(True, "Search by alias"),
+        "tac_alias.onlyShowAlias": shared.OptionInfo(False, "Only show alias"),
+        # Translation settings
+        "tac_translation.translationFile": shared.OptionInfo("None", "Translation filename", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files),
+        "tac_translation.oldFormat": shared.OptionInfo(False, "Translation file uses old 3-column translation format instead of the new 2-column one"),
+        "tac_translation.searchByTranslation": shared.OptionInfo(True, "Search by translation"),
+        "tac_translation.liveTranslation": shared.OptionInfo(False, "Show live tag translation below prompt ").info("WIP, expect some bugs"),
+        # Extra file settings
+        "tac_extra.extraFile": shared.OptionInfo("extra-quality-tags.csv", "Extra filename", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files).info("for small sets of custom tags"),
+        "tac_extra.addMode": shared.OptionInfo("Insert before", "Mode to add the extra tags to the main tag list", gr.Dropdown, lambda: {"choices": ["Insert before","Insert after"]}),
+        # Chant settings
+        "tac_chantFile": shared.OptionInfo("demo-chants.json", "Chant filename", gr.Dropdown, lambda: {"choices": json_files_withnone}, refresh=update_json_files).info("Chants are longer prompt presets"),
+    }
+
+    # Add normal settings
+    for key, opt in tac_options.items():
+        opt.section = TAC_SECTION
+        shared.opts.add_option(key, opt)
+
+    # Settings that need special treatment
     # Custom mappings
     keymapDefault = """\
 {
@@ -370,7 +381,7 @@ def on_ui_settings():
 }\
 """
     keymapLabel = "Configure Hotkeys. For possible values, see https://www.w3.org/TR/uievents-key, or leave empty / set to 'None' to disable. Must be valid JSON."
-    colorLabel = "Configure colors. See https://github.com/DominikDoom/a1111-sd-webui-tagcomplete#colors for info. Must be valid JSON."
+    colorLabel = "Configure colors. See the Settings section in the README for more info. Must be valid JSON."
 
     try:
         shared.opts.add_option("tac_keymap", shared.OptionInfo(keymapDefault, keymapLabel, gr.Code, lambda: {"language": "json", "interactive": True}, section=TAC_SECTION))
