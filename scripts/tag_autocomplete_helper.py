@@ -301,7 +301,7 @@ def on_ui_settings():
         "tac_activeIn.txt2img": shared.OptionInfo(True, "Active in txt2img").needs_restart(),
         "tac_activeIn.img2img": shared.OptionInfo(True, "Active in img2img").needs_restart(),
         "tac_activeIn.negativePrompts": shared.OptionInfo(True, "Active in negative prompts").needs_restart(),
-        "tac_activeIn.thirdParty": shared.OptionInfo(True, "Active in third party textboxes").html("<span class=\"info\">See <a href=\"https://github.com/DominikDoom/a1111-sd-webui-tagcomplete#-features\" target=\"_blank\">README</a> for supported extensions</span>").needs_restart(),
+        "tac_activeIn.thirdParty": shared.OptionInfo(True, "Active in third party textboxes").info("See <a href=\"https://github.com/DominikDoom/a1111-sd-webui-tagcomplete#-features\" target=\"_blank\">README</a> for supported extensions").needs_restart(),
         "tac_activeIn.modelList": shared.OptionInfo("", "Black/Whitelist models").info("Model names [with file extension] or their hashes, separated by commas"),
         "tac_activeIn.modelListMode": shared.OptionInfo("Blacklist", "Mode to use for model list", gr.Dropdown, lambda: {"choices": ["Blacklist","Whitelist"]}),
         # Results related settings
