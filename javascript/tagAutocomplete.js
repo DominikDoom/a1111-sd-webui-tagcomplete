@@ -200,6 +200,7 @@ async function syncOptions() {
         escapeParentheses: opts["tac_escapeParentheses"],
         appendComma: opts["tac_appendComma"],
         appendSpace: opts["tac_appendSpace"],
+        alwaysSpaceAtEnd: opts["tac_alwaysSpaceAtEnd"],
         wildcardCompletionMode: opts["tac_wildcardCompletionMode"],
         // Alias settings
         alias: {
@@ -420,11 +421,15 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     let extraNetworkTypes = [ResultType.hypernetwork, ResultType.lora];
     let noCommaTypes = [ResultType.wildcardFile, ResultType.yamlWildcard].concat(extraNetworkTypes);
     if (!noCommaTypes.includes(tagType)) {
+        // Append comma if enabled and not already present
         if (TAC_CFG.appendComma)
             optionalSeparator = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ",";
-        
+        // Add space if enabled
         if (TAC_CFG.appendSpace)
             optionalSeparator += " ";
+        // If at end of prompt and enabled, override the normal setting if not already added
+        if (!TAC_CFG.appendSpace && TAC_CFG.alwaysSpaceAtEnd)
+            optionalSeparator += surrounding.match(new RegExp(`${escapeRegExp(tagword)}$`, "im")) !== null ? " " : "";
     } else if (extraNetworkTypes.includes(tagType)) {
         // Use the dedicated separator for extra networks if it's defined, otherwise fall back to space
         optionalSeparator = TAC_CFG.extraNetworksSeparator || " ";
