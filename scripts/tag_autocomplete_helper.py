@@ -293,6 +293,18 @@ write_temp_files()
 def on_ui_settings():
     TAC_SECTION = ("tac", "Tag Autocomplete")
 
+    # Backwards compatibility for pre 1.3.0 webui versions
+    if not (hasattr(shared.OptionInfo, "info") and callable(getattr(shared.OptionInfo, "info"))):
+        def info(self, info):
+            self.label += f" ({info})"
+            return self
+        shared.OptionInfo.info = info
+    if not (hasattr(shared.OptionInfo, "needs_restart") and callable(getattr(shared.OptionInfo, "needs_restart"))):
+        def needs_restart(self):
+            self.label += " (Requires restart)"
+            return self
+        shared.OptionInfo.needs_restart = needs_restart
+
     tac_options = {
         # Main tag file
         "tac_tagFile": shared.OptionInfo("danbooru.csv", "Tag filename", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files),
