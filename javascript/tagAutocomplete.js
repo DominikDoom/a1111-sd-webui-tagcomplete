@@ -422,10 +422,11 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     let noCommaTypes = [ResultType.wildcardFile, ResultType.yamlWildcard].concat(extraNetworkTypes);
     if (!noCommaTypes.includes(tagType)) {
         // Append comma if enabled and not already present
+        let beforeComma = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null;
         if (TAC_CFG.appendComma)
-            optionalSeparator = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null ? "" : ",";
+            optionalSeparator = beforeComma ? "" : ",";
         // Add space if enabled
-        if (TAC_CFG.appendSpace)
+        if (TAC_CFG.appendSpace && !beforeComma)
             optionalSeparator += " ";
         // If at end of prompt and enabled, override the normal setting if not already added
         if (!TAC_CFG.appendSpace && TAC_CFG.alwaysSpaceAtEnd)
