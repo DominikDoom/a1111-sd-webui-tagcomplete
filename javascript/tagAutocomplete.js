@@ -202,6 +202,7 @@ async function syncOptions() {
         appendSpace: opts["tac_appendSpace"],
         alwaysSpaceAtEnd: opts["tac_alwaysSpaceAtEnd"],
         wildcardCompletionMode: opts["tac_wildcardCompletionMode"],
+        modelKeywordCompletion: opts["tac_modelKeywordCompletion"],
         // Alias settings
         alias: {
             searchByAlias: opts["tac_alias.searchByAlias"],
@@ -441,8 +442,22 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     // Add back start
     var newPrompt = prompt.substring(0, editStart) + insert + prompt.substring(editEnd);
+
+    // Add lora/lyco keywords if enabled and found
+    let keywordsLength = 0;
+    if (TAC_CFG.modelKeywordCompletion && modelKeywordPath.length > 0 && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
+        if (result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
+            let keywords = modelKeywordDict.get(result.hash);
+            if (keywords && keywords.length > 0) {
+                newPrompt = `${keywords}, ${newPrompt}`;
+                keywordsLength = keywords.length + 2; // +2 for the comma and space
+            }
+        }
+    }
+    
+    // Insert into prompt textbox and reposition cursor
     textArea.value = newPrompt;
-    textArea.selectionStart = afterInsertCursorPos + optionalSeparator.length;
+    textArea.selectionStart = afterInsertCursorPos + optionalSeparator.length + keywordsLength;
     textArea.selectionEnd = textArea.selectionStart
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.

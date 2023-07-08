@@ -1,6 +1,7 @@
 // Core components
 var TAC_CFG = null;
 var tagBasePath = "";
+var modelKeywordPath = "";
 
 // Tag completion data loaded from files
 var allTags = [];
@@ -14,6 +15,7 @@ var embeddings = [];
 var hypernetworks = [];
 var loras = [];
 var lycos = [];
+var modelKeywordDict = new Map();
 var chants = [];
 
 // Selected model info for black/whitelisting

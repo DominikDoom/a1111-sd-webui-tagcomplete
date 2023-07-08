@@ -6,52 +6,12 @@ from pathlib import Path
 
 import gradio as gr
 import yaml
-from modules import script_callbacks, scripts, sd_hijack, shared
+from modules import script_callbacks, sd_hijack, shared
 
-try:
-    from modules.paths import extensions_dir, script_path
-
-    # Webui root path
-    FILE_DIR = Path(script_path)
-
-    # The extension base path
-    EXT_PATH = Path(extensions_dir)
-except ImportError:
-    # Webui root path
-    FILE_DIR = Path().absolute()
-    # The extension base path
-    EXT_PATH = FILE_DIR.joinpath('extensions')
-
-# Tags base path
-TAGS_PATH = Path(scripts.basedir()).joinpath('tags')
-
-# The path to the folder containing the wildcards and embeddings
-WILDCARD_PATH = FILE_DIR.joinpath('scripts/wildcards')
-EMB_PATH = Path(shared.cmd_opts.embeddings_dir)
-HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir)
-
-try:
-    LORA_PATH = Path(shared.cmd_opts.lora_dir)
-except AttributeError:
-    LORA_PATH = None
-    
-try:
-    LYCO_PATH = Path(shared.cmd_opts.lyco_dir)
-except AttributeError:
-    LYCO_PATH = None
-
-def find_ext_wildcard_paths():
-    """Returns the path to the extension wildcards folder"""
-    found = list(EXT_PATH.glob('*/wildcards/'))
-    return found
-
-
-# The path to the extension wildcards folder
-WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
-
-# The path to the temporary files
-STATIC_TEMP_PATH = FILE_DIR.joinpath('tmp') # In the webui root, on windows it exists by default, on linux it doesn't
-TEMP_PATH = TAGS_PATH.joinpath('temp') # Extension specific temp files
+from scripts.model_keyword_support import (get_lora_simple_hash,
+                                           load_hash_cache, update_hash_cache,
+                                           write_model_keyword_path)
+from scripts.shared_paths import *
 
 
 def get_wildcards():
@@ -171,23 +131,47 @@ def get_hypernetworks():
     # Remove file extensions
     return sorted([h[:h.rfind('.')] for h in all_hypernetworks], key=lambda x: x.lower())
 
+model_keyword_installed = write_model_keyword_path()
 def get_lora():
     """Write a list of all lora"""
+    global model_keyword_installed
 
     # Get a list of all lora in the folder
     lora_paths = [Path(l) for l in glob.glob(LORA_PATH.joinpath("**/*").as_posix(), recursive=True)]
-    all_lora = [str(l.name) for l in lora_paths if l.suffix in {".safetensors", ".ckpt", ".pt"}]
-    # Remove file extensions
-    return sorted([l[:l.rfind('.')] for l in all_lora], key=lambda x: x.lower())
+    # Get hashes
+    valid_loras = [lf for lf in lora_paths if lf.suffix in {".safetensors", ".ckpt", ".pt"}]
+    hashes = {}
+    for l in valid_loras:
+        name = l.name[:l.name.rfind('.')]
+        if model_keyword_installed:
+            hashes[name] = get_lora_simple_hash(l)
+        else:
+            hashes[name] = ""
+    
+    # Sort
+    sorted_loras = dict(sorted(hashes.items()))
+    # Add hashes and return
+    return [f"{name},{hash}" for name, hash in sorted_loras.items()]
+
 
 def get_lyco():
     """Write a list of all LyCORIS/LOHA from https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris"""
 
     # Get a list of all LyCORIS in the folder
     lyco_paths = [Path(ly) for ly in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)]
-    all_lyco = [str(ly.name) for ly in lyco_paths if ly.suffix in {".safetensors", ".ckpt", ".pt"}]
-    # Remove file extensions
-    return sorted([ly[:ly.rfind('.')] for ly in all_lyco], key=lambda x: x.lower())
+    
+    # Get hashes
+    valid_lycos = [lyf for lyf in lyco_paths if lyf.suffix in {".safetensors", ".ckpt", ".pt"}]
+    hashes = {}
+    for ly in valid_lycos:
+        name = ly.name[:ly.name.rfind('.')]
+        hashes[name] = get_lora_simple_hash(ly)
+    
+    # Sort
+    sorted_lycos = dict(sorted(hashes.items()))
+    # Add hashes and return
+    return [f"{name},{hash}" for name, hash in sorted_lycos.items()]
+
 
 def write_tag_base_path():
     """Writes the tag base path to a fixed location temporary file"""
@@ -276,6 +260,9 @@ def write_temp_files():
         if hypernets:
             write_to_temp_file('hyp.txt', hypernets)
 
+    if model_keyword_installed:
+        load_hash_cache()
+
     if LORA_PATH is not None and LORA_PATH.exists():
         lora = get_lora()
         if lora:
@@ -285,6 +272,9 @@ def write_temp_files():
         lyco = get_lyco()
         if lyco:
             write_to_temp_file('lyco.txt', lyco)
+
+    if model_keyword_installed:
+        update_hash_cache()
 
 
 write_temp_files()
@@ -334,6 +324,7 @@ def on_ui_settings():
         "tac_appendComma": shared.OptionInfo(True, "Append comma on tag autocompletion"),
         "tac_appendSpace": shared.OptionInfo(True, "Append space on tag autocompletion").info("will append after comma if the above is enabled"),
         "tac_alwaysSpaceAtEnd": shared.OptionInfo(True, "Always append space if inserting at the end of the textbox").info("takes precedence over the regular space setting for that position"),
+        "tac_modelKeywordCompletion": shared.OptionInfo(False, "Try to add known trigger words for LORA/LyCO models", gr.Checkbox, lambda: {"interactive": model_keyword_installed}).info("Requires the <a href=\"https://github.com/mix1009/model-keyword\" target=\"_blank\">model-keyword</a> extension to be installed, but will work with it disabled"),
         "tac_wildcardCompletionMode": shared.OptionInfo("To next folder level", "How to complete nested wildcard paths", gr.Dropdown, lambda: {"choices": ["To next folder level","To first difference","Always fully"]}).info("e.g. \"hair/colours/light/...\""),
         # Alias settings
         "tac_alias.searchByAlias": shared.OptionInfo(True, "Search by alias"),
