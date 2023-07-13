@@ -447,7 +447,21 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     let keywordsLength = 0;
     if (TAC_CFG.modelKeywordCompletion && modelKeywordPath.length > 0 && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
         if (result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
-            let keywords = modelKeywordDict.get(result.hash);
+            let keywords = null;
+            let nameDict = modelKeywordDict.get(result.hash);
+            let name = result.text + ".safetensors";
+
+            console.log(name, nameDict);
+
+            if (nameDict) {
+                if (nameDict.size > 1)
+                    keywords = nameDict.get(name);
+                else 
+                    keywords = nameDict.get("none");
+            }
+
+            console.log(keywords);
+
             if (keywords && keywords.length > 0) {
                 newPrompt = `${keywords}, ${newPrompt}`;
                 keywordsLength = keywords.length + 2; // +2 for the comma and space

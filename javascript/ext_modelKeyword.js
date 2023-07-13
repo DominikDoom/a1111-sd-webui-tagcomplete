@@ -17,8 +17,16 @@ async function load() {
                 const parts = line.split(",");
                 const hash = parts[0];
                 const keywords = parts[1].replaceAll("| ", ", ").replaceAll("|", ", ").trim();
+                const name = parts[2]?.trim() || "none"
 
-                modelKeywordDict.set(hash, keywords);
+                if (modelKeywordDict.has(hash) && name !== "none") {
+                    // Add a new name key if the hash already exists
+                    modelKeywordDict.get(hash).set(name, keywords);
+                } else {
+                    // Create new hash entry
+                    let map = new Map().set(name, keywords);
+                    modelKeywordDict.set(hash, map);
+                }
             });
         } catch (e) {
             console.error("Error loading model-keywords list: " + e);
