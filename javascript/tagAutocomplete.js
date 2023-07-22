@@ -445,7 +445,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     // Add lora/lyco keywords if enabled and found
     let keywordsLength = 0;
-    if (TAC_CFG.modelKeywordCompletion && modelKeywordPath.length > 0 && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
+    if (TAC_CFG.modelKeywordCompletion !== "Never" && modelKeywordPath.length > 0 && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
         if (result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
             let keywords = null;
             let nameDict = modelKeywordDict.get(result.hash);
@@ -805,7 +805,7 @@ function rubyTagClicked(node, textBefore, prompt, textArea) {
 
 // Check if the last edit was the keyword insertion, and catch undo/redo in that case
 function checkKeywordInsertionUndo(textArea, event) {
-    if (!TAC_CFG.modelKeywordCompletion) return;
+    if (TAC_CFG.modelKeywordCompletion === "Never") return;
 
     switch (event.inputType) {
         case "historyUndo":

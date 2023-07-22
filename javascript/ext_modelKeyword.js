@@ -5,10 +5,15 @@ async function load() {
 
     if (modelKeywordPath.length > 0 && modelKeywordDict.size === 0) {
         try {
-            let lines = (await readFile(`${modelKeywordPath}/lora-keyword.txt`)).split("\n");
+            let lines = [];
+            // Only add default keywords if wanted by the user
+            if (TAC_CFG.modelKeywordCompletion !== "Only user list")
+                lines = (await readFile(`${modelKeywordPath}/lora-keyword.txt`)).split("\n");
             // Add custom user keywords if the file exists
             if (customFileExists)
                 lines = lines.concat((await readFile(`${modelKeywordPath}/lora-keyword-user.txt`)).split("\n"));
+
+            if (lines.length === 0) return;
 
             lines = lines.filter(x => x.trim().length > 0 && x.trim()[0] !== "#") // Remove empty lines and comments
             
