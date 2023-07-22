@@ -8,7 +8,7 @@ class LoraParser extends BaseTagParser {
         if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lora:") {
             let searchTerm = tagword.replace("<lora:", "").replace("<l:", "").replace("<", "");
             let filterCondition = x => x.toLowerCase().includes(searchTerm) || x.toLowerCase().replaceAll(" ", "_").includes(searchTerm);
-            tempResults = loras.filter(x => filterCondition(x)); // Filter by tagword
+            tempResults = loras.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
             tempResults = loras;
         }
@@ -16,8 +16,9 @@ class LoraParser extends BaseTagParser {
         // Add final results
         let finalResults = [];
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t.trim(), ResultType.lora)
+            let result = new AutocompleteResult(t[0].trim(), ResultType.lora)
             result.meta = "Lora";
+            result.hash = t[1];
             finalResults.push(result);
         });
 
@@ -30,7 +31,7 @@ async function load() {
         try {
             loras = (await readFile(`${tagBasePath}/temp/lora.txt`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim()); // Remove carriage returns and padding if it exists
+                .map(x => x.trim().split(",")); // Remove carriage returns and padding if it exists, split into name, hash pairs
         } catch (e) {
             console.error("Error loading lora.txt: " + e);
         }

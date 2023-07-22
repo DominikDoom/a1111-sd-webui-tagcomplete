@@ -202,6 +202,7 @@ async function syncOptions() {
         appendSpace: opts["tac_appendSpace"],
         alwaysSpaceAtEnd: opts["tac_alwaysSpaceAtEnd"],
         wildcardCompletionMode: opts["tac_wildcardCompletionMode"],
+        modelKeywordCompletion: opts["tac_modelKeywordCompletion"],
         // Alias settings
         alias: {
             searchByAlias: opts["tac_alias.searchByAlias"],
@@ -441,8 +442,39 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     // Add back start
     var newPrompt = prompt.substring(0, editStart) + insert + prompt.substring(editEnd);
+
+    // Add lora/lyco keywords if enabled and found
+    let keywordsLength = 0;
+    if (TAC_CFG.modelKeywordCompletion !== "Never" && modelKeywordPath.length > 0 && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
+        if (result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
+            let keywords = null;
+            let nameDict = modelKeywordDict.get(result.hash);
+            let name = result.text + ".safetensors";
+
+            if (nameDict) {
+                if (nameDict.has(name))
+                    keywords = nameDict.get(name);
+                else
+                    keywords = nameDict.get("none");
+            }
+
+            if (keywords && keywords.length > 0) {
+                textBeforeKeywordInsertion = newPrompt;
+                
+                newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
+                
+                textAfterKeywordInsertion = newPrompt;
+                keywordInsertionUndone = false;
+                setTimeout(() => lastEditWasKeywordInsertion = true, 200)
+                
+                keywordsLength = keywords.length + 2; // +2 for the comma and space
+            }
+        }
+    }
+    
+    // Insert into prompt textbox and reposition cursor
     textArea.value = newPrompt;
-    textArea.selectionStart = afterInsertCursorPos + optionalSeparator.length;
+    textArea.selectionStart = afterInsertCursorPos + optionalSeparator.length + keywordsLength;
     textArea.selectionEnd = textArea.selectionStart
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
@@ -771,6 +803,37 @@ function rubyTagClicked(node, textBefore, prompt, textArea) {
     textArea.setSelectionRange(startPos, endPos);
 }
 
+// Check if the last edit was the keyword insertion, and catch undo/redo in that case
+function checkKeywordInsertionUndo(textArea, event) {
+    if (TAC_CFG.modelKeywordCompletion === "Never") return;
+
+    switch (event.inputType) {
+        case "historyUndo":
+            if (lastEditWasKeywordInsertion && !keywordInsertionUndone) {
+                keywordInsertionUndone = true;
+                textArea.value = textBeforeKeywordInsertion;
+                updateInput(textArea);
+            }
+            break;
+        case "historyRedo":
+            if (lastEditWasKeywordInsertion && keywordInsertionUndone) {
+                keywordInsertionUndone = false;
+                textArea.value = textAfterKeywordInsertion;
+                updateInput(textArea);
+            }
+        case undefined:
+            // undefined is caused by the updateInput event firing, so we just ignore it
+            break;
+        default:
+            // Everything else deactivates the keyword undo and returns to normal undo behavior
+            lastEditWasKeywordInsertion = false;
+            keywordInsertionUndone = false;
+            textBeforeKeywordInsertion = "";
+            textAfterKeywordInsertion = "";
+            break;
+    }
+}
+
 async function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
     if (!isEnabled()) return;
@@ -1036,6 +1099,7 @@ async function refreshTacTempFiles() {
         hypernetworks = [];
         loras = [];
         lycos = [];
+        modelKeywordDict.clear();
         await processQueue(QUEUE_FILE_LOAD, null);
 
         console.log("TAC: Refreshed temp files");
@@ -1061,9 +1125,10 @@ function addAutocompleteToArea(area) {
         hideResults(area);
 
         // Add autocomplete event listener
-        area.addEventListener('input', () => {
+        area.addEventListener('input', (e) => {
             debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
             updateRuby(area, area.value);
+            checkKeywordInsertionUndo(area, e);
         });
         // Add focusout event listener
         area.addEventListener('focusout', debounce(() => {

@@ -42,7 +42,7 @@ You can install it using the inbuilt available extensions list, clone the files 
 Tag autocomplete supports built-in completion for:
 - 🏷️ **Danbooru & e621 tags** (Top 100k by post count, as of November 2022)
 - ✳️ [**Wildcards**](#wildcards)
-- ➕ [**Extra network**](#extra-networks-embeddings-hypernets-lora) filenames, including
+- ➕ [**Extra network**](#extra-networks-embeddings-hypernets-lora-) filenames, including
    - Textual Inversion embeddings [(jump to readme section)]
    - Hypernetworks
    - LoRA
@@ -122,6 +122,30 @@ Completion for these types is triggered by typing `<`. By default it will show t
 - `<l:` will only show LoRA and LyCORIS
    - Or `<lora:` and `<lyco:` respectively for the long form
 - `<h:` or `<hypernet:` will only show Hypernetworks
+
+### Lora / Lyco trigger word completion
+This is an advanced feature that will try to add known trigger words on autocompleting a Lora/Lyco.
+
+It uses the list provided by the [model-keyword](https://github.com/mix1009/model-keyword/) extension, which thus needs to be installed to use this feature. The list is also regularly updated through it.
+However, once installed, you can deactivate it if you want, since tag autocomplete only needs the local keyword lists it ships with, not the extension itself.
+
+The used files are `lora-keywords.txt` and `lora-keywords-user.txt` in the model-keyword installation folder.
+If the main file isn't found, the feature will simply deactivate itself, everything else should work normally.
+
+To add custom mappings for unknown Loras, you can use the UI provided by model-keyword, it will automatically write it to the `lora-keywords-user.txt` for you (and create it if it doesn't exist).
+The only issue is that it has no official support for the Lycoris extension and doesn't scan its folder for files, so to add them through the UI you will have to temporarily move them into the Lora model folder to be able to select them in model-keywords dropdown.
+Some are already included in the default list though, so trying it out first is advisable.
+<details>
+<summary>Walkthorugh to add custom keywords</summary>
+
+![image](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/4302c44e-c632-473d-a14a-76f164f966cb)
+</details>
+After having added your custom keywords, you will need to either restart the UI or use the "Refresh TAC temp files" setting button.
+
+Sometimes the inserted keywords can be wrong due to a hash collision, however model-keyword and tag autocomplete take the name of the file into account too if the collision is known.
+
+If it still inserts something wrong or you simply don't want the keywords added that time, you can undo / redo it directly after as often as you want, until you type something else
+(It uses the default undo/redo action of the browser, so <kbd>CTRL</kbd> + <kbd>Z</kbd>, context menu and mouse macros should all work).
 
 ### Embedding type filtering
 Embeddings trained for Stable Diffusion 1.x or 2.x models respectively are incompatible with the other type. To make it easier to find valid embeds, they are categorized by "v1 Embedding" and "v2 Embedding", including a slight color difference. You can also filter your search to include only v1 or v2 embeddings by typing `<v1/2` or `<e:v1/2` followed by the actual search term.
@@ -284,6 +308,26 @@ Parentheses are used as control characters in the webui to give more attention /
 Depending on the last setting, tag autocomplete will append a comma and space after inserting a tag, which may help for rapid completion of multiple tags in a row.
 
 ![insertEscape](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/d28557be-6c75-43fd-bf17-c0609223b384)
+</details>
+<!-- Lora keywords -->
+<details>
+<summary>Lora / Lyco trigger word insertion</summary>
+
+See [the detailed readme section](#lora--lyco-trigger-word-completion) for more info.
+
+Selects the mode to use for Lora / Lyco trigger word insertion.
+Needs the [model-keyword](https://github.com/mix1009/model-keyword/) extension to be installed, else it will do nothing.
+
+- Never
+   - Will not complete trigger words, even if the model-keyword extension is installed
+- Only user list
+   - Will only load the custom keywords specified in the lora-keyword-user.txt file and ignore the default list
+- Always
+   - Will load and use both lists
+
+Switching from "Never" to what you had before or back will not require a restart, but changing between the full and user only list will.
+
+![loraKeywordCompletion](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/8bec89ea-68f7-4783-b5cb-55869d9121a3)
 </details>
 <!-- Wildcard path mode -->
 <details>

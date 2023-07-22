@@ -8,7 +8,7 @@ class LycoParser extends BaseTagParser {
         if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lyco:") {
             let searchTerm = tagword.replace("<lyco:", "").replace("<l:", "").replace("<", "");
             let filterCondition = x => x.toLowerCase().includes(searchTerm) || x.toLowerCase().replaceAll(" ", "_").includes(searchTerm);
-            tempResults = lycos.filter(x => filterCondition(x)); // Filter by tagword
+            tempResults = lycos.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
             tempResults = lycos;
         }
@@ -16,8 +16,9 @@ class LycoParser extends BaseTagParser {
         // Add final results
         let finalResults = [];
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t.trim(), ResultType.lyco)
+            let result = new AutocompleteResult(t[0].trim(), ResultType.lyco)
             result.meta = "Lyco";
+            result.hash = t[1];
             finalResults.push(result);
         });
 
@@ -30,7 +31,7 @@ async function load() {
         try {
             lycos = (await readFile(`${tagBasePath}/temp/lyco.txt`)).split("\n")
                 .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim()); // Remove carriage returns and padding if it exists
+                .map(x => x.trim().split(",")); // Remove carriage returns and padding if it exists, split into name, hash pairs
         } catch (e) {
             console.error("Error loading lyco.txt: " + e);
         }
