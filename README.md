@@ -140,6 +140,7 @@ Some are already included in the default list though, so trying it out first is 
 
 ![image](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/4302c44e-c632-473d-a14a-76f164f966cb)
 </details>
+After having added your custom keywords, you will need to either restart the UI or use the "Refresh TAC temp files" setting button.
 
 Sometimes the inserted keywords can be wrong due to a hash collision, however model-keyword and tag autocomplete take the name of the file into account too if the collision is known.
 

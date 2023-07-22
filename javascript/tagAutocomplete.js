@@ -1099,6 +1099,7 @@ async function refreshTacTempFiles() {
         hypernetworks = [];
         loras = [];
         lycos = [];
+        modelKeywordDict.clear();
         await processQueue(QUEUE_FILE_LOAD, null);
 
         console.log("TAC: Refreshed temp files");
