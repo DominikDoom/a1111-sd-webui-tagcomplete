@@ -263,15 +263,19 @@ def write_temp_files():
     if model_keyword_installed:
         load_hash_cache()
 
-    if LORA_PATH is not None and LORA_PATH.exists():
+    lora_exists = LORA_PATH is not None and LORA_PATH.exists()
+    if lora_exists:
         lora = get_lora()
         if lora:
             write_to_temp_file('lora.txt', lora)
-
-    if LYCO_PATH is not None and LYCO_PATH.exists():
+            
+    lyco_exists = LYCO_PATH is not None and LYCO_PATH.exists()
+    if lyco_exists and not (lora_exists and LYCO_PATH.samefile(LORA_PATH)):
         lyco = get_lyco()
         if lyco:
             write_to_temp_file('lyco.txt', lyco)
+    elif lyco_exists and lora_exists and LYCO_PATH.samefile(LORA_PATH):
+        print("tag_autocomplete_helper: LyCORIS path is the same as LORA path, skipping")
 
     if model_keyword_installed:
         update_hash_cache()
