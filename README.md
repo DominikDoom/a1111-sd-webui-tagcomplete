@@ -42,7 +42,7 @@ You can install it using the inbuilt available extensions list, clone the files 
 Tag autocomplete supports built-in completion for:
 - 🏷️ **Danbooru & e621 tags** (Top 100k by post count, as of November 2022)
 - ✳️ [**Wildcards**](#wildcards)
-- ➕ [**Extra network**](#extra-networks-embeddings-hypernets-lora) filenames, including
+- ➕ [**Extra network**](#extra-networks-embeddings-hypernets-lora-) filenames, including
    - Textual Inversion embeddings [(jump to readme section)]
    - Hypernetworks
    - LoRA
