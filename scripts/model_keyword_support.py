@@ -17,7 +17,7 @@ hash_dict = {}
 
 
 def load_hash_cache():
-    with open(known_hashes_file, "r") as file:
+    with open(known_hashes_file, "r", encoding="utf-8") as file:
         for line in file:
             name, hash, mtime = line.replace("\n", "").split(",")
             hash_dict[name] = (hash, mtime)
