@@ -133,7 +133,8 @@ The used files are `lora-keywords.txt` and `lora-keywords-user.txt` in the model
 If the main file isn't found, the feature will simply deactivate itself, everything else should work normally.
 
 To add custom mappings for unknown Loras, you can use the UI provided by model-keyword, it will automatically write it to the `lora-keywords-user.txt` for you (and create it if it doesn't exist).
-The only issue is that it has no official support for Lycos, so to add them through the UI you will have to temporarily move them into the Lora model folder to be able to select them in model-keywords dropdown.
+The only issue is that it has no official support for the Lycoris extension and doesn't scan its folder for files, so to add them through the UI you will have to temporarily move them into the Lora model folder to be able to select them in model-keywords dropdown.
+Some are already included in the default list though, so trying it out first is advisable.
 <details>
 <summary>Walkthorugh to add custom keywords</summary>
 
@@ -311,7 +312,7 @@ Depending on the last setting, tag autocomplete will append a comma and space af
 <details>
 <summary>Lora / Lyco trigger word insertion</summary>
 
-See [the detailed readme section](#lora--lyco-trigger-word-completion) for more info
+See [the detailed readme section](#lora--lyco-trigger-word-completion) for more info.
 
 Selects the mode to use for Lora / Lyco trigger word insertion.
 Needs the [model-keyword](https://github.com/mix1009/model-keyword/) extension to be installed, else it will do nothing.
@@ -323,7 +324,7 @@ Needs the [model-keyword](https://github.com/mix1009/model-keyword/) extension t
 - Always
    - Will load and use both lists
 
-Switching from "Never" to what you had before or back will not require a restart, but changing between the full and only the user list will.
+Switching from "Never" to what you had before or back will not require a restart, but changing between the full and user only list will.
 
 ![loraKeywordCompletion](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/8bec89ea-68f7-4783-b5cb-55869d9121a3)
 </details>
