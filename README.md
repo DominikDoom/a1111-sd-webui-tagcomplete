@@ -136,7 +136,7 @@ To add custom mappings for unknown Loras, you can use the UI provided by model-k
 The only issue is that it has no official support for the Lycoris extension and doesn't scan its folder for files, so to add them through the UI you will have to temporarily move them into the Lora model folder to be able to select them in model-keywords dropdown.
 Some are already included in the default list though, so trying it out first is advisable.
 <details>
-<summary>Walkthorugh to add custom keywords</summary>
+<summary>Walkthrough to add custom keywords</summary>
 
 ![image](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/4302c44e-c632-473d-a14a-76f164f966cb)
 </details>
