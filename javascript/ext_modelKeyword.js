@@ -17,7 +17,8 @@ async function load() {
                 const parts = line.split(",");
                 const hash = parts[0];
                 const keywords = parts[1].replaceAll("| ", ", ").replaceAll("|", ", ").trim();
-                const name = parts[2]?.trim() || "none"
+                const lastSepIndex = parts[2]?.lastIndexOf("/") + 1 || parts[2]?.lastIndexOf("\\") + 1 || 0;
+                const name = parts[2]?.substring(lastSepIndex).trim() || "none"
 
                 if (modelKeywordDict.has(hash) && name !== "none") {
                     // Add a new name key if the hash already exists

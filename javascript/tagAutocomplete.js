@@ -452,9 +452,9 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             let name = result.text + ".safetensors";
 
             if (nameDict) {
-                if (nameDict.size > 1)
+                if (nameDict.has(name))
                     keywords = nameDict.get(name);
-                else 
+                else
                     keywords = nameDict.get("none");
             }
 
