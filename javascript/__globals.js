@@ -36,6 +36,12 @@ let hideBlocked = false;
 var selectedTag = null;
 var oldSelectedTag = null;
 
+// Lora keyword undo/redo history
+var textBeforeKeywordInsertion = "";
+var textAfterKeywordInsertion = "";
+var lastEditWasKeywordInsertion = false;
+var keywordInsertionUndone = false;
+
 // UMI
 var umiPreviousTags = [];
 

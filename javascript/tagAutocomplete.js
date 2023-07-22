@@ -451,8 +451,6 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             let nameDict = modelKeywordDict.get(result.hash);
             let name = result.text + ".safetensors";
 
-            console.log(name, nameDict);
-
             if (nameDict) {
                 if (nameDict.size > 1)
                     keywords = nameDict.get(name);
@@ -460,10 +458,15 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
                     keywords = nameDict.get("none");
             }
 
-            console.log(keywords);
-
             if (keywords && keywords.length > 0) {
-                newPrompt = `${keywords}, ${newPrompt}`;
+                textBeforeKeywordInsertion = newPrompt;
+                
+                newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
+                
+                textAfterKeywordInsertion = newPrompt;
+                keywordInsertionUndone = false;
+                setTimeout(() => lastEditWasKeywordInsertion = true, 200)
+                
                 keywordsLength = keywords.length + 2; // +2 for the comma and space
             }
         }
@@ -800,6 +803,37 @@ function rubyTagClicked(node, textBefore, prompt, textArea) {
     textArea.setSelectionRange(startPos, endPos);
 }
 
+// Check if the last edit was the keyword insertion, and catch undo/redo in that case
+function checkKeywordInsertionUndo(textArea, event) {
+    if (!TAC_CFG.modelKeywordCompletion) return;
+
+    switch (event.inputType) {
+        case "historyUndo":
+            if (lastEditWasKeywordInsertion && !keywordInsertionUndone) {
+                keywordInsertionUndone = true;
+                textArea.value = textBeforeKeywordInsertion;
+                updateInput(textArea);
+            }
+            break;
+        case "historyRedo":
+            if (lastEditWasKeywordInsertion && keywordInsertionUndone) {
+                keywordInsertionUndone = false;
+                textArea.value = textAfterKeywordInsertion;
+                updateInput(textArea);
+            }
+        case undefined:
+            // undefined is caused by the updateInput event firing, so we just ignore it
+            break;
+        default:
+            // Everything else deactivates the keyword undo and returns to normal undo behavior
+            lastEditWasKeywordInsertion = false;
+            keywordInsertionUndone = false;
+            textBeforeKeywordInsertion = "";
+            textAfterKeywordInsertion = "";
+            break;
+    }
+}
+
 async function autocomplete(textArea, prompt, fixedTag = null) {
     // Return if the function is deactivated in the UI
     if (!isEnabled()) return;
@@ -1090,9 +1124,10 @@ function addAutocompleteToArea(area) {
         hideResults(area);
 
         // Add autocomplete event listener
-        area.addEventListener('input', () => {
+        area.addEventListener('input', (e) => {
             debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
             updateRuby(area, area.value);
+            checkKeywordInsertionUndo(area, e);
         });
         // Add focusout event listener
         area.addEventListener('focusout', debounce(() => {
