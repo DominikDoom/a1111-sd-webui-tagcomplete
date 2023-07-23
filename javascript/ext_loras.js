@@ -30,8 +30,8 @@ async function load() {
     if (loras.length === 0) {
         try {
             loras = (await loadCSV(`${tagBasePath}/temp/lora.txt`))
-                .filter(x => x[0].trim().length > 0) // Remove empty lines
-                .map(x => [x[0].trim(), x[1]]); // Remove carriage returns and padding if it exists, split into name, hash pairs
+                .filter(x => x[0]?.trim().length > 0) // Remove empty lines
+                .map(x => [x[0]?.trim(), x[1]]); // Trim filenames and return the name, hash pairs
         } catch (e) {
             console.error("Error loading lora.txt: " + e);
         }

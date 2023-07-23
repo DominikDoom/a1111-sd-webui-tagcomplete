@@ -16,7 +16,6 @@ async function load() {
             if (csv_lines.length === 0) return;
 
             csv_lines = csv_lines.filter(x => x[0].trim().length > 0 && x[0].trim()[0] !== "#") // Remove empty lines and comments
-            console.log(csv_lines)
 
             // Add to the dict
             csv_lines.forEach(parts => {
