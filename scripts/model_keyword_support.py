@@ -1,5 +1,6 @@
 # This file provides support for the model-keyword extension to add known lora keywords on completion
 
+import csv
 import hashlib
 from pathlib import Path
 
@@ -16,8 +17,11 @@ hash_dict = {}
 
 def load_hash_cache():
     with open(known_hashes_file, "r", encoding="utf-8") as file:
-        for line in file:
-            name, hash, mtime = line.replace("\n", "").split(",")
+        reader = csv.reader(
+            file.readlines(), delimiter=",", quotechar='"', skipinitialspace=True
+        )
+        for line in reader:
+            name, hash, mtime = line
             hash_dict[name] = (hash, mtime)
 
 
@@ -26,7 +30,7 @@ def update_hash_cache():
     if file_needs_update:
         with open(known_hashes_file, "w", encoding="utf-8") as file:
             for name, (hash, mtime) in hash_dict.items():
-                file.write(f"{name},{hash},{mtime}\n")
+                file.write(f'"{name}",{hash},{mtime}\n')
 
 
 # Copy of the fast inaccurate hash function from the extension

@@ -5,21 +5,21 @@ async function load() {
 
     if (modelKeywordPath.length > 0 && modelKeywordDict.size === 0) {
         try {
-            let lines = [];
+            let csv_lines = [];
             // Only add default keywords if wanted by the user
             if (TAC_CFG.modelKeywordCompletion !== "Only user list")
-                lines = (await readFile(`${modelKeywordPath}/lora-keyword.txt`)).split("\n");
+                csv_lines = (await loadCSV(`${modelKeywordPath}/lora-keyword.txt`));
             // Add custom user keywords if the file exists
             if (customFileExists)
-                lines = lines.concat((await readFile(`${modelKeywordPath}/lora-keyword-user.txt`)).split("\n"));
+                csv_lines = csv_lines.concat((await loadCSV(`${modelKeywordPath}/lora-keyword-user.txt`)));
 
-            if (lines.length === 0) return;
+            if (csv_lines.length === 0) return;
 
-            lines = lines.filter(x => x.trim().length > 0 && x.trim()[0] !== "#") // Remove empty lines and comments
-            
+            csv_lines = csv_lines.filter(x => x[0].trim().length > 0 && x[0].trim()[0] !== "#") // Remove empty lines and comments
+            console.log(csv_lines)
+
             // Add to the dict
-            lines.forEach(line => {
-                const parts = line.split(",");
+            csv_lines.forEach(parts => {
                 const hash = parts[0];
                 const keywords = parts[1].replaceAll("| ", ", ").replaceAll("|", ", ").trim();
                 const lastSepIndex = parts[2]?.lastIndexOf("/") + 1 || parts[2]?.lastIndexOf("\\") + 1 || 0;

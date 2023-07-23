@@ -29,9 +29,9 @@ class LycoParser extends BaseTagParser {
 async function load() {
     if (lycos.length === 0) {
         try {
-            lycos = (await readFile(`${tagBasePath}/temp/lyco.txt`)).split("\n")
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim().split(",")); // Remove carriage returns and padding if it exists, split into name, hash pairs
+            lycos = (await loadCSV(`${tagBasePath}/temp/lyco.txt`))
+                .filter(x => x[0].trim().length > 0) // Remove empty lines
+                .map(x => [x[0].trim(), x[1]]); // Remove carriage returns and padding if it exists, split into name, hash pairs
         } catch (e) {
             console.error("Error loading lyco.txt: " + e);
         }

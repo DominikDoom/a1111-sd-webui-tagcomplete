@@ -29,9 +29,9 @@ class LoraParser extends BaseTagParser {
 async function load() {
     if (loras.length === 0) {
         try {
-            loras = (await readFile(`${tagBasePath}/temp/lora.txt`)).split("\n")
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim().split(",")); // Remove carriage returns and padding if it exists, split into name, hash pairs
+            loras = (await loadCSV(`${tagBasePath}/temp/lora.txt`))
+                .filter(x => x[0].trim().length > 0) // Remove empty lines
+                .map(x => [x[0].trim(), x[1]]); // Remove carriage returns and padding if it exists, split into name, hash pairs
         } catch (e) {
             console.error("Error loading lora.txt: " + e);
         }

@@ -151,7 +151,7 @@ def get_lora():
     # Sort
     sorted_loras = dict(sorted(hashes.items()))
     # Add hashes and return
-    return [f"{name},{hash}" for name, hash in sorted_loras.items()]
+    return [f"\"{name}\",{hash}" for name, hash in sorted_loras.items()]
 
 
 def get_lyco():
@@ -170,7 +170,7 @@ def get_lyco():
     # Sort
     sorted_lycos = dict(sorted(hashes.items()))
     # Add hashes and return
-    return [f"{name},{hash}" for name, hash in sorted_lycos.items()]
+    return [f"\"{name}\",{hash}" for name, hash in sorted_lycos.items()]
 
 
 def write_tag_base_path():
