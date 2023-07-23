@@ -449,12 +449,18 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         if (result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
             let keywords = null;
             let nameDict = modelKeywordDict.get(result.hash);
-            let name = result.text + ".safetensors";
+            let names = [result.text + ".safetensors", result.text + ".pt", result.text + ".ckpt"];
 
             if (nameDict) {
-                if (nameDict.has(name))
-                    keywords = nameDict.get(name);
-                else
+                let found = false;
+                names.forEach(name => {
+                    if (!found && nameDict.has(name)) {
+                        found = true;
+                        keywords = nameDict.get(name);
+                    }
+                });
+                
+                if (!found)
                     keywords = nameDict.get("none");
             }
 
