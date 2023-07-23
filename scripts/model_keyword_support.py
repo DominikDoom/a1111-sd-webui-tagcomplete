@@ -7,8 +7,6 @@ from scripts.shared_paths import EXT_PATH, STATIC_TEMP_PATH, TEMP_PATH
 
 # Set up our hash cache
 known_hashes_file = TEMP_PATH.joinpath("known_lora_hashes.txt")
-if not TEMP_PATH.exists():
-    TEMP_PATH.mkdir()
 known_hashes_file.touch()
 file_needs_update = False
 

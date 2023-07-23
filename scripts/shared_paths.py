@@ -45,3 +45,9 @@ WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
 # The path to the temporary files
 STATIC_TEMP_PATH = FILE_DIR.joinpath('tmp') # In the webui root, on windows it exists by default, on linux it doesn't
 TEMP_PATH = TAGS_PATH.joinpath('temp') # Extension specific temp files
+
+# Make sure these folders exist
+if not TEMP_PATH.exists():
+    TEMP_PATH.mkdir()
+if not STATIC_TEMP_PATH.exists():
+    STATIC_TEMP_PATH.mkdir()
