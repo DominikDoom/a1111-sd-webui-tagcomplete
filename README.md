@@ -141,8 +141,9 @@ Custom trigger words can be added through two methods:
    - This method requires no manual refresh
    - <details>
      <summary>Image example</summary>
-
-     ![image](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/4302c44e-c632-473d-a14a-76f164f966cb)
+	   
+     ![edit button](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/22e95040-1d85-4b7e-a005-1918fafec807)
+     ![lora_edit](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/3e6c5245-d3bc-498d-8cd2-26eadf8882e7)
      </details>
 2. Through the model-keyword UI:
    - One issue with this method is that it has no official support for the Lycoris extension and doesn't scan its folder for files, so to add them through the UI you will have to temporarily move them into the Lora model folder to be able to select them in model-keywords dropdown. Some are already included in the default list though, so trying it out first is advisable.
