@@ -445,9 +445,18 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     // Add lora/lyco keywords if enabled and found
     let keywordsLength = 0;
-    if (TAC_CFG.modelKeywordCompletion !== "Never" && modelKeywordPath.length > 0 && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
-        if (result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
-            let keywords = null;
+
+    if (TAC_CFG.modelKeywordCompletion !== "Never" && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
+        let keywords = null;
+        // Check built-in activation words first
+        if (tagType === ResultType.lora || tagType === ResultType.lyco) {
+            let info = await fetchAPI(`tacapi/v1/lora-info/${result.text}`)
+            if (info && info["activation text"]) {
+                keywords = info["activation text"];
+            }
+        }
+        
+        if (!keywords && modelKeywordPath.length > 0 && result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
             let nameDict = modelKeywordDict.get(result.hash);
             let names = [result.text + ".safetensors", result.text + ".pt", result.text + ".ckpt"];
 
@@ -463,18 +472,18 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
                 if (!found)
                     keywords = nameDict.get("none");
             }
+        }
 
-            if (keywords && keywords.length > 0) {
-                textBeforeKeywordInsertion = newPrompt;
-                
-                newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
-                
-                textAfterKeywordInsertion = newPrompt;
-                keywordInsertionUndone = false;
-                setTimeout(() => lastEditWasKeywordInsertion = true, 200)
-                
-                keywordsLength = keywords.length + 2; // +2 for the comma and space
-            }
+        if (keywords && keywords.length > 0) {
+            textBeforeKeywordInsertion = newPrompt;
+            
+            newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
+            
+            textAfterKeywordInsertion = newPrompt;
+            keywordInsertionUndone = false;
+            setTimeout(() => lastEditWasKeywordInsertion = true, 200)
+            
+            keywordsLength = keywords.length + 2; // +2 for the comma and space
         }
     }
     
@@ -572,6 +581,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
             if (!TAC_CFG.alias.onlyShowAlias && result.text !== bestAlias)
                 displayText += " ➝ " + result.text;
+        } else if (result.type === ResultType.lora || result.type === ResultType.lyco) {
+            let lastDot = result.text.lastIndexOf(".");
+            let lastSlash = result.text.lastIndexOf("/");
+            let name = result.text.substring(lastSlash + 1, lastDot);
+            displayText = escapeHTML(name);
         } else { // No alias
             displayText = escapeHTML(result.text);
         }

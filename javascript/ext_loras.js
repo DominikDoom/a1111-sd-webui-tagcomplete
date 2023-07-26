@@ -38,9 +38,19 @@ async function load() {
     }
 }
 
-function sanitize(tagType, text) {
+async function sanitize(tagType, text) {
     if (tagType === ResultType.lora) {
-        return `<lora:${text}:${TAC_CFG.extraNetworksDefaultMultiplier}>`;
+        let multiplier = TAC_CFG.extraNetworksDefaultMultiplier;
+        let info = await fetchAPI(`tacapi/v1/lora-info/${text}`)
+        if (info && info["preferred weight"]) {
+            multiplier = info["preferred weight"];
+        }
+
+        const lastDot = text.lastIndexOf(".");
+        const lastSlash = text.lastIndexOf("/");
+        const name = text.substring(lastSlash + 1, lastDot);
+
+        return `<lora:${name}:${multiplier}>`;
     }
     return null;
 }
