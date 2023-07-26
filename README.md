@@ -124,23 +124,35 @@ Completion for these types is triggered by typing `<`. By default it will show t
 - `<h:` or `<hypernet:` will only show Hypernetworks
 
 ### Lora / Lyco trigger word completion
-This is an advanced feature that will try to add known trigger words on autocompleting a Lora/Lyco.
+This feature will try to add known trigger words on autocompleting a Lora/Lyco.
 
-It uses the list provided by the [model-keyword](https://github.com/mix1009/model-keyword/) extension, which thus needs to be installed to use this feature. The list is also regularly updated through it.
+It primarily uses the list provided by the [model-keyword](https://github.com/mix1009/model-keyword/) extension, which thus needs to be installed to use this feature. The list is also regularly updated through it.
 However, once installed, you can deactivate it if you want, since tag autocomplete only needs the local keyword lists it ships with, not the extension itself.
-
-The used files are `lora-keywords.txt` and `lora-keywords-user.txt` in the model-keyword installation folder.
+The used files are `lora-keyword.txt` and `lora-keyword-user.txt` in the model-keyword installation folder.
 If the main file isn't found, the feature will simply deactivate itself, everything else should work normally.
 
-To add custom mappings for unknown Loras, you can use the UI provided by model-keyword, it will automatically write it to the `lora-keywords-user.txt` for you (and create it if it doesn't exist).
-The only issue is that it has no official support for the Lycoris extension and doesn't scan its folder for files, so to add them through the UI you will have to temporarily move them into the Lora model folder to be able to select them in model-keywords dropdown.
-Some are already included in the default list though, so trying it out first is advisable.
-<details>
-<summary>Walkthrough to add custom keywords</summary>
+#### Note:
+As of [v1.5.0](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/a3ddf464a2ed24c999f67ddfef7969f8291567be), the webui provides a native method to add activation keywords for Lora through the Extra networks config UI.
+These trigger words will always be preferred over the model-keyword ones and can be used without needing to install the model-keyword extension. This will however, obviously, be limited to those manually added keywords. For automatic discovery of keywords, you will still need the big list provided by model-keyword.
 
-![image](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/4302c44e-c632-473d-a14a-76f164f966cb)
-</details>
-After having added your custom keywords, you will need to either restart the UI or use the "Refresh TAC temp files" setting button.
+Custom trigger words can be added through two methods:
+1. Using the extra networks UI (recommended):
+   - Only works with webui version v1.5.0 upwards, but much easier to use and works without the model-keyword extension
+   - This method requires no manual refresh
+   - <details>
+     <summary>Image example</summary>
+	   
+     ![edit button](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/22e95040-1d85-4b7e-a005-1918fafec807)
+     ![lora_edit](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/3e6c5245-d3bc-498d-8cd2-26eadf8882e7)
+     </details>
+2. Through the model-keyword UI:
+   - One issue with this method is that it has no official support for the Lycoris extension and doesn't scan its folder for files, so to add them through the UI you will have to temporarily move them into the Lora model folder to be able to select them in model-keywords dropdown. Some are already included in the default list though, so trying it out first is advisable.
+   - After having added your custom keywords, you will need to either restart the UI or use the "Refresh TAC temp files" setting button.
+   - <details>
+     <summary>Image example</summary>
+
+     ![image](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/4302c44e-c632-473d-a14a-76f164f966cb)
+     </details>
 
 Sometimes the inserted keywords can be wrong due to a hash collision, however model-keyword and tag autocomplete take the name of the file into account too if the collision is known.
 

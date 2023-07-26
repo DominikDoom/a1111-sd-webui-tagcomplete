@@ -75,6 +75,6 @@ def write_model_keyword_path():
         return True
     else:
         print(
-            "Tag Autocomplete: Could not locate model-keyword extension, LORA/LYCO trigger word completion will be unavailable."
+            "Tag Autocomplete: Could not locate model-keyword extension, Lora trigger word completion will be limited to those added through the extra networks menu."
         )
         return False

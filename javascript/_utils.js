@@ -61,6 +61,26 @@ async function loadCSV(path) {
     return parseCSV(text);
 }
 
+// Fetch API
+async function fetchAPI(url, json = true, cache = false) {
+    if (!cache) {
+        const appendChar = url.includes("?") ? "&" : "?";
+        url += `${appendChar}${new Date().getTime()}`
+    }
+
+    let response = await fetch(url);
+
+    if (response.status != 200) {
+        console.error(`Error fetching API endpoint "${url}": ` + response.status, response.statusText);
+        return null;
+    }
+
+    if (json)
+        return await response.json();
+    else
+        return await response.text();
+}
+
 // Debounce function to prevent spamming the autocomplete function
 var dbTimeOut;
 const debounce = (func, wait = 300) => {

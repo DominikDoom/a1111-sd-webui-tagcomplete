@@ -2,10 +2,13 @@
 # to a temporary file to expose it to the javascript side
 
 import glob
+import json
 from pathlib import Path
 
 import gradio as gr
 import yaml
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from modules import script_callbacks, sd_hijack, shared
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
@@ -142,12 +145,11 @@ def get_lora():
     valid_loras = [lf for lf in lora_paths if lf.suffix in {".safetensors", ".ckpt", ".pt"}]
     hashes = {}
     for l in valid_loras:
-        name = l.name[:l.name.rfind('.')]
+        name = l.relative_to(LORA_PATH).as_posix()
         if model_keyword_installed:
             hashes[name] = get_lora_simple_hash(l)
         else:
             hashes[name] = ""
-    
     # Sort
     sorted_loras = dict(sorted(hashes.items()))
     # Add hashes and return
@@ -164,8 +166,11 @@ def get_lyco():
     valid_lycos = [lyf for lyf in lyco_paths if lyf.suffix in {".safetensors", ".ckpt", ".pt"}]
     hashes = {}
     for ly in valid_lycos:
-        name = ly.name[:ly.name.rfind('.')]
-        hashes[name] = get_lora_simple_hash(ly)
+        name = ly.relative_to(LYCO_PATH).as_posix()
+        if model_keyword_installed:
+            hashes[name] = get_lora_simple_hash(ly)
+        else:
+            hashes[name] = ""
     
     # Sort
     sorted_lycos = dict(sorted(hashes.items()))
@@ -328,7 +333,7 @@ def on_ui_settings():
         "tac_appendComma": shared.OptionInfo(True, "Append comma on tag autocompletion"),
         "tac_appendSpace": shared.OptionInfo(True, "Append space on tag autocompletion").info("will append after comma if the above is enabled"),
         "tac_alwaysSpaceAtEnd": shared.OptionInfo(True, "Always append space if inserting at the end of the textbox").info("takes precedence over the regular space setting for that position"),
-        "tac_modelKeywordCompletion": shared.OptionInfo("Never", "Try to add known trigger words for LORA/LyCO models", gr.Dropdown, lambda: {"interactive": model_keyword_installed, "choices": ["Never","Only user list","Always"]}).info("Requires the <a href=\"https://github.com/mix1009/model-keyword\" target=\"_blank\">model-keyword</a> extension to be installed, but will work with it disabled.").needs_restart(),
+        "tac_modelKeywordCompletion": shared.OptionInfo("Never", "Try to add known trigger words for LORA/LyCO models", gr.Dropdown, lambda: {"choices": ["Never","Only user list","Always"]}).info("Will use & prefer the native activation keywords settable in the extra networks UI. Other functionality requires the <a href=\"https://github.com/mix1009/model-keyword\" target=\"_blank\">model-keyword</a> extension to be installed, but will work with it disabled.").needs_restart(),
         "tac_wildcardCompletionMode": shared.OptionInfo("To next folder level", "How to complete nested wildcard paths", gr.Dropdown, lambda: {"choices": ["To next folder level","To first difference","Always fully"]}).info("e.g. \"hair/colours/light/...\""),
         # Alias settings
         "tac_alias.searchByAlias": shared.OptionInfo(True, "Search by alias"),
@@ -401,3 +406,36 @@ def on_ui_settings():
     shared.opts.add_option("tac_refreshTempFiles", shared.OptionInfo("Refresh TAC temp files", "Refresh internal temp files", gr.HTML, {}, refresh=refresh_temp_files, section=TAC_SECTION))
     
 script_callbacks.on_ui_settings(on_ui_settings)
+
+def api_tac(_: gr.Blocks, app: FastAPI):
+    async def get_json_info(path: Path):
+        if not path:
+            return json.dumps({})
+        
+        try:
+            if path is not None and path.exists() and path.parent.joinpath(path.stem + ".json").exists():
+                return FileResponse(path.parent.joinpath(path.stem + ".json").as_posix())
+        except Exception as e:
+            return json.dumps({"error": e})
+
+    @app.get("/tacapi/v1/lora-info/{folder}/{lora_name}")
+    async def get_lora_info_subfolder(folder, lora_name):
+        if LORA_PATH is None:
+            return json.dumps({})
+        return await get_json_info(LORA_PATH.joinpath(folder).joinpath(lora_name))
+    
+    @app.get("/tacapi/v1/lyco-info/{folder}/{lyco_name}")
+    async def get_lyco_info_subfolder(folder, lyco_name):
+        if LYCO_PATH is None:
+            return json.dumps({})
+        return await get_json_info(LYCO_PATH.joinpath(folder).joinpath(lyco_name))
+
+    @app.get("/tacapi/v1/lora-info/{lora_name}")
+    async def get_lora_info(lora_name):
+        return await get_lora_info_subfolder(".", lora_name)
+    
+    @app.get("/tacapi/v1/lyco-info/{lyco_name}")
+    async def get_lyco_info(lyco_name):
+        return await get_lyco_info_subfolder(".", lyco_name)
+
+script_callbacks.on_app_started(api_tac)
