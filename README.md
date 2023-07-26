@@ -133,7 +133,7 @@ If the main file isn't found, the feature will simply deactivate itself, everyth
 
 #### Note:
 As of [v1.5.0](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/a3ddf464a2ed24c999f67ddfef7969f8291567be), the webui provides a native method to add activation keywords for Lora through the Extra networks config UI.
-These trigger words will always be preferred over the model-keyword ones and can be used without needing to install the extension. This will however, obviously, be limited to those manually added keywords. For automatic discovery of keywords, you will still need the big list provided by model-keyword.
+These trigger words will always be preferred over the model-keyword ones and can be used without needing to install the model-keyword extension. This will however, obviously, be limited to those manually added keywords. For automatic discovery of keywords, you will still need the big list provided by model-keyword.
 
 Custom trigger words can be added through two methods:
 1. Using the extra networks UI (recommended):
