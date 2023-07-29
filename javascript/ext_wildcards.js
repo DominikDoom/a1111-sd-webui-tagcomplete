@@ -13,26 +13,35 @@ class WildcardParser extends BaseTagParser {
         let wcWord = wcMatch[0][2];
 
         // Look in normal wildcard files
-        let wcFound = wildcardFiles.find(x => x[1].toLowerCase() === wcFile);
+        let wcFound = wildcardFiles.filter(x => x[1].toLowerCase() === wcFile);
+        if (wcFound.length === 0) wcFound = null;
         // Use found wildcard file or look in external wildcard files
-        let wcPair = wcFound || wildcardExtFiles.find(x => x[1].toLowerCase() === wcFile);
+        let wcPairs = wcFound || wildcardExtFiles.filter(x => x[1].toLowerCase() === wcFile);
 
-        if (!wcPair || !wcPair[0] || !wcPair[1]) return [];
-
+        if (!wcPairs) return [];
+    
         let wildcards = [];
-        if (wcPair[0].endsWith(".yaml")) {
-            const getDescendantProp = (obj, desc) => {
-                const arr = desc.split("/");
-                while (arr.length) {
-                  obj = obj[arr.shift()];
+        for (let i = 0; i < wcPairs.length; i++) {
+            const wcPair = wcPairs[i];
+            if (!wcPair[0] || !wcPair[1]) continue;
+
+            if (wcPair[0].endsWith(".yaml")) {
+                const getDescendantProp = (obj, desc) => {
+                    const arr = desc.split("/");
+                    while (arr.length) {
+                      obj = obj[arr.shift()];
+                    }
+                    return obj;
                 }
-                return obj;
+                wildcards = wildcards.concat(getDescendantProp(yamlWildcards[wcPair[0]], wcPair[1]));
+            } else {
+                const fileContent = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt`)).split("\n")
+                .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
+                wildcards = wildcards.concat(fileContent);
             }
-            wildcards = getDescendantProp(yamlWildcards[wcPair[0]], wcPair[1]);
-        } else {
-            wildcards = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt`)).split("\n")
-            .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
         }
+
+        wildcards.sort((a, b) => a.localeCompare(b));
 
         let finalResults = [];
         let tempResults = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
@@ -58,8 +67,12 @@ class WildcardFileParser extends BaseTagParser {
         }
 
         let finalResults = [];
+        const alreadyAdded = new Map();
         // Get final results
         tempResults.forEach(wcFile => {
+            // Skip duplicate entries incase multiple files have the same name or yaml category
+            if (alreadyAdded.has(wcFile[1])) return;
+
             let result = null;
             if (wcFile[0].endsWith(".yaml")) {
                 result = new AutocompleteResult(wcFile[1].trim(), ResultType.yamlWildcard);
@@ -70,6 +83,7 @@ class WildcardFileParser extends BaseTagParser {
             }
                 
             finalResults.push(result);
+            alreadyAdded.set(wcFile[1], true);
         });
 
         finalResults.sort((a, b) => a.text.localeCompare(b.text));
