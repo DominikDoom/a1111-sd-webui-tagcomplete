@@ -375,7 +375,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         }
     }
 
-    if (tagType === ResultType.wildcardFile
+    if ((tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
         && tabCompletedWithoutChoice
         && TAC_CFG.wildcardCompletionMode !== "Always fully"
         && sanitizedText.includes("/")) {
@@ -402,9 +402,11 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
                 }
             }
             // Don't cut off the __ at the end if it is already the full path
-            if (firstDifference < longestResult) {
+            if (firstDifference > 0 && firstDifference < longestResult) {
                 // +2 because the sanitized text already has the __ at the start but the matched text doesn't
                 sanitizedText = sanitizedText.substring(0, firstDifference + 2);
+            } else if (firstDifference === 0) {
+                sanitizedText = tagword;
             }
         }
     }
@@ -420,7 +422,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     var optionalSeparator = "";
     let extraNetworkTypes = [ResultType.hypernetwork, ResultType.lora];
-    let noCommaTypes = [ResultType.wildcardFile, ResultType.yamlWildcard].concat(extraNetworkTypes);
+    let noCommaTypes = [ResultType.wildcardFile, ResultType.yamlWildcard, ResultType.umiWildcard].concat(extraNetworkTypes);
     if (!noCommaTypes.includes(tagType)) {
         // Append comma if enabled and not already present
         let beforeComma = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null;
@@ -597,7 +599,8 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Print search term bolded in result
         itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
 
-        if (result.type === ResultType.wildcardFile && itemText.innerHTML.includes("/")) {
+        const splitTypes = [ResultType.wildcardFile, ResultType.yamlWildcard]
+        if (splitTypes.includes(result.type) && itemText.innerHTML.includes("/")) {
             let parts = itemText.innerHTML.split("/");
             let lastPart = parts[parts.length - 1];
             parts = parts.slice(0, parts.length - 1);
@@ -1114,7 +1117,7 @@ async function refreshTacTempFiles() {
     setTimeout(async () => {
         wildcardFiles = [];
         wildcardExtFiles = [];
-        yamlWildcards = [];
+        umiWildcards = [];
         embeddings = [];
         hypernetworks = [];
         loras = [];

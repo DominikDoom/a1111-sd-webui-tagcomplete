@@ -36,37 +36,73 @@ def get_ext_wildcards():
 
     return wildcard_files
 
+def is_umi_format(data):
+    """Returns True if the YAML file is in UMI format."""
+    issue_found = False
+    for item in data:
+        if not (data[item] and 'Tags' in data[item] and isinstance(data[item]['Tags'], list)):
+            issue_found = True
+            break
+    return not issue_found
 
-def get_ext_wildcard_tags():
+def parse_umi_format(umi_tags, count, data):
+    for item in data:
+        umi_tags[count] = ','.join(data[item]['Tags'])
+        count += 1
+    
+
+def parse_dynamic_prompt_format(yaml_wildcards, data, path):
+    # Recurse subkeys, delete those without string lists as values
+    def recurse_dict(d: dict):
+        for key, value in d.copy().items():
+            if isinstance(value, dict):
+                recurse_dict(value)
+            elif not (isinstance(value, list) and all(isinstance(v, str) for v in value)):
+                del d[key]
+    
+    recurse_dict(data)
+    # Add to yaml_wildcards
+    yaml_wildcards[path.name] = data
+
+
+def get_yaml_wildcards():
     """Returns a list of all tags found in extension YAML files found under a Tags: key."""
-    wildcard_tags = {} # { tag: count }
     yaml_files = []
     for path in WILDCARD_EXT_PATHS:
         yaml_files.extend(p for p in path.rglob("*.yml"))
         yaml_files.extend(p for p in path.rglob("*.yaml"))
+
+    yaml_wildcards = {}
+
+    umi_tags = {} # { tag: count }
     count = 0
+
     for path in yaml_files:
         try:
             with open(path, encoding="utf8") as file:
                 data = yaml.safe_load(file)
-                if data:
-                    for item in data:
-                        if data[item] and 'Tags' in data[item] and isinstance(data[item]['Tags'], list):
-                            wildcard_tags[count] = ','.join(data[item]['Tags'])
-                            count += 1
-                        else:
-                            print('Issue with tags found in ' + path.name + ' at item ' + item)
+                if (data):
+                    if (is_umi_format(data)):
+                        parse_umi_format(umi_tags, count, data)
+                    else:
+                        parse_dynamic_prompt_format(yaml_wildcards, data, path)
                 else:
                     print('No data found in ' + path.name)
         except yaml.YAMLError:
-            print('Issue in parsing YAML file ' + path.name                       )
+            print('Issue in parsing YAML file ' + path.name)
             continue
+    
     # Sort by count
-    sorted_tags = sorted(wildcard_tags.items(), key=lambda item: item[1], reverse=True)
-    output = []
-    for tag, count in sorted_tags:
-        output.append(f"{tag},{count}")
-    return output
+    umi_sorted = sorted(umi_tags.items(), key=lambda item: item[1], reverse=True)
+    umi_output = []
+    for tag, count in umi_sorted:
+        umi_output.append(f"{tag},{count}")
+    
+    if (len(umi_output) > 0):
+        write_to_temp_file('umi_tags.txt', umi_output)
+
+    with open(TEMP_PATH.joinpath("wc_yaml.json"), "w", encoding="utf-8") as file:
+        json.dump(yaml_wildcards, file, ensure_ascii=False)
 
 
 def get_embeddings(sd_model):
@@ -226,7 +262,8 @@ if not TEMP_PATH.exists():
 # even if no wildcards or embeddings are found
 write_to_temp_file('wc.txt', [])
 write_to_temp_file('wce.txt', [])
-write_to_temp_file('wcet.txt', [])
+write_to_temp_file('wc_yaml.json', [])
+write_to_temp_file('umi_tags.txt', [])
 write_to_temp_file('hyp.txt', [])
 write_to_temp_file('lora.txt', [])
 write_to_temp_file('lyco.txt', [])
@@ -240,6 +277,8 @@ if EMB_PATH.exists():
     script_callbacks.on_model_loaded(get_embeddings)
 
 def refresh_temp_files():
+    global WILDCARD_EXT_PATHS
+    WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
     write_temp_files()
     get_embeddings(shared.sd_model)
 
@@ -255,10 +294,8 @@ def write_temp_files():
         wildcards_ext = get_ext_wildcards()
         if wildcards_ext:
             write_to_temp_file('wce.txt', wildcards_ext)
-        # Write yaml extension wildcards to wcet.txt if found
-        wildcards_yaml_ext = get_ext_wildcard_tags()
-        if wildcards_yaml_ext:
-            write_to_temp_file('wcet.txt', wildcards_yaml_ext)
+        # Write yaml extension wildcards to umi_tags.txt and wc_yaml.json if found
+        get_yaml_wildcards()
 
     if HYP_PATH.exists():
         hypernets = get_hypernetworks()

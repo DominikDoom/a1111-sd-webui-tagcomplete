@@ -11,6 +11,7 @@ var extras = [];
 var wildcardFiles = [];
 var wildcardExtFiles = [];
 var yamlWildcards = [];
+var umiWildcards = [];
 var embeddings = [];
 var hypernetworks = [];
 var loras = [];
