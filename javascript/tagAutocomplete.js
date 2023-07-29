@@ -375,7 +375,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         }
     }
 
-    if (tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard
+    if ((tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
         && tabCompletedWithoutChoice
         && TAC_CFG.wildcardCompletionMode !== "Always fully"
         && sanitizedText.includes("/")) {
