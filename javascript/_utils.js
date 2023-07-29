@@ -109,6 +109,28 @@ function difference(a, b) {
     )].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
 }
 
+// Object flatten function adapted from https://stackoverflow.com/a/61602592
+// $roots keeps previous parent properties as they will be added as a prefix for each prop.
+// $sep is just a preference if you want to seperate nested paths other than dot.
+function flatten(obj, roots = [], sep = ".") {
+  return Object.keys(obj).reduce(
+    (memo, prop) =>
+      Object.assign(
+        // create a new object
+        {},
+        // include previously returned object
+        memo,
+        Object.prototype.toString.call(obj[prop]) === "[object Object]"
+          ? // keep working if value is an object
+            flatten(obj[prop], roots.concat([prop]), sep)
+          : // include current prop and value and prefix prop with the roots
+            { [roots.concat([prop]).join(sep)]: obj[prop] }
+      ),
+    {}
+  );
+}
+  
+
 // Sliding window function to get possible combination groups of an array
 function toNgrams(inputArray, size) {
     return Array.from(

@@ -74,7 +74,7 @@ class UmiParser extends BaseTagParser {
         //console.log({ matches })
 
         const filteredWildcards = (tagword) => {
-            const wildcards = yamlWildcards.filter(x => {
+            const wildcards = umiWildcards.filter(x => {
                 let tags = x[1];
                 const matchesNeg =
                     matches.negative.length === 0
@@ -144,7 +144,7 @@ class UmiParser extends BaseTagParser {
                 // Add final results
                 let finalResults = [];
                 tempResults.forEach(t => {
-                    let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
+                    let result = new AutocompleteResult(t[0].trim(), ResultType.umiWildcard)
                     result.count = t[1];
                     finalResults.push(result);
                 });
@@ -156,7 +156,7 @@ class UmiParser extends BaseTagParser {
                 // Add final results
                 let finalResults = [];
                 filteredWildcardsSorted.forEach(t => {
-                    let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
+                    let result = new AutocompleteResult(t[0].trim(), ResultType.umiWildcard)
                     result.count = t[1];
                     finalResults.push(result);
                 });
@@ -171,7 +171,7 @@ class UmiParser extends BaseTagParser {
             // Add final results
             let finalResults = [];
             filteredWildcardsSorted.forEach(t => {
-                let result = new AutocompleteResult(t[0].trim(), ResultType.yamlWildcard)
+                let result = new AutocompleteResult(t[0].trim(), ResultType.umiWildcard)
                 result.count = t[1];
                 finalResults.push(result);
             });
@@ -184,8 +184,8 @@ class UmiParser extends BaseTagParser {
 }
 
 function updateUmiTags( tagType, sanitizedText, newPrompt, textArea) {
-    // If it was a yaml wildcard, also update the umiPreviousTags
-    if (tagType === ResultType.yamlWildcard && originalTagword.length > 0) {
+    // If it was a umi wildcard, also update the umiPreviousTags
+    if (tagType === ResultType.umiWildcard && originalTagword.length > 0) {
         let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
 
         let umiTags = [];
@@ -203,11 +203,11 @@ function updateUmiTags( tagType, sanitizedText, newPrompt, textArea) {
 }
 
 async function load() {
-    if (yamlWildcards.length === 0) {
+    if (umiWildcards.length === 0) {
         try {
-            let yamlTags = (await readFile(`${tagBasePath}/temp/wcet.txt`)).split("\n");
+            let umiTags = (await readFile(`${tagBasePath}/temp/umi_tags.txt`)).split("\n");
             // Split into tag, count pairs
-            yamlWildcards = yamlTags.map(x => x
+            umiWildcards = umiTags.map(x => x
                 .trim()
                 .split(","))
                 .map(([i, ...rest]) => [
@@ -218,14 +218,14 @@ async function load() {
                     }, {}),
                 ]);
         } catch (e) {
-            console.error("Error loading yaml wildcards: " + e);
+            console.error("Error loading umi wildcards: " + e);
         }
     }
 }
 
 function sanitize(tagType, text) {
-    // Replace underscores only if the yaml tag is not using them
-    if (tagType === ResultType.yamlWildcard && !yamlWildcards.includes(text)) {
+    // Replace underscores only if the umi tag is not using them
+    if (tagType === ResultType.umiWildcard && !umiWildcards.includes(text)) {
         return text.replaceAll("_", " "); 
     }
     return null;
