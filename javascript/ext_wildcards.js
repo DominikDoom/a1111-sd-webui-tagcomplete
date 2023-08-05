@@ -41,7 +41,8 @@ class WildcardParser extends BaseTagParser {
             }
         }
 
-        wildcards.sort((a, b) => a.localeCompare(b));
+        if (TAC_CFG.sortWildcardResults)
+            wildcards.sort((a, b) => a.localeCompare(b));
 
         let finalResults = [];
         let tempResults = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword

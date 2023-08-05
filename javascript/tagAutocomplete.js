@@ -190,6 +190,7 @@ async function syncOptions() {
         resultStepLength: opts["tac_resultStepLength"],
         delayTime: opts["tac_delayTime"],
         useWildcards: opts["tac_useWildcards"],
+        sortWildcardResults: opts["tac_sortWildcardResults"],
         useEmbeddings: opts["tac_useEmbeddings"],
         useHypernetworks: opts["tac_useHypernetworks"],
         useLoras: opts["tac_useLoras"],

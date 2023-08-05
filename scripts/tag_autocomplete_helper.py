@@ -359,6 +359,7 @@ def on_ui_settings():
         "tac_resultStepLength": shared.OptionInfo(100, "How many results to load at once"),
         "tac_delayTime": shared.OptionInfo(100, "Time in ms to wait before triggering completion again").needs_restart(),
         "tac_useWildcards": shared.OptionInfo(True, "Search for wildcards"),
+        "tac_sortWildcardResults": shared.OptionInfo(True, "Sort wildcard file contents alphabetically").info("If your wildcard files have a specific custom order, disable this to keep it"),
         "tac_useEmbeddings": shared.OptionInfo(True, "Search for embeddings"),
         "tac_useHypernetworks": shared.OptionInfo(True, "Search for hypernetworks"),
         "tac_useLoras": shared.OptionInfo(True, "Search for Loras"),
