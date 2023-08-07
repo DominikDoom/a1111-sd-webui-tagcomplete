@@ -453,8 +453,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         let keywords = null;
         // Check built-in activation words first
         if (tagType === ResultType.lora || tagType === ResultType.lyco) {
-            let finalComponent = result.text.lastIndexOf("/") > -1 ? result.text.substring(result.text.lastIndexOf("/") + 1) : result.text;
-            let info = await fetchAPI(`tacapi/v1/lora-info/${finalComponent}`)
+            let info = await fetchAPI(`tacapi/v1/lora-info/${result.text}`)
             if (info && info["activation text"]) {
                 keywords = info["activation text"];
             }
@@ -585,11 +584,6 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
             if (!TAC_CFG.alias.onlyShowAlias && result.text !== bestAlias)
                 displayText += " ➝ " + result.text;
-        } else if (result.type === ResultType.lora || result.type === ResultType.lyco) {
-            let lastDot = result.text.lastIndexOf(".");
-            let lastSlash = result.text.lastIndexOf("/");
-            let name = result.text.substring(lastSlash + 1, lastDot);
-            displayText = escapeHTML(name);
         } else { // No alias
             displayText = escapeHTML(result.text);
         }
@@ -713,7 +707,11 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
 
     // make it safer
     if (newIndex !== null) {
-        items[newIndex].classList.add('selected');
+        let selected = items[newIndex];
+        selected.classList.add('selected');
+
+         // Set scrolltop to selected item
+        resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
     }
 
     // Set scrolltop to selected item if we are showing more than max results

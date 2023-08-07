@@ -16,7 +16,12 @@ class LycoParser extends BaseTagParser {
         // Add final results
         let finalResults = [];
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.lyco)
+            const text = t[0].trim();
+            let lastDot = text.lastIndexOf(".") > -1 ? text.lastIndexOf(".") : text.length;
+            let lastSlash = text.lastIndexOf("/") > -1 ? text.lastIndexOf("/") : 0;
+            let name = text.substring(lastSlash + 1, lastDot);
+
+            let result = new AutocompleteResult(name, ResultType.lyco)
             result.meta = "Lyco";
             result.hash = t[1];
             finalResults.push(result);
@@ -41,17 +46,12 @@ async function load() {
 async function sanitize(tagType, text) {
     if (tagType === ResultType.lyco) {
         let multiplier = TAC_CFG.extraNetworksDefaultMultiplier;
-        let finalComponent = text.lastIndexOf("/") > -1 ? text.substring(text.lastIndexOf("/") + 1) : text;
-        let info = await fetchAPI(`tacapi/v1/lyco-info/${finalComponent}`)
+        let info = await fetchAPI(`tacapi/v1/lyco-info/${text}`)
         if (info && info["preferred weight"]) {
             multiplier = info["preferred weight"];
         }
 
-        const lastDot = text.lastIndexOf(".");
-        const lastSlash = text.lastIndexOf("/");
-        const name = text.substring(lastSlash + 1, lastDot);
-
-        return `<lyco:${name}:${multiplier}>`;
+        return `<lyco:${text}:${multiplier}>`;
     }
     return null;
 }
