@@ -74,6 +74,10 @@ Wildcard script support:
 
 https://user-images.githubusercontent.com/34448969/200128031-22dd7c33-71d1-464f-ae36-5f6c8fd49df0.mp4
 
+Extra Network preview support:
+
+https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/3c0cad84-fb5f-436d-b05a-28db35860d13
+
 Dark and Light mode supported, including tag colors:
 
 ![results_dark](https://user-images.githubusercontent.com/34448969/200128214-3b6f21b4-9dda-4acf-820e-5df0285c30d6.png)
@@ -122,6 +126,13 @@ Completion for these types is triggered by typing `<`. By default it will show t
 - `<l:` will only show LoRA and LyCORIS
    - Or `<lora:` and `<lyco:` respectively for the long form
 - `<h:` or `<hypernet:` will only show Hypernetworks
+
+### Live previews
+Tag Autocomplete will now also show the preview images used for the cards in the Extra Networks menu in a small window next to the regular popup.
+This enables quick comparisons and additional info for unclear filenames without having to stop typing to look it up in the webui menu.
+It works for all supported extra network types that use preview images (Loras/Lycos, Embeddings & Hypernetworks). The preview window will stay hidden for normal tags or if no preview was found.
+
+![extra_live_preview](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/6a5d81e6-b3a0-407b-8bac-c9790f86016c)
 
 ### Lora / Lyco trigger word completion
 This feature will try to add known trigger words on autocompleting a Lora/Lyco.
@@ -306,6 +317,14 @@ If this option is turned on, it will show a `?` link next to the tag. Clicking t
 > Danbooru and e621 are external sites and include a lot of NSFW content, which might show in the list of examples for a tag on its wiki page. Because of this, the option is disabled by default.
 
 ![wikiLink](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/733e1ba8-89e1-4c2b-8c4e-2d23352bd3d7)
+</details>
+<!-- Wiki links -->
+<details>
+<summary>Extra network live previews</summary>
+
+This option enables a small preview window alongside the normal completion popup that will show the card preview also usd in the extra networks tab for that file.
+
+![extraNetworkPreviews](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/72b5473f-563e-4238-a513-38b60ac87e96)
 </details>
 <!-- Insertion -->
 <details>
