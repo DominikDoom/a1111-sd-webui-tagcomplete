@@ -18,7 +18,7 @@ class LoraParser extends BaseTagParser {
         tempResults.forEach(t => {
             const text = t[0].trim();
             let lastDot = text.lastIndexOf(".") > -1 ? text.lastIndexOf(".") : text.length;
-            let lastSlash = text.lastIndexOf("/") > -1 ? text.lastIndexOf("/") : 0;
+            let lastSlash = text.lastIndexOf("/") > -1 ? text.lastIndexOf("/") : -1;
             let name = text.substring(lastSlash + 1, lastDot);
 
             let result = new AutocompleteResult(name, ResultType.lora)
