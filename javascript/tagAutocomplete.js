@@ -1,4 +1,4 @@
-const styleColors = {
+﻿const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
     "--results-border-width": ["1px", "1.5px"],
@@ -25,17 +25,35 @@ const autocompleteCSS = `
         background-color: transparent;
         min-width: fit-content;
     }
-    .autocompleteResults {
+    .autocompleteParent {
+        display: flex;
         position: absolute;
         z-index: 999;
         max-width: calc(100% - 1.5rem);
         margin: 5px 0 0 0;
+    }
+    .autocompleteResults {
         background-color: var(--results-bg) !important;
         border: var(--results-border-width) solid var(--results-border-color) !important;
         border-radius: 12px !important;
+        height: fit-content;
+        flex-basis: fit-content;
+        flex-shrink: 0;
         overflow-y: var(--results-overflow-y);
         overflow-x: hidden;
         word-break: break-word;
+    }
+    .sideInfo {
+        display: none;
+        position: relative;
+        margin-left: 10px;
+        height: 18rem;
+        max-width: 16rem;
+    }
+    .sideInfo > img {
+        object-fit: cover;
+        height: 100%;
+        width: 100%;
     }
     .autocompleteResultsList > li:nth-child(odd) {
         background-color: var(--results-bg-odd);
@@ -56,6 +74,7 @@ const autocompleteCSS = `
     }
     .acListItem {
         white-space: break-spaces;
+        min-width: 100px;
     }
     .acMetaText {
         position: relative;
@@ -196,6 +215,7 @@ async function syncOptions() {
         useLoras: opts["tac_useLoras"],
 	    useLycos: opts["tac_useLycos"],
         showWikiLinks: opts["tac_showWikiLinks"],
+        showExtraNetworkPreviews: opts["tac_showExtraNetworkPreviews"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
@@ -270,47 +290,62 @@ async function syncOptions() {
 
 // Create the result list div and necessary styling
 function createResultsDiv(textArea) {
+    let parentDiv = document.createElement("div");
     let resultsDiv = document.createElement("div");
     let resultsList = document.createElement("ul");
+    let sideDiv = document.createElement("div");
+    let sideDivImg = document.createElement("img");
 
     let textAreaId = getTextAreaIdentifier(textArea);
     let typeClass = textAreaId.replaceAll(".", " ");
 
+    parentDiv.setAttribute("class", `autocompleteParent${typeClass}`);
+
     resultsDiv.style.maxHeight = `${TAC_CFG.maxResults * 50}px`;
-    resultsDiv.setAttribute("class", `autocompleteResults ${typeClass} notranslate`);
+    resultsDiv.setAttribute("class", `autocompleteResults${typeClass} notranslate`);
     resultsDiv.setAttribute("translate", "no");
     resultsList.setAttribute("class", "autocompleteResultsList");
     resultsDiv.appendChild(resultsList);
 
-    return resultsDiv;
+    sideDiv.setAttribute("class", `autocompleteResults${typeClass} sideInfo`);
+    sideDiv.appendChild(sideDivImg);
+
+    parentDiv.appendChild(resultsDiv);
+    parentDiv.appendChild(sideDiv);
+
+    return parentDiv;
 }
 
 // Show or hide the results div
 function isVisible(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
-    let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
-    return resultsDiv.style.display === "block";
+    let parentDiv = gradioApp().querySelector('.autocompleteParent' + textAreaId);
+    return parentDiv.style.display === "flex";
 }
 function showResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
-    let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
-    resultsDiv.style.display = "block";
+    let parentDiv = gradioApp().querySelector('.autocompleteParent' + textAreaId);
+    parentDiv.style.display = "flex";
 
     if (TAC_CFG.slidingPopup) {
         let caretPosition = getCaretCoordinates(textArea, textArea.selectionEnd).left;
-        let offset = Math.min(textArea.offsetLeft - textArea.scrollLeft + caretPosition, textArea.offsetWidth - resultsDiv.offsetWidth);
+        let offset = Math.min(textArea.offsetLeft - textArea.scrollLeft + caretPosition, textArea.offsetWidth - parentDiv.offsetWidth);
     
-        resultsDiv.style.left = `${offset}px`;
+        parentDiv.style.left = `${offset}px`;
     } else {
-        if (resultsDiv.style.left)
-            resultsDiv.style.removeProperty("left");
+        if (parentDiv.style.left)
+            parentDiv.style.removeProperty("left");
     }
     // Reset here too to make absolutely sure the browser registers it
-    resultsDiv.scrollTop = 0;
+    parentDiv.scrollTop = 0;
+
+    // Ensure preview is hidden
+    let previewDiv = gradioApp().querySelector(`.autocompleteParent${textAreaId} .sideInfo`);
+    previewDiv.style.display = "none";
 }
 function hideResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
-    let resultsDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
+    let resultsDiv = gradioApp().querySelector('.autocompleteParent' + textAreaId);
     
     if (!resultsDiv) return;
     
@@ -695,7 +730,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
     }
 }
 
-function updateSelectionStyle(textArea, newIndex, oldIndex) {
+async function updateSelectionStyle(textArea, newIndex, oldIndex) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     let resultsList = resultDiv.querySelector('ul');
@@ -714,10 +749,45 @@ function updateSelectionStyle(textArea, newIndex, oldIndex) {
         resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
     }
 
-    // Set scrolltop to selected item if we are showing more than max results
-    if (items.length > TAC_CFG.maxResults) {
+    // Show preview if enabled and the selected type supports it
+    if (newIndex !== null) {
         let selected = items[newIndex];
-        resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
+        let previewTypes = ["v1 Embedding", "v2 Embedding", "Hypernetwork", "Lora", "Lyco"];
+        let selectedType = selected.querySelector(".acMetaText").innerText;
+        let selectedFilename = selected.querySelector(".acListItem").innerText;
+
+        let previewDiv = gradioApp().querySelector(`.autocompleteParent${textAreaId} .sideInfo`);
+
+        if (TAC_CFG.showExtraNetworkPreviews && previewTypes.includes(selectedType)) {
+            let shorthandType = "";
+            switch (selectedType) {
+                case "v1 Embedding":
+                case "v2 Embedding":
+                    shorthandType = "embed";
+                    break;
+                case "Hypernetwork":
+                    shorthandType = "hyper";
+                    break;
+                case "Lora":
+                    shorthandType = "lora";
+                    break;
+                case "Lyco":
+                    shorthandType = "lyco";
+                    break;
+            }
+
+            let img = previewDiv.querySelector("img");
+            
+            let url = await getExtraNetworkPreviewURL(selectedFilename, shorthandType);
+            if (url) {
+                img.src = url;
+                previewDiv.style.display = "block";
+            } else {
+                previewDiv.style.display = "none";
+            }
+        } else {
+            previewDiv.style.display = "none";
+        }
     }
 }
 
@@ -1230,8 +1300,8 @@ async function setup() {
     // Not found, we're on a page without prompt textareas
     if (textAreas.every(v => v === null || v === undefined)) return;
     // Already added or unnecessary to add
-    if (gradioApp().querySelector('.autocompleteResults.p')) {
-        if (gradioApp().querySelector('.autocompleteResults.n') || !TAC_CFG.activeIn.negativePrompts) {
+    if (gradioApp().querySelector('.autocompleteParent.p')) {
+        if (gradioApp().querySelector('.autocompleteParent.n') || !TAC_CFG.activeIn.negativePrompts) {
             return;
         }
     } else if (!TAC_CFG.activeIn.txt2img && !TAC_CFG.activeIn.img2img) {

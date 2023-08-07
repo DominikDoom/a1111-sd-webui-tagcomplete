@@ -81,6 +81,15 @@ async function fetchAPI(url, json = true, cache = false) {
         return await response.text();
 }
 
+// Extra network preview thumbnails
+async function getExtraNetworkPreviewURL(filename, type) {
+    const previewJSON = await fetchAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
+    if (previewJSON?.url)
+        return `file=${previewJSON.url}`;
+    else
+        return null;
+}
+
 // Debounce function to prevent spamming the autocomplete function
 var dbTimeOut;
 const debounce = (func, wait = 300) => {

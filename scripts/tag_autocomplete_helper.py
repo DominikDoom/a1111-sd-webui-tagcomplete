@@ -3,12 +3,13 @@
 
 import glob
 import json
+import urllib.parse
 from pathlib import Path
 
 import gradio as gr
 import yaml
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from modules import script_callbacks, sd_hijack, shared
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
@@ -365,6 +366,7 @@ def on_ui_settings():
         "tac_useLoras": shared.OptionInfo(True, "Search for Loras"),
         "tac_useLycos": shared.OptionInfo(True, "Search for LyCORIS/LoHa"),
         "tac_showWikiLinks": shared.OptionInfo(False, "Show '?' next to tags, linking to its Danbooru or e621 wiki page").info("Warning: This is an external site and very likely contains NSFW examples!"),
+        "tac_showExtraNetworkPreviews": shared.OptionInfo(True, "Show preview thumbnails for extra networks if available"),
         # Insertion related settings
         "tac_replaceUnderscores": shared.OptionInfo(True, "Replace underscores with spaces on insertion"),
         "tac_escapeParentheses": shared.OptionInfo(True, "Escape parentheses on insertion"),
@@ -457,6 +459,19 @@ def api_tac(_: gr.Blocks, app: FastAPI):
                 return FileResponse(json_candidates[0])
         except Exception as e:
             return json.dumps({"error": e})
+        
+    async def get_preview_thumbnail(base_path: Path, filename: str = None):
+        if base_path is None or (not base_path.exists()):
+            return json.dumps({})
+        
+        try:
+            name = Path(filename).stem
+            img_glob = glob.glob(base_path.as_posix() + f"/**/{name}.*", recursive=True)
+            img_candidates = [img for img in img_glob if Path(img).suffix in [".png", ".jpg", ".jpeg", ".webp"]]
+            if img_candidates is not None and len(img_candidates) > 0:
+                return JSONResponse({"url": urllib.parse.quote(img_candidates[0])})
+        except Exception as e:
+            return json.dumps({"error": e})
 
     @app.get("/tacapi/v1/lora-info/{lora_name}")
     async def get_lora_info(lora_name):
@@ -465,5 +480,19 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     @app.get("/tacapi/v1/lyco-info/{lyco_name}")
     async def get_lyco_info(lyco_name):
         return await get_json_info(LYCO_PATH, lyco_name)
+    
+    @app.get("/tacapi/v1/thumb-preview/{filename}")
+    async def get_thumb_preview(filename, type):
+        if type == "lora":
+            return await get_preview_thumbnail(LORA_PATH, filename)
+        elif type == "lyco":
+            return await get_preview_thumbnail(LYCO_PATH, filename)
+        elif type == "hyper":
+            return await get_preview_thumbnail(HYP_PATH, filename)
+        elif type == "embed":
+            return await get_preview_thumbnail(EMB_PATH, filename)
+        else:
+            return "Invalid type"
+
 
 script_callbacks.on_app_started(api_tac)
