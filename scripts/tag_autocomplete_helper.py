@@ -453,8 +453,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return json.dumps({})
         
         try:
-            name = Path(filename).stem
-            json_candidates = glob.glob(base_path.as_posix() + f"/**/{name}.json", recursive=True)
+            json_candidates = glob.glob(base_path.as_posix() + f"/**/{filename}.json", recursive=True)
             if json_candidates is not None and len(json_candidates) > 0:
                 return FileResponse(json_candidates[0])
         except Exception as e:
@@ -465,8 +464,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return json.dumps({})
         
         try:
-            name = Path(filename).stem
-            img_glob = glob.glob(base_path.as_posix() + f"/**/{name}.*", recursive=True)
+            img_glob = glob.glob(base_path.as_posix() + f"/**/{filename}.*", recursive=True)
             img_candidates = [img for img in img_glob if Path(img).suffix in [".png", ".jpg", ".jpeg", ".webp"]]
             if img_candidates is not None and len(img_candidates) > 0:
                 return JSONResponse({"url": urllib.parse.quote(img_candidates[0])})
