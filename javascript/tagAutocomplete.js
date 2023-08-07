@@ -1,4 +1,4 @@
-﻿const styleColors = {
+const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
     "--results-border-width": ["1px", "1.5px"],
@@ -453,7 +453,8 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         let keywords = null;
         // Check built-in activation words first
         if (tagType === ResultType.lora || tagType === ResultType.lyco) {
-            let info = await fetchAPI(`tacapi/v1/lora-info/${result.text}`)
+            let finalComponent = result.text.lastIndexOf("/") > -1 ? result.text.substring(result.text.lastIndexOf("/") + 1) : result.text;
+            let info = await fetchAPI(`tacapi/v1/lora-info/${finalComponent}`)
             if (info && info["activation text"]) {
                 keywords = info["activation text"];
             }

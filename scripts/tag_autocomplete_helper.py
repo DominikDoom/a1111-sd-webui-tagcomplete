@@ -446,34 +446,24 @@ def on_ui_settings():
 script_callbacks.on_ui_settings(on_ui_settings)
 
 def api_tac(_: gr.Blocks, app: FastAPI):
-    async def get_json_info(path: Path):
-        if not path:
+    async def get_json_info(base_path: Path, filename: str = None):
+        if base_path is None or (not base_path.exists()):
             return json.dumps({})
         
         try:
-            if path is not None and path.exists() and path.parent.joinpath(path.stem + ".json").exists():
-                return FileResponse(path.parent.joinpath(path.stem + ".json").as_posix())
+            name = Path(filename).stem
+            json_candidates = glob.glob(base_path.as_posix() + f"/**/{name}.json", recursive=True)
+            if json_candidates is not None and len(json_candidates) > 0:
+                return FileResponse(json_candidates[0])
         except Exception as e:
             return json.dumps({"error": e})
 
-    @app.get("/tacapi/v1/lora-info/{folder}/{lora_name}")
-    async def get_lora_info_subfolder(folder, lora_name):
-        if LORA_PATH is None:
-            return json.dumps({})
-        return await get_json_info(LORA_PATH.joinpath(folder).joinpath(lora_name))
-    
-    @app.get("/tacapi/v1/lyco-info/{folder}/{lyco_name}")
-    async def get_lyco_info_subfolder(folder, lyco_name):
-        if LYCO_PATH is None:
-            return json.dumps({})
-        return await get_json_info(LYCO_PATH.joinpath(folder).joinpath(lyco_name))
-
     @app.get("/tacapi/v1/lora-info/{lora_name}")
     async def get_lora_info(lora_name):
-        return await get_lora_info_subfolder(".", lora_name)
+        return await get_json_info(LORA_PATH, lora_name)
     
     @app.get("/tacapi/v1/lyco-info/{lyco_name}")
     async def get_lyco_info(lyco_name):
-        return await get_lyco_info_subfolder(".", lyco_name)
+        return await get_json_info(LYCO_PATH, lyco_name)
 
 script_callbacks.on_app_started(api_tac)
