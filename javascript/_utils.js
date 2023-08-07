@@ -84,10 +84,18 @@ async function fetchAPI(url, json = true, cache = false) {
 // Extra network preview thumbnails
 async function getExtraNetworkPreviewURL(filename, type) {
     const previewJSON = await fetchAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
-    if (previewJSON?.url)
-        return `file=${previewJSON.url}`;
-    else
+    if (previewJSON?.url) {
+        const properURL = `sd_extra_networks/thumb?filename=${previewJSON.url}`;
+        if ((await fetch(properURL)).status == 200) {
+            return properURL;
+        } else {
+            // create blob url
+            const blob = await (await fetch(`tacapi/v1/thumb-preview-blob/${filename}?type=${type}`)).blob();
+            return URL.createObjectURL(blob);
+        }
+    } else {
         return null;
+    }
 }
 
 // Debounce function to prevent spamming the autocomplete function

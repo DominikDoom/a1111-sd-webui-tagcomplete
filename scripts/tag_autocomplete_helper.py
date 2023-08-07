@@ -459,15 +459,18 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         except Exception as e:
             return json.dumps({"error": e})
         
-    async def get_preview_thumbnail(base_path: Path, filename: str = None):
+    async def get_preview_thumbnail(base_path: Path, filename: str = None, blob: bool = False):
         if base_path is None or (not base_path.exists()):
             return json.dumps({})
         
         try:
             img_glob = glob.glob(base_path.as_posix() + f"/**/{filename}.*", recursive=True)
-            img_candidates = [img for img in img_glob if Path(img).suffix in [".png", ".jpg", ".jpeg", ".webp"]]
+            img_candidates = [img for img in img_glob if Path(img).suffix in [".png", ".jpg", ".jpeg", ".webp", ".gif"]]
             if img_candidates is not None and len(img_candidates) > 0:
-                return JSONResponse({"url": urllib.parse.quote(img_candidates[0])})
+                if blob:
+                    return FileResponse(img_candidates[0])
+                else:
+                    return JSONResponse({"url": urllib.parse.quote(img_candidates[0])})
         except Exception as e:
             return json.dumps({"error": e})
 
@@ -479,18 +482,27 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     async def get_lyco_info(lyco_name):
         return await get_json_info(LYCO_PATH, lyco_name)
     
+    def get_path_for_type(type):
+        if type == "lora":
+            return LORA_PATH
+        elif type == "lyco":
+            return LYCO_PATH
+        elif type == "hyper":
+            return HYP_PATH
+        elif type == "embed":
+            return EMB_PATH
+        else:
+            return None
+
     @app.get("/tacapi/v1/thumb-preview/{filename}")
     async def get_thumb_preview(filename, type):
-        if type == "lora":
-            return await get_preview_thumbnail(LORA_PATH, filename)
-        elif type == "lyco":
-            return await get_preview_thumbnail(LYCO_PATH, filename)
-        elif type == "hyper":
-            return await get_preview_thumbnail(HYP_PATH, filename)
-        elif type == "embed":
-            return await get_preview_thumbnail(EMB_PATH, filename)
-        else:
-            return "Invalid type"
+        return await get_preview_thumbnail(get_path_for_type(type), filename, False)
+    
+    @app.get("/tacapi/v1/thumb-preview-blob/{filename}")
+    async def get_thumb_preview_blob(filename, type):
+        return await get_preview_thumbnail(get_path_for_type(type), filename, True)
+        
+
 
 
 script_callbacks.on_app_started(api_tac)
