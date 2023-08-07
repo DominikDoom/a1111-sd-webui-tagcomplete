@@ -28,9 +28,10 @@ def load_hash_cache():
 def update_hash_cache():
     global file_needs_update
     if file_needs_update:
-        with open(known_hashes_file, "w", encoding="utf-8") as file:
+        with open(known_hashes_file, "w", encoding="utf-8", newline='') as file:
+            writer = csv.writer(file)
             for name, (hash, mtime) in hash_dict.items():
-                file.write(f'"{name}",{hash},{mtime}\n')
+                writer.writerow([name, hash, mtime])
 
 
 # Copy of the fast inaccurate hash function from the extension
