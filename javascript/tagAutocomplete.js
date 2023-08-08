@@ -651,6 +651,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
             // Only use alias result if it is one
             if (displayText.includes("➝"))
                 linkPart = displayText.split(" ➝ ")[1];
+
+            // Remove any trailing translations
+            if (linkPart.includes("[")) {
+                linkPart = linkPart.split("[")[0]
+            }
             
             // Set link based on selected file
             let tagFileNameLower = tagFileName.toLowerCase();
