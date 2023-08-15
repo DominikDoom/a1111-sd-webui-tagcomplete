@@ -57,6 +57,24 @@ const thirdParty = {
             "[id^=MD-i2i][id$=prompt] textarea",
             "[id^=MD-i2i][id$=prompt] input[type='text']"
         ]
+    },
+    "adetailer-t2i": {
+        "base": "#txt2img_script_container",
+        "hasIds": true,
+        "onDemand": true,
+        "selectors": [
+            "[id^=script_txt2img_adetailer_ad_prompt] textarea",
+            "[id^=script_txt2img_adetailer_ad_negative_prompt] textarea"
+        ]
+    },
+    "adetailer-i2i": {
+        "base": "#img2img_script_container",
+        "hasIds": true,
+        "onDemand": true,
+        "selectors": [
+            "[id^=script_img2img_adetailer_ad_prompt] textarea",
+            "[id^=script_img2img_adetailer_ad_negative_prompt] textarea"
+        ]
     }
 }
 
