@@ -9,7 +9,9 @@ const core = [
     "#img2img_prompt > label > textarea",
     "#txt2img_neg_prompt > label > textarea",
     "#img2img_neg_prompt > label > textarea",
-    ".prompt > label > textarea"
+    ".prompt > label > textarea",
+	"#script_txt2img_adetailer_ad_prompt > label > textarea", // Adetailer.
+	"#script_txt2img_adetailer_ad_negative_prompt > label > textarea",
 ];
 
 // Third party text area selectors
