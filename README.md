@@ -474,7 +474,9 @@ You can also add this to your quicksettings bar to have the refresh button avail
 
 # Translations
 An additional file can be added in the translation section, which will be used to translate both tags and aliases and also enables searching by translation.
-This file needs to be a CSV in the format `<English tag/alias>,<Translation>`, but for backwards compatibility with older files that used a three column format, you can turn on `Translation file uses old 3-column translation format instead of the new 2-column one` to support them. In that case, the second column will be unused and skipped during parsing.
+This file needs to be a CSV in the format `<English tag/alias>,<Translation>`. Some older files use a three column format, which requires a compatibility setting to be activated.
+You can find it under `Settings > Tag autocomplete > Translation filename > Translation file uses old 3-column translation format instead of the new 2-column one`.
+With it on, the second column will be unused and skipped during parsing.
 
 Example with Chinese translation:
 
