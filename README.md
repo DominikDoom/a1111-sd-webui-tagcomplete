@@ -485,6 +485,11 @@ Example with Chinese translation:
 - [🇨🇳 Chinese tags](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/23) by @HalfMAI, using machine translation and manual correction for the most common tags (uses legacy format)
 - [🇨🇳 Chinese tags](https://github.com/sgmklp/tag-for-autocompletion-with-translation) by @sgmklp, smaller set of manual translations based on https://github.com/zcyzcy88/TagTable
 
+## Switch to use old 3-column translation format
+![old-column-format-translation](https://github.com/fbukevin/a1111-sd-webui-tagcomplete/assets/4548874/8b7d4598-0266-4f26-ae07-c78ba3b559bd)
+
+
+
 > ### 🫵 I need your help!
 > Translations are a community effort. If you have translated a tag file or want to create one, please open a Pull Request or Issue so your link can be added here.
 > Please make sure the quality is alright though, machine translation gets a lot of stuff wrong even for the most common tags.
