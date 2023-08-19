@@ -1114,7 +1114,7 @@ function navigateInList(textArea, event) {
     if (!validKeys.includes(event.key)) return;
     if (!isVisible(textArea)) return
     // Return if ctrl key is pressed to not interfere with weight editing shortcut
-    if (event.ctrlKey || event.altKey) return;
+    if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) return;
 
     oldSelectedTag = selectedTag;
 
