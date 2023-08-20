@@ -17,6 +17,12 @@ from scripts.model_keyword_support import (get_lora_simple_hash,
                                            write_model_keyword_path)
 from scripts.shared_paths import *
 
+# Attempt to get embedding load function, using the same call as api.
+try:
+    load_textual_inversion_embeddings = sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings
+except Exception as e: # Not supported.
+    load_textual_inversion_embeddings = lambda *args, **kwargs: None
+    print("Tag Autocomplete: Cannot reload embeddings instantly:", e)
 
 def get_wildcards():
     """Returns a list of all wildcards. Works on nested folders."""
@@ -280,6 +286,7 @@ if EMB_PATH.exists():
 def refresh_temp_files():
     global WILDCARD_EXT_PATHS
     WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
+    load_textual_inversion_embeddings(force_reload = True) # Instant embedding reload.
     write_temp_files()
     get_embeddings(shared.sd_model)
 
