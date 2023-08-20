@@ -22,7 +22,7 @@ try:
     load_textual_inversion_embeddings = sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings
 except Exception as e: # Not supported.
     load_textual_inversion_embeddings = lambda *args, **kwargs: None
-    print("Cannot load embeddings instantly:", e)
+    print("Tag Autocomplete: Cannot reload embeddings instantly:", e)
 
 def get_wildcards():
     """Returns a list of all wildcards. Works on nested folders."""
