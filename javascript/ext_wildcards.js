@@ -35,7 +35,7 @@ class WildcardParser extends BaseTagParser {
                 }
                 wildcards = wildcards.concat(getDescendantProp(yamlWildcards[wcPair[0]], wcPair[1]));
             } else {
-                const fileContent = (await readFile(`${wcPair[0]}/${wcPair[1]}.txt`)).split("\n")
+                const fileContent = (await readFile(`${wcPair[0]}${wcPair[1]}.txt`)).split("\n")
                 .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
                 wildcards = wildcards.concat(fileContent);
             }
