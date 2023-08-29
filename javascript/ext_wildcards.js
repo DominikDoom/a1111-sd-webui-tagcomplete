@@ -159,7 +159,6 @@ function keepOpenIfWildcard(tagType, sanitizedText, newPrompt, textArea) {
     // If it's a wildcard, we want to keep the results open so the user can select another wildcard
     if (tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard) {
         hideBlocked = true;
-        autocomplete(textArea, newPrompt, sanitizedText);
         setTimeout(() => { hideBlocked = false; }, 450);
         return true;
     }
