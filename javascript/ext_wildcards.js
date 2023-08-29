@@ -22,10 +22,13 @@ class WildcardParser extends BaseTagParser {
     
         let wildcards = [];
         for (let i = 0; i < wcPairs.length; i++) {
-            const wcPair = wcPairs[i];
-            if (!wcPair[0] || !wcPair[1]) continue;
+            const basePath = wcPairs[i][0];
+            const fileName = wcPairs[i][1];
+            if (!basePath || !fileName) return;
 
-            if (wcPair[0].endsWith(".yaml")) {
+            // YAML wildcards are already loaded as json, so we can get the values directly.
+            // basePath is the name of the file in this case, and fileName the key
+            if (basePath.endsWith(".yaml")) {
                 const getDescendantProp = (obj, desc) => {
                     const arr = desc.split("/");
                     while (arr.length) {
@@ -33,10 +36,11 @@ class WildcardParser extends BaseTagParser {
                     }
                     return obj;
                 }
-                wildcards = wildcards.concat(getDescendantProp(yamlWildcards[wcPair[0]], wcPair[1]));
+                wildcards = wildcards.concat(getDescendantProp(yamlWildcards[basePath], fileName));
             } else {
-                const fileContent = (await readFile(`${wcPair[0]}${wcPair[1]}.txt`)).split("\n")
-                .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
+                const fileContent = (await fetchAPI(`tacapi/v1/wildcard-contents?basepath=${basePath}&filename=${fileName}.txt`, false))
+                    .split("\n")
+                    .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
                 wildcards = wildcards.concat(fileContent);
             }
         }

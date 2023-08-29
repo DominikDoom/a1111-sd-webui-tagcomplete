@@ -457,18 +457,18 @@ script_callbacks.on_ui_settings(on_ui_settings)
 def api_tac(_: gr.Blocks, app: FastAPI):
     async def get_json_info(base_path: Path, filename: str = None):
         if base_path is None or (not base_path.exists()):
-            return json.dumps({})
+            return JSONResponse({}, status_code=404)
         
         try:
             json_candidates = glob.glob(base_path.as_posix() + f"/**/{filename}.json", recursive=True)
             if json_candidates is not None and len(json_candidates) > 0:
                 return FileResponse(json_candidates[0])
         except Exception as e:
-            return json.dumps({"error": e})
+            return JSONResponse({"error": e}, status_code=500)
         
     async def get_preview_thumbnail(base_path: Path, filename: str = None, blob: bool = False):
         if base_path is None or (not base_path.exists()):
-            return json.dumps({})
+            return JSONResponse({}, status_code=404)
         
         try:
             img_glob = glob.glob(base_path.as_posix() + f"/**/{filename}.*", recursive=True)
@@ -479,7 +479,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
                 else:
                     return JSONResponse({"url": urllib.parse.quote(img_candidates[0])})
         except Exception as e:
-            return json.dumps({"error": e})
+            return JSONResponse({"error": e}, status_code=500)
 
     @app.get("/tacapi/v1/lora-info/{lora_name}")
     async def get_lora_info(lora_name):
@@ -509,7 +509,23 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     async def get_thumb_preview_blob(filename, type):
         return await get_preview_thumbnail(get_path_for_type(type), filename, True)
         
+    @app.get("/tacapi/v1/wildcard-contents")
+    async def get_wildcard_contents(basepath: str, filename: str):
+        if basepath is None or basepath == "":
+            return JSONResponse({}, status_code=404)
 
+        base = Path(basepath)
+        if base is None or (not base.exists()):
+            return JSONResponse({}, status_code=404)
+        
+        try:
+            wildcard_path = base.joinpath(filename)
+            if wildcard_path.exists():
+                return FileResponse(wildcard_path)
+            else:
+                return JSONResponse({}, status_code=404)
+        except Exception as e:
+            return JSONResponse({"error": e}, status_code=500)
 
 
 script_callbacks.on_app_started(api_tac)
