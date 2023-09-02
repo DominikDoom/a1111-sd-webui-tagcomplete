@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from modules import scripts, shared
 
 try:
@@ -33,6 +34,7 @@ try:
 except AttributeError:
     LYCO_PATH = None
 
+
 def find_ext_wildcard_paths():
     """Returns the path to the extension wildcards folder"""
     found = list(EXT_PATH.glob("*/wildcards/"))
@@ -42,11 +44,15 @@ def find_ext_wildcard_paths():
     except ImportError:  # likely not in an a1111 context
         opts = None
 
-    wildcard_dir = getattr(opts, "wildcard_dir", None)
-    if wildcard_dir is not None:
-        wildcard_dir = Path(wildcard_dir)
-        if wildcard_dir.exists():
-            found.append(wildcard_dir)
+    # Append custom wildcard paths
+    custom_paths = [
+        getattr(shared.cmd_opts, "wildcards_dir", None),    # Cmd arg from the wildcard extension
+        getattr(opts, "wildcard_dir", None),                # Custom path from sd-dynamic-prompts
+    ]
+    for path in [Path(p) for p in custom_paths if p is not None]:
+        if path.exists():
+            found.append(path)
+
     return found
 
 
