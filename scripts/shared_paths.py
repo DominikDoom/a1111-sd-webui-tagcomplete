@@ -33,10 +33,20 @@ try:
 except AttributeError:
     LYCO_PATH = None
 
-
 def find_ext_wildcard_paths():
     """Returns the path to the extension wildcards folder"""
     found = list(EXT_PATH.glob("*/wildcards/"))
+    # Try to find the wildcard path from the shared opts
+    try:
+        from modules.shared import opts
+    except ImportError:  # likely not in an a1111 context
+        opts = None
+
+    wildcard_dir = getattr(opts, "wildcard_dir", None)
+    if wildcard_dir is not None:
+        wildcard_dir = Path(wildcard_dir)
+        if wildcard_dir.exists():
+            found.append(wildcard_dir)
     return found
 
 
