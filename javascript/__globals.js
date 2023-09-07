@@ -36,6 +36,7 @@ let hideBlocked = false;
 // Tag selection for keyboard navigation
 var selectedTag = null;
 var oldSelectedTag = null;
+var resultCountBeforeNormalTags = 0;
 
 // Lora keyword undo/redo history
 var textBeforeKeywordInsertion = "";

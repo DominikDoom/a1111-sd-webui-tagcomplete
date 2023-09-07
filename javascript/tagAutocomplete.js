@@ -211,6 +211,7 @@ async function syncOptions() {
         useWildcards: opts["tac_useWildcards"],
         sortWildcardResults: opts["tac_sortWildcardResults"],
         useEmbeddings: opts["tac_useEmbeddings"],
+        includeEmbeddingsInNormalResults: opts["tac_includeEmbeddingsInNormalResults"],
         useHypernetworks: opts["tac_useHypernetworks"],
         useLoras: opts["tac_useLoras"],
 	    useLycos: opts["tac_useLycos"],
@@ -985,6 +986,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     }
 
     results = [];
+    resultCountBeforeNormalTags = 0;
     tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
 
     // Process all parsers
@@ -1024,7 +1026,13 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 });
             }
         }
-    } else { // Else search the normal tag list
+    }
+    // Else search the normal tag list
+    if (!resultCandidates || resultCandidates.length === 0
+        || (TAC_CFG.includeEmbeddingsInNormalResults && !(tagword.startsWith("<") || tagword.startsWith("*<")))
+    ) {
+        resultCountBeforeNormalTags = results.length;
+        
         // Create escaped search regex with support for * as a start placeholder
         let searchRegex;
         if (tagword.startsWith("*")) {
@@ -1080,7 +1088,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         
         // Slice if the user has set a max result count
         if (!TAC_CFG.showAllResults) {
-            results = results.slice(0, TAC_CFG.maxResults);
+            results = results.slice(0, TAC_CFG.maxResults + resultCountBeforeNormalTags);
         }
     }
 
@@ -1148,10 +1156,25 @@ function navigateInList(textArea, event) {
             }
             break;
         case keys["JumpToStart"]:
-            selectedTag = 0;
+            if (TAC_CFG.includeEmbeddingsInNormalResults &&
+                selectedTag > resultCountBeforeNormalTags &&
+                resultCountBeforeNormalTags > 0
+            ) {
+                selectedTag = resultCountBeforeNormalTags;
+            } else {
+                selectedTag = 0;
+            }
             break;
         case keys["JumpToEnd"]:
-            selectedTag = resultCount - 1;
+            // Jump to the end of the list, or the end of embeddings if they are included in the normal results
+            if (TAC_CFG.includeEmbeddingsInNormalResults &&
+                selectedTag < resultCountBeforeNormalTags &&
+                resultCountBeforeNormalTags > 0
+            ) {
+                selectedTag = Math.min(resultCountBeforeNormalTags, resultCount - 1);
+            } else {
+                selectedTag = resultCount - 1;
+            }
             break;
         case keys["ChooseSelected"]:
             if (selectedTag !== null) {
