@@ -41,7 +41,7 @@ function parseCSV(str) {
 async function readFile(filePath, json = false, cache = false) {
     if (!cache)
         filePath += `?${new Date().getTime()}`;
-        
+
     let response = await fetch(`file=${filePath}`);
 
     if (response.status != 200) {
@@ -146,7 +146,7 @@ function flatten(obj, roots = [], sep = ".") {
     {}
   );
 }
-  
+
 
 // Sliding window function to get possible combination groups of an array
 function toNgrams(inputArray, size) {

@@ -56,7 +56,7 @@ def parse_umi_format(umi_tags, count, data):
     for item in data:
         umi_tags[count] = ','.join(data[item]['Tags'])
         count += 1
-    
+
 
 def parse_dynamic_prompt_format(yaml_wildcards, data, path):
     # Recurse subkeys, delete those without string lists as values
@@ -66,7 +66,7 @@ def parse_dynamic_prompt_format(yaml_wildcards, data, path):
                 recurse_dict(value)
             elif not (isinstance(value, list) and all(isinstance(v, str) for v in value)):
                 del d[key]
-    
+
     recurse_dict(data)
     # Add to yaml_wildcards
     yaml_wildcards[path.name] = data
@@ -98,13 +98,13 @@ def get_yaml_wildcards():
         except yaml.YAMLError:
             print('Issue in parsing YAML file ' + path.name)
             continue
-    
+
     # Sort by count
     umi_sorted = sorted(umi_tags.items(), key=lambda item: item[1], reverse=True)
     umi_output = []
     for tag, count in umi_sorted:
         umi_output.append(f"{tag},{count}")
-    
+
     if (len(umi_output) > 0):
         write_to_temp_file('umi_tags.txt', umi_output)
 
@@ -204,7 +204,7 @@ def get_lyco():
 
     # Get a list of all LyCORIS in the folder
     lyco_paths = [Path(ly) for ly in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)]
-    
+
     # Get hashes
     valid_lycos = [lyf for lyf in lyco_paths if lyf.suffix in {".safetensors", ".ckpt", ".pt"}]
     hashes = {}
@@ -214,7 +214,7 @@ def get_lyco():
             hashes[name] = get_lora_simple_hash(ly)
         else:
             hashes[name] = ""
-    
+
     # Sort
     sorted_lycos = dict(sorted(hashes.items()))
     # Add hashes and return
@@ -318,7 +318,7 @@ def write_temp_files():
         lora = get_lora()
         if lora:
             write_to_temp_file('lora.txt', lora)
-            
+
     lyco_exists = LYCO_PATH is not None and LYCO_PATH.exists()
     if lyco_exists and not (lora_exists and LYCO_PATH.samefile(LORA_PATH)):
         lyco = get_lyco()
@@ -453,25 +453,25 @@ def on_ui_settings():
         shared.opts.add_option("tac_colormap", shared.OptionInfo(colorDefault, colorLabel, gr.Textbox, section=TAC_SECTION))
 
     shared.opts.add_option("tac_refreshTempFiles", shared.OptionInfo("Refresh TAC temp files", "Refresh internal temp files", gr.HTML, {}, refresh=refresh_temp_files, section=TAC_SECTION))
-    
+
 script_callbacks.on_ui_settings(on_ui_settings)
 
 def api_tac(_: gr.Blocks, app: FastAPI):
     async def get_json_info(base_path: Path, filename: str = None):
         if base_path is None or (not base_path.exists()):
             return JSONResponse({}, status_code=404)
-        
+
         try:
             json_candidates = glob.glob(base_path.as_posix() + f"/**/{filename}.json", recursive=True)
             if json_candidates is not None and len(json_candidates) > 0:
                 return FileResponse(json_candidates[0])
         except Exception as e:
             return JSONResponse({"error": e}, status_code=500)
-        
+
     async def get_preview_thumbnail(base_path: Path, filename: str = None, blob: bool = False):
         if base_path is None or (not base_path.exists()):
             return JSONResponse({}, status_code=404)
-        
+
         try:
             img_glob = glob.glob(base_path.as_posix() + f"/**/{filename}.*", recursive=True)
             img_candidates = [img for img in img_glob if Path(img).suffix in [".png", ".jpg", ".jpeg", ".webp", ".gif"]]
@@ -486,11 +486,11 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     @app.get("/tacapi/v1/lora-info/{lora_name}")
     async def get_lora_info(lora_name):
         return await get_json_info(LORA_PATH, lora_name)
-    
+
     @app.get("/tacapi/v1/lyco-info/{lyco_name}")
     async def get_lyco_info(lyco_name):
         return await get_json_info(LYCO_PATH, lyco_name)
-    
+
     def get_path_for_type(type):
         if type == "lora":
             return LORA_PATH
@@ -506,11 +506,11 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     @app.get("/tacapi/v1/thumb-preview/{filename}")
     async def get_thumb_preview(filename, type):
         return await get_preview_thumbnail(get_path_for_type(type), filename, False)
-    
+
     @app.get("/tacapi/v1/thumb-preview-blob/{filename}")
     async def get_thumb_preview_blob(filename, type):
         return await get_preview_thumbnail(get_path_for_type(type), filename, True)
-        
+
     @app.get("/tacapi/v1/wildcard-contents")
     async def get_wildcard_contents(basepath: str, filename: str):
         if basepath is None or basepath == "":
@@ -519,7 +519,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         base = Path(basepath)
         if base is None or (not base.exists()):
             return JSONResponse({}, status_code=404)
-        
+
         try:
             wildcard_path = base.joinpath(filename)
             if wildcard_path.exists():

@@ -7,7 +7,7 @@ class UmiParser extends BaseTagParser {
     parse(textArea, prompt) {
         // We are in a UMI yaml tag definition, parse further
         let umiSubPrompts = [...prompt.matchAll(UMI_PROMPT_REGEX)];
-                
+
         let umiTags = [];
         let umiTagsWithOperators = []
 
@@ -15,7 +15,7 @@ class UmiParser extends BaseTagParser {
 
         umiSubPrompts.forEach(umiSubPrompt => {
             umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
-            
+
             const start = umiSubPrompt.index;
             const end = umiSubPrompt.index + umiSubPrompt[0].length;
             if (textArea.selectionStart >= start && textArea.selectionStart <= end) {
@@ -113,7 +113,7 @@ class UmiParser extends BaseTagParser {
                     || !matches.all.includes(x[0])
                 );
         }
-        
+
         if (umiTags.length > 0) {
             // Get difference for subprompt
             let tagCountChange = umiTags.length - umiPreviousTags.length;
@@ -152,7 +152,7 @@ class UmiParser extends BaseTagParser {
                 return finalResults;
             } else if (showAll) {
                 let filteredWildcardsSorted = filteredWildcards("");
-                
+
                 // Add final results
                 let finalResults = [];
                 filteredWildcardsSorted.forEach(t => {
@@ -160,14 +160,14 @@ class UmiParser extends BaseTagParser {
                     result.count = t[1];
                     finalResults.push(result);
                 });
-        
+
                 originalTagword = tagword;
                 tagword = "";
                 return finalResults;
             }
         } else {
             let filteredWildcardsSorted = filteredWildcards("");
-                
+
             // Add final results
             let finalResults = [];
             filteredWildcardsSorted.forEach(t => {
