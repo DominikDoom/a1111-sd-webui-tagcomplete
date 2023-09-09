@@ -225,6 +225,7 @@ async function syncOptions() {
         alwaysSpaceAtEnd: opts["tac_alwaysSpaceAtEnd"],
         wildcardCompletionMode: opts["tac_wildcardCompletionMode"],
         modelKeywordCompletion: opts["tac_modelKeywordCompletion"],
+        modelKeywordLocation: opts["tac_modelKeywordLocation"],
         // Alias settings
         alias: {
             searchByAlias: opts["tac_alias.searchByAlias"],
@@ -331,7 +332,7 @@ function showResults(textArea) {
     if (TAC_CFG.slidingPopup) {
         let caretPosition = getCaretCoordinates(textArea, textArea.selectionEnd).left;
         let offset = Math.min(textArea.offsetLeft - textArea.scrollLeft + caretPosition, textArea.offsetWidth - parentDiv.offsetWidth);
-    
+
         parentDiv.style.left = `${offset}px`;
     } else {
         if (parentDiv.style.left)
@@ -347,9 +348,9 @@ function showResults(textArea) {
 function hideResults(textArea) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultsDiv = gradioApp().querySelector('.autocompleteParent' + textAreaId);
-    
+
     if (!resultsDiv) return;
-    
+
     resultsDiv.style.display = "none";
     selectedTag = null;
 }
@@ -359,12 +360,12 @@ function isEnabled() {
     if (TAC_CFG.activeIn.global) {
         // Skip check if the current model was not correctly detected, since it could wrongly disable the script otherwise
         if (!currentModelName || !currentModelHash) return true;
-        
+
         let modelList = TAC_CFG.activeIn.modelList
             .split(",")
             .map(x => x.trim())
             .filter(x => x.length > 0);
-        
+
         let shortHash = currentModelHash.substring(0, 10);
         let modelNameWithoutHash = currentModelName.replace(/\[.*\]$/g, "").trim();
         if (TAC_CFG.activeIn.modelListMode.toLowerCase() === "blacklist") {
@@ -494,7 +495,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
                 keywords = info["activation text"];
             }
         }
-        
+
         if (!keywords && modelKeywordPath.length > 0 && result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
             let nameDict = modelKeywordDict.get(result.hash);
             let names = [result.text + ".safetensors", result.text + ".pt", result.text + ".ckpt"];
@@ -507,7 +508,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
                         keywords = nameDict.get(name);
                     }
                 });
-                
+
                 if (!found)
                     keywords = nameDict.get("none");
             }
@@ -515,17 +516,25 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
         if (keywords && keywords.length > 0) {
             textBeforeKeywordInsertion = newPrompt;
-            
-            newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
-            
+
+            if (TAC_CFG.modelKeywordLocation === "Start of prompt")
+                newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
+            else if (TAC_CFG.modelKeywordLocation === "End of prompt")
+                newPrompt = `${newPrompt}${keywords}`; // Insert keywords
+            else {
+                let keywordStart = prompt[editStart - 1] === " " ? editStart - 1 : editStart;
+                newPrompt = prompt.substring(0, keywordStart) + `, ${keywords} ${insert}` + prompt.substring(editEnd);
+            }
+
+
             textAfterKeywordInsertion = newPrompt;
             keywordInsertionUndone = false;
             setTimeout(() => lastEditWasKeywordInsertion = true, 200)
-            
+
             keywordsLength = keywords.length + 2; // +2 for the comma and space
         }
     }
-    
+
     // Insert into prompt textbox and reposition cursor
     textArea.value = newPrompt;
     textArea.selectionStart = afterInsertCursorPos + optionalSeparator.length + keywordsLength;
@@ -657,7 +666,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             if (linkPart.includes("[")) {
                 linkPart = linkPart.split("[")[0]
             }
-            
+
             // Set link based on selected file
             let tagFileNameLower = tagFileName.toLowerCase();
             if (tagFileNameLower.startsWith("danbooru")) {
@@ -665,7 +674,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             } else if (tagFileNameLower.startsWith("e621")) {
                 wikiLink.href = `https://e621.net/wiki_pages/${linkPart}`;
             }
-            
+
             wikiLink.target = "_blank";
             flexDiv.appendChild(wikiLink);
         }
@@ -718,7 +727,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 else if (result.meta.startsWith("v2"))
                     itemText.classList.add("acEmbeddingV2");
             }
-                
+
             flexDiv.appendChild(metaDiv);
         }
 
@@ -783,7 +792,7 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex) {
             }
 
             let img = previewDiv.querySelector("img");
-            
+
             let url = await getExtraNetworkPreviewURL(selectedFilename, shorthandType);
             if (url) {
                 img.src = url;
@@ -809,7 +818,7 @@ function updateRuby(textArea, prompt) {
         ruby.setAttribute("class", `acRuby${typeClass} notranslate`);
         textArea.parentNode.appendChild(ruby);
     }
-    
+
     ruby.innerText = prompt;
 
     let bracketEscapedPrompt = prompt.replaceAll("\\(", "$").replaceAll("\\)", "%");
@@ -827,9 +836,9 @@ function updateRuby(textArea, prompt) {
             .replaceAll(" ", "_")
             .replaceAll("\\(", "(")
             .replaceAll("\\)", ")");
-        
+
         const translation = translations?.get(tag) || translations?.get(unsanitizedTag); 
-        
+
         let escapedTag = escapeRegExp(tag);
         return { tag, escapedTag, translation };
     }
@@ -845,14 +854,14 @@ function updateRuby(textArea, prompt) {
     // First try to find direct matches
     [...rubyTags].forEach(tag => {
         let tuple = prepareTag(tag);
-        
+
         if (tuple.translation) {
             html = replaceOccurences(html, tuple);
         } else {
             let subTags = tuple.tag.split(" ").filter(x => x.trim().length > 0);
             // Return if there is only one word
             if (subTags.length === 1) return;
-            
+
             let subHtml = tag.replaceAll("$", "\\(").replaceAll("%", "\\)");
 
             let translateNgram = (windows) => {
@@ -867,14 +876,14 @@ function updateRuby(textArea, prompt) {
                     }
                 });
             }
-    
+
             // Perform n-gram sliding window search
             translateNgram(toNgrams(subTags, 3));
             translateNgram(toNgrams(subTags, 2));
             translateNgram(toNgrams(subTags, 1));
 
             let escapedTag = escapeRegExp(tuple.tag);
-            
+
             let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,|: \\t\\n\\r]))(?!<rt>)`, "g");
             html = html.replaceAll(searchRegex, subHtml);
         }
@@ -1032,7 +1041,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         || (TAC_CFG.includeEmbeddingsInNormalResults && !(tagword.startsWith("<") || tagword.startsWith("*<")))
     ) {
         resultCountBeforeNormalTags = results.length;
-        
+
         // Create escaped search regex with support for * as a start placeholder
         let searchRegex;
         if (tagword.startsWith("*")) {
@@ -1047,7 +1056,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) > -1;
         let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) > -1)
             || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) > -1);
-        
+
         let fil;
         if (TAC_CFG.alias.searchByAlias && TAC_CFG.translation.searchByTranslation)
             fil = (x) => baseFilter(x) || aliasFilter(x) || translationFilter(x);
@@ -1085,7 +1094,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 results = results.concat(extraResults);
             }
         }
-        
+
         // Slice if the user has set a max result count
         if (!TAC_CFG.showAllResults) {
             results = results.slice(0, TAC_CFG.maxResults + resultCountBeforeNormalTags);
@@ -1106,7 +1115,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI or the current model is excluded due to white/blacklist settings
     if (!isEnabled()) return;
-    
+
     let keys = TAC_CFG.keymap;
 
     // Close window if Home or End is pressed while not a keybinding, since it would break completion on leaving the original tag
@@ -1343,7 +1352,7 @@ async function setup() {
     let mode = (document.querySelector(".dark") || gradioApp().querySelector(".dark")) ? 0 : 1;
     // Check if we are on webkit
     let browser = navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? "firefox" : "other";
-    
+
     let css = autocompleteCSS;
     // Replace vars with actual values (can't use actual css vars because of the way we inject the css)
     Object.keys(styleColors).forEach((key) => {
@@ -1352,7 +1361,7 @@ async function setup() {
     Object.keys(browserVars).forEach((key) => {
         css = css.replaceAll(`var(${key})`, browserVars[key][browser]);
     })
-    
+
     if (acStyle.styleSheet) {
         acStyle.styleSheet.cssText = css;
     } else {
