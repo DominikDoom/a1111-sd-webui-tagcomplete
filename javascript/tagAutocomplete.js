@@ -520,7 +520,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             if (TAC_CFG.modelKeywordLocation === "Start of prompt")
                 newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
             else if (TAC_CFG.modelKeywordLocation === "End of prompt")
-                newPrompt = `${newPrompt}${keywords}`; // Insert keywords
+                newPrompt = `${newPrompt}, ${keywords}`; // Insert keywords
             else {
                 let keywordStart = prompt[editStart - 1] === " " ? editStart - 1 : editStart;
                 newPrompt = prompt.substring(0, keywordStart) + `, ${keywords} ${insert}` + prompt.substring(editEnd);
