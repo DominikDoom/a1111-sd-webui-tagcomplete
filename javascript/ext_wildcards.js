@@ -19,7 +19,7 @@ class WildcardParser extends BaseTagParser {
         let wcPairs = wcFound || wildcardExtFiles.filter(x => x[1].toLowerCase() === wcFile);
 
         if (!wcPairs) return [];
-    
+
         let wildcards = [];
         for (let i = 0; i < wcPairs.length; i++) {
             const basePath = wcPairs[i][0];
@@ -86,7 +86,7 @@ class WildcardFileParser extends BaseTagParser {
                 result = new AutocompleteResult(wcFile[1].trim(), ResultType.wildcardFile);
                 result.meta = "Wildcard file";
             }
-                
+
             finalResults.push(result);
             alreadyAdded.set(wcFile[1], true);
         });
@@ -132,7 +132,7 @@ async function load() {
 
             // Load the yaml wildcard json file and append it as a wildcard file, appending each key as a path component until we reach the end
             yamlWildcards = await readFile(`${tagBasePath}/temp/wc_yaml.json`, true);
-            
+
             // Append each key as a path component until we reach a leaf
             Object.keys(yamlWildcards).forEach(file => {
                 const flattened = flatten(yamlWildcards[file], [], "/");
