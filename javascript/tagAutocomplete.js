@@ -542,6 +542,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
     // Uses a built-in method from the webui's ui.js which also already accounts for event target
+    tacSelfTrigger = true;
     updateInput(textArea);
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
@@ -920,6 +921,7 @@ function checkKeywordInsertionUndo(textArea, event) {
             if (lastEditWasKeywordInsertion && !keywordInsertionUndone) {
                 keywordInsertionUndone = true;
                 textArea.value = textBeforeKeywordInsertion;
+                tacSelfTrigger = true;
                 updateInput(textArea);
             }
             break;
@@ -927,6 +929,7 @@ function checkKeywordInsertionUndo(textArea, event) {
             if (lastEditWasKeywordInsertion && keywordInsertionUndone) {
                 keywordInsertionUndone = false;
                 textArea.value = textAfterKeywordInsertion;
+                tacSelfTrigger = true;
                 updateInput(textArea);
             }
         case undefined:
@@ -1256,8 +1259,13 @@ function addAutocompleteToArea(area) {
 
         // Add autocomplete event listener
         area.addEventListener('input', (e) => {
-            debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
             updateRuby(area, area.value);
+
+            // Cancel autocomplete itself if the event has no inputType (e.g. because it was triggered by the updateInput() function)
+            if (!e.inputType && !tacSelfTrigger) return;
+            tacSelfTrigger = false;
+
+            debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
             checkKeywordInsertionUndo(area, e);
         });
         // Add focusout event listener

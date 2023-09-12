@@ -2,6 +2,7 @@
 var TAC_CFG = null;
 var tagBasePath = "";
 var modelKeywordPath = "";
+var tacSelfTrigger = false;
 
 // Tag completion data loaded from files
 var allTags = [];
