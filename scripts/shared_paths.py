@@ -30,7 +30,7 @@ except AttributeError:
     LORA_PATH = None
 
 try:
-    LYCO_PATH = Path(shared.cmd_opts.lyco_dir)
+    LYCO_PATH = Path(shared.cmd_opts.lyco_dir_backcompat)
 except AttributeError:
     LYCO_PATH = None
 
