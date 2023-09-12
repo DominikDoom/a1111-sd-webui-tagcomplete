@@ -81,6 +81,17 @@ async function fetchAPI(url, json = true, cache = false) {
         return await response.text();
 }
 
+async function postAPI(url, body) {
+    let response = await fetch(url, { method: "POST", body: body });
+
+    if (response.status != 200) {
+        console.error(`Error posting to API endpoint "${url}": ` + response.status, response.statusText);
+        return null;
+    }
+
+    return await response.json();
+}
+
 // Extra network preview thumbnails
 async function getExtraNetworkPreviewURL(filename, type) {
     const previewJSON = await fetchAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
@@ -147,6 +158,18 @@ function flatten(obj, roots = [], sep = ".") {
   );
 }
 
+// Calculate biased tag score based on post count and frequent usage
+function tagBias(count, uses) {
+    return Math.log(count) + Math.log(uses);
+}
+// Call API endpoint to increase bias of tag in the database
+function increaseUseCount(tagName) {
+    postAPI(`tacapi/v1/increase-use-count/${tagName}`, null);
+}
+// Get use count of tag from the database
+async function getUseCount(tagName) {
+    return (await fetchAPI(`tacapi/v1/get-use-count/${tagName}`, true, false))["count"];
+}
 
 // Sliding window function to get possible combination groups of an array
 function toNgrams(inputArray, size) {

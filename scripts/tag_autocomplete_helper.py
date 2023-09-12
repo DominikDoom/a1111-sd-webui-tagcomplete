@@ -529,5 +529,16 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         except Exception as e:
             return JSONResponse({"error": e}, status_code=500)
 
+    @app.post("/tacapi/v1/increase-use-count/{tagname}")
+    async def increase_use_count(tagname: str):
+        pass
+
+    @app.get("/tacapi/v1/get-use-count/{tagname}")
+    async def get_use_count(tagname: str):
+        return JSONResponse({"count": 0})
+    
+    @app.put("/tacapi/v1/reset-use-count/{tagname}")
+    async def reset_use_count(tagname: str):
+        pass
 
 script_callbacks.on_app_started(api_tac)
