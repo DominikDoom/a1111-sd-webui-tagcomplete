@@ -213,12 +213,12 @@ function observeElement(element, property, callback, delay = 0) {
 
 // Sort functions
 function getSortFunction() {
-    let criterium = TAC_CFG.modelSortOrder || "Name";
+    let criterion = TAC_CFG.modelSortOrder || "Name";
     return (a, b) => {
         let textHolderA = a.type === ResultType.chant ? a.aliases : a.text;
         let textHolderB = b.type === ResultType.chant ? b.aliases : b.text;
 
-        switch (criterium) {
+        switch (criterion) {
             case "Date Modified":
                 let aParsed = parseFloat(a.sortKey || "-1");
                 let bParsed = parseFloat(b.sortKey || "-1");
