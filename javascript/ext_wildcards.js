@@ -85,13 +85,14 @@ class WildcardFileParser extends BaseTagParser {
             } else {
                 result = new AutocompleteResult(wcFile[1].trim(), ResultType.wildcardFile);
                 result.meta = "Wildcard file";
+                result.sortKey = wcFile[2].trim();
             }
 
             finalResults.push(result);
             alreadyAdded.set(wcFile[1], true);
         });
 
-        finalResults.sort((a, b) => a.text.localeCompare(b.text));
+        finalResults.sort(getSortFunction());
 
         return finalResults;
     }
@@ -100,17 +101,17 @@ class WildcardFileParser extends BaseTagParser {
 async function load() {
     if (wildcardFiles.length === 0 && wildcardExtFiles.length === 0) {
         try {
-            let wcFileArr = (await readFile(`${tagBasePath}/temp/wc.txt`)).split("\n");
-            let wcBasePath = wcFileArr[0].trim(); // First line should be the base path
+            let wcFileArr = await loadCSV(`${tagBasePath}/temp/wc.txt`);
+            let wcBasePath = wcFileArr[0][0].trim(); // First line should be the base path
             wildcardFiles = wcFileArr.slice(1)
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => [wcBasePath, x.trim().replace(".txt", "")]); // Remove file extension & newlines
+                .filter(x => x[0]?.trim().length > 0) //Remove empty lines
+                .map(x => [wcBasePath, x[0]?.trim().replace(".txt", ""), x[1]]); // Remove file extension & newlines
 
             // To support multiple sources, we need to separate them using the provided "-----" strings
-            let wcExtFileArr = (await readFile(`${tagBasePath}/temp/wce.txt`)).split("\n");
+            let wcExtFileArr = await loadCSV(`${tagBasePath}/temp/wce.txt`);
             let splitIndices = [];
             for (let index = 0; index < wcExtFileArr.length; index++) {
-                if (wcExtFileArr[index].trim() === "-----") {
+                if (wcExtFileArr[index][0].trim() === "-----") {
                     splitIndices.push(index);
                 }
             }
@@ -121,12 +122,10 @@ async function load() {
                 let end = splitIndices[i];
 
                 let wcExtFile = wcExtFileArr.slice(start, end);
-                let base = wcExtFile[0].trim() + "/";
+                let base = wcExtFile[0][0].trim() + "/";
                 wcExtFile = wcExtFile.slice(1)
-                    .filter(x => x.trim().length > 0) // Remove empty lines
-                    .map(x => x.trim().replace(base, "").replace(".txt", "")); // Remove file extension & newlines;
-
-                wcExtFile = wcExtFile.map(x => [base, x]);
+                    .filter(x => x[0]?.trim().length > 0) //Remove empty lines
+                    .map(x => [base, x[0]?.trim().replace(base, "").replace(".txt", ""), x[1]]);
                 wildcardExtFiles.push(...wcExtFile);
             }
 

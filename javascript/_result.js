@@ -27,6 +27,7 @@ class AutocompleteResult {
     aliases = null;
     meta = null;
     hash = null;
+    sortKey = null;
 
     // Constructor
     constructor(text, type) {

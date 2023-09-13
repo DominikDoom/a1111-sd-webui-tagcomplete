@@ -27,24 +27,16 @@ except Exception as e: # Not supported.
 
 # Sorting functions for extra networks / embeddings stuff
 sort_criteria = {
-    "Name": {
-        "key": lambda path, name: name.lower() if Path(name).parts > 1 else path.stem.lower(),
-        "reverse": False
-    },
-    "Date Modified": {
-        "key": lambda path, name: path.stat().st_mtime,
-        "reverse": True
-    },
+    "Name": lambda path, name, subpath: name.lower() if subpath else path.stem.lower(),
+    "Date Modified": lambda path, name, subpath: path.stat().st_mtime
 }
 
-def sort_models(model_list, sort_method = None):
+def sort_models(model_list, sort_method = None, name_has_subpath = False):
     """Sorts models according to the setting.
     
     Input: list of (full_path, display_name, {hash}) models. 
     Returns models in the format of name, sort key, meta.
     Meta is optional and can be a hash, version string or other required info.
-    Whether the currently selected sort method needs to be reversed is provided
-    by an API endpoint to reduce duplication in temp files.
     """
     if len(model_list) == 0:
         return model_list
@@ -58,9 +50,9 @@ def sort_models(model_list, sort_method = None):
     # During merging on the JS side we need to re-sort anyway, so here only the sort criteria are calculated.
     # The list itself doesn't need to get sorted at this point.
     if len(model_list[0]) > 2:
-        results = [f'{name},"{sorter["key"](path, name)}",{meta}' for path, name, meta in model_list]
+        results = [f'{name},"{sorter(path, name, name_has_subpath)}",{meta}' for path, name, meta in model_list]
     else:
-        results = [f'{name},"{sorter["key"](path, name)}"' for path, name in model_list]
+        results = [f'{name},"{sorter(path, name, name_has_subpath)}"' for path, name in model_list]
     return results
 
 
@@ -70,7 +62,7 @@ def get_wildcards():
     resolved = [(w, w.relative_to(WILDCARD_PATH).as_posix())
                 for w in wildcard_files
                 if w.name != "put wildcards here.txt"]
-    return sort_models(resolved)
+    return sort_models(resolved, name_has_subpath=True)
 
 
 def get_ext_wildcards():
@@ -82,7 +74,7 @@ def get_ext_wildcards():
         resolved = [(w, w.relative_to(path).as_posix())
                     for w in path.rglob("*.txt")
                     if w.name != "put wildcards here.txt"]
-        wildcard_files.extend(sort_models(resolved))
+        wildcard_files.extend(sort_models(resolved, name_has_subpath=True))
         wildcard_files.append("-----")
 
     return wildcard_files
@@ -232,7 +224,6 @@ def get_lora():
     loras_with_hash = []
     for l in valid_loras:
         name = l.relative_to(LORA_PATH).as_posix()
-        name = f'"{name}"'
         if model_keyword_installed:
             hash = get_lora_simple_hash(l)
         else:
@@ -253,7 +244,6 @@ def get_lyco():
     lycos_with_hash = []
     for ly in valid_lycos:
         name = ly.relative_to(LYCO_PATH).as_posix()
-        name = f'"{name}"'
         if model_keyword_installed:
             hash = get_lora_simple_hash(ly)
         else:
@@ -525,10 +515,9 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         except Exception as e:
             return JSONResponse({"error": e}, status_code=500)
 
-    @app.get("/tacapi/v1/sort-direction")
-    async def get_sort_direction():
-        criterium = getattr(shared.opts, "tac_modelSortOrder", "Name")
-        return sort_criteria[criterium]['reverse'] if sort_criteria[criterium] else sort_criteria['Name']['reverse']
+    @app.post("/tacapi/v1/refresh-temp-files")
+    async def api_refresh_temp_files():
+        refresh_temp_files()
 
     @app.get("/tacapi/v1/lora-info/{lora_name}")
     async def get_lora_info(lora_name):

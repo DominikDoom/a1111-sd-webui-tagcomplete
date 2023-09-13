@@ -81,6 +81,17 @@ async function fetchAPI(url, json = true, cache = false) {
         return await response.text();
 }
 
+async function postAPI(url, body) {
+    let response = await fetch(url, { method: "POST", body: body });
+
+    if (response.status != 200) {
+        console.error(`Error posting to API endpoint "${url}": ` + response.status, response.statusText);
+        return null;
+    }
+
+    return await response.json();
+}
+
 // Extra network preview thumbnails
 async function getExtraNetworkPreviewURL(filename, type) {
     const previewJSON = await fetchAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
@@ -197,6 +208,33 @@ function observeElement(element, property, callback, delay = 0) {
                 return newValue;
             }
         });
+    }
+}
+
+// Sort functions
+function getSortFunction() {
+    let criterium = TAC_CFG.modelSortOrder || "Name";
+    return (a, b) => {
+        let textHolderA = a.type === ResultType.chant ? a.aliases : a.text;
+        let textHolderB = b.type === ResultType.chant ? b.aliases : b.text;
+
+        switch (criterium) {
+            case "Date Modified":
+                let aParsed = parseFloat(a.sortKey || "-1");
+                let bParsed = parseFloat(b.sortKey || "-1");
+
+                if (aParsed === bParsed) {
+                    let aKey = a.sortKey || textHolderA;
+                    let bKey = b.sortKey || textHolderB;
+                    return aKey.localeCompare(bKey);
+                }
+                
+                return bParsed - aParsed;
+            default:
+                let aKey = a.sortKey || textHolderA;
+                let bKey = b.sortKey || textHolderB;
+                return aKey.localeCompare(bKey);
+        }
     }
 }
 
