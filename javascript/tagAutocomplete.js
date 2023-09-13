@@ -1014,8 +1014,9 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     if (resultCandidates && resultCandidates.length > 0) {
         // Flatten our candidate(s)
         results = resultCandidates.flat();
-        // Sort results
-        results = results.sort(getSortFunction());
+        // Sort results, but not if it's umi tags since they are sorted by count
+        if (!(resultCandidates.length === 1 && results[0].type === ResultType.umiWildcard))
+            results = results.sort(getSortFunction());
 
         // Since some tags are kaomoji, we have to add the normal results in some cases
         if (tagword.startsWith("<") || tagword.startsWith("*<")) {
