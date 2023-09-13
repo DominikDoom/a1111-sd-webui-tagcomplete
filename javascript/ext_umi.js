@@ -149,6 +149,7 @@ class UmiParser extends BaseTagParser {
                     finalResults.push(result);
                 });
 
+                finalResults = finalResults.sort((a, b) => b.count - a.count);
                 return finalResults;
             } else if (showAll) {
                 let filteredWildcardsSorted = filteredWildcards("");
@@ -163,6 +164,8 @@ class UmiParser extends BaseTagParser {
 
                 originalTagword = tagword;
                 tagword = "";
+
+                finalResults = finalResults.sort((a, b) => b.count - a.count);
                 return finalResults;
             }
         } else {
@@ -178,6 +181,8 @@ class UmiParser extends BaseTagParser {
 
             originalTagword = tagword;
             tagword = "";
+
+            finalResults = finalResults.sort((a, b) => b.count - a.count);
             return finalResults;
         }
     }
