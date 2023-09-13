@@ -28,7 +28,8 @@ except Exception as e: # Not supported.
 # Sorting functions for extra networks / embeddings stuff
 sort_criteria = {
     "Name": lambda path, name, subpath: name.lower() if subpath else path.stem.lower(),
-    "Date Modified": lambda path, name, subpath: path.stat().st_mtime
+    "Date Modified (newest first)": lambda path, name, subpath: path.stat().st_mtime,
+    "Date Modified (oldest first)": lambda path, name, subpath: path.stat().st_mtime
 }
 
 def sort_models(model_list, sort_method = None, name_has_subpath = False):
@@ -45,7 +46,7 @@ def sort_models(model_list, sort_method = None, name_has_subpath = False):
         sort_method = getattr(shared.opts, "tac_modelSortOrder", "Name")
 
     # Get sorting method from dictionary
-    sorter = sort_criteria[sort_method] if sort_criteria[sort_method] else sort_criteria['Name']
+    sorter = sort_criteria.get(sort_method, sort_criteria["Name"])
 
     # During merging on the JS side we need to re-sort anyway, so here only the sort criteria are calculated.
     # The list itself doesn't need to get sorted at this point.
@@ -406,7 +407,7 @@ def on_ui_settings():
         "tac_useLycos": shared.OptionInfo(True, "Search for LyCORIS/LoHa"),
         "tac_showWikiLinks": shared.OptionInfo(False, "Show '?' next to tags, linking to its Danbooru or e621 wiki page").info("Warning: This is an external site and very likely contains NSFW examples!"),
         "tac_showExtraNetworkPreviews": shared.OptionInfo(True, "Show preview thumbnails for extra networks if available"),
-        "tac_modelSortOrder": shared.OptionInfo("Name", "Model sort order", gr.Dropdown, lambda: {"choices": ["Name", "Date Modified"]}).info("Order for extra network models and wildcards in dropdown"),
+        "tac_modelSortOrder": shared.OptionInfo("Name", "Model sort order", gr.Dropdown, lambda: {"choices": list(sort_criteria.keys())}).info("Order for extra network models and wildcards in dropdown"),
         # Insertion related settings
         "tac_replaceUnderscores": shared.OptionInfo(True, "Replace underscores with spaces on insertion"),
         "tac_escapeParentheses": shared.OptionInfo(True, "Escape parentheses on insertion"),
