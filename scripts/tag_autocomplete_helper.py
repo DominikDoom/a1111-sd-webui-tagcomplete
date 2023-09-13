@@ -52,7 +52,9 @@ def is_umi_format(data):
             break
     return not issue_found
 
-def parse_umi_format(umi_tags, count, data):
+count = 0
+def parse_umi_format(umi_tags, data):
+    global count
     for item in data:
         umi_tags[count] = ','.join(data[item]['Tags'])
         count += 1
@@ -82,7 +84,6 @@ def get_yaml_wildcards():
     yaml_wildcards = {}
 
     umi_tags = {} # { tag: count }
-    count = 0
 
     for path in yaml_files:
         try:
@@ -90,7 +91,7 @@ def get_yaml_wildcards():
                 data = yaml.safe_load(file)
                 if (data):
                     if (is_umi_format(data)):
-                        parse_umi_format(umi_tags, count, data)
+                        parse_umi_format(umi_tags, data)
                     else:
                         parse_dynamic_prompt_format(yaml_wildcards, data, path)
                 else:

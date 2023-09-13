@@ -1002,7 +1002,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
 
     // Process all parsers
-    let resultCandidates = await processParsers(textArea, prompt);
+    let resultCandidates = (await processParsers(textArea, prompt)).filter(x => x.length > 0);
     // If one ore more result candidates match, use their results
     if (resultCandidates && resultCandidates.length > 0) {
         // Flatten our candidate(s)
