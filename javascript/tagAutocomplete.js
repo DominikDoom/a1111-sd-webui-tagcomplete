@@ -273,7 +273,12 @@ async function syncOptions() {
     // Refresh temp files if model sort order changed
     // Contrary to the other loads, this one shouldn't happen on a first time load
     if (TAC_CFG && newCFG.modelSortOrder !== TAC_CFG.modelSortOrder) {
+        const dropdown = gradioApp().querySelector("#setting_tac_modelSortOrder");
+        dropdown.style.opacity = 0.5;
+        dropdown.style.pointerEvents = "none";
         await refreshTacTempFiles(true);
+        dropdown.style.opacity = null;
+        dropdown.style.pointerEvents = null;
     }
 
     // Update CSS if maxResults changed
