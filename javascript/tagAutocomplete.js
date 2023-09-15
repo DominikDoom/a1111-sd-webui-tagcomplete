@@ -1326,6 +1326,11 @@ async function setup() {
     // Listener for internal temp files refresh button
     gradioApp().querySelector("#refresh_tac_refreshTempFiles")?.addEventListener("click", refreshTacTempFiles);
 
+    // Also add listener for external network refresh button
+    gradioApp().querySelector("#txt2img_extra_refresh")?.addEventListener("click", refreshTacTempFiles);
+    gradioApp().querySelector("#img2img_extra_refresh")?.addEventListener("click", refreshTacTempFiles);
+
+
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
     let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");
     updateModelName();
