@@ -1338,13 +1338,12 @@ async function setup() {
         })
     });
     // Listener for internal temp files refresh button
-    const refreshButton = gradioApp().querySelector("#refresh_tac_refreshTempFiles")
-    refreshButton?.addEventListener("click", refreshTacTempFiles);
+    gradioApp().querySelector("#refresh_tac_refreshTempFiles")?.addEventListener("click", refreshTacTempFiles);
 
     // Also add listener for external network refresh button (plus triggering python code)
     ["#img2img_extra_refresh", "#txt2img_extra_refresh"].forEach(e => {
         gradioApp().querySelector(e)?.addEventListener("click", ()=>{
-            refreshButton?.click();
+            refreshTacTempFiles(true);
         });
     })
 
