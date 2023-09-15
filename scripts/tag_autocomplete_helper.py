@@ -1,6 +1,7 @@
 # This helper script scans folders for wildcards and embeddings and writes them
 # to a temporary file to expose it to the javascript side
 
+import os
 import glob
 import json
 import urllib.parse
@@ -24,12 +25,45 @@ except Exception as e: # Not supported.
     load_textual_inversion_embeddings = lambda *args, **kwargs: None
     print("Tag Autocomplete: Cannot reload embeddings instantly:", e)
 
+# Sorting functions for extra networks / embeddings stuff
+sort_criteria = {
+    "Name": lambda path, name, subpath: name.lower() if subpath else path.stem.lower(),
+    "Date Modified (newest first)": lambda path, name, subpath: path.stat().st_mtime,
+    "Date Modified (oldest first)": lambda path, name, subpath: path.stat().st_mtime
+}
+
+def sort_models(model_list, sort_method = None, name_has_subpath = False):
+    """Sorts models according to the setting.
+    
+    Input: list of (full_path, display_name, {hash}) models. 
+    Returns models in the format of name, sort key, meta.
+    Meta is optional and can be a hash, version string or other required info.
+    """
+    if len(model_list) == 0:
+        return model_list
+
+    if sort_method is None:
+        sort_method = getattr(shared.opts, "tac_modelSortOrder", "Name")
+
+    # Get sorting method from dictionary
+    sorter = sort_criteria.get(sort_method, sort_criteria["Name"])
+
+    # During merging on the JS side we need to re-sort anyway, so here only the sort criteria are calculated.
+    # The list itself doesn't need to get sorted at this point.
+    if len(model_list[0]) > 2:
+        results = [f'{name},"{sorter(path, name, name_has_subpath)}",{meta}' for path, name, meta in model_list]
+    else:
+        results = [f'{name},"{sorter(path, name, name_has_subpath)}"' for path, name in model_list]
+    return results
+
+
 def get_wildcards():
     """Returns a list of all wildcards. Works on nested folders."""
     wildcard_files = list(WILDCARD_PATH.rglob("*.txt"))
-    resolved = [w.relative_to(WILDCARD_PATH).as_posix(
-    ) for w in wildcard_files if w.name != "put wildcards here.txt"]
-    return resolved
+    resolved = [(w, w.relative_to(WILDCARD_PATH).as_posix())
+                for w in wildcard_files
+                if w.name != "put wildcards here.txt"]
+    return sort_models(resolved, name_has_subpath=True)
 
 
 def get_ext_wildcards():
@@ -38,7 +72,10 @@ def get_ext_wildcards():
 
     for path in WILDCARD_EXT_PATHS:
         wildcard_files.append(path.as_posix())
-        wildcard_files.extend(p.relative_to(path).as_posix() for p in path.rglob("*.txt") if p.name != "put wildcards here.txt")
+        resolved = [(w, w.relative_to(path).as_posix())
+                    for w in path.rglob("*.txt")
+                    if w.name != "put wildcards here.txt"]
+        wildcard_files.extend(sort_models(resolved, name_has_subpath=True))
         wildcard_files.append("-----")
 
     return wildcard_files
@@ -52,7 +89,9 @@ def is_umi_format(data):
             break
     return not issue_found
 
-def parse_umi_format(umi_tags, count, data):
+count = 0
+def parse_umi_format(umi_tags, data):
+    global count
     for item in data:
         umi_tags[count] = ','.join(data[item]['Tags'])
         count += 1
@@ -82,7 +121,6 @@ def get_yaml_wildcards():
     yaml_wildcards = {}
 
     umi_tags = {} # { tag: count }
-    count = 0
 
     for path in yaml_files:
         try:
@@ -90,7 +128,7 @@ def get_yaml_wildcards():
                 data = yaml.safe_load(file)
                 if (data):
                     if (is_umi_format(data)):
-                        parse_umi_format(umi_tags, count, data)
+                        parse_umi_format(umi_tags, data)
                     else:
                         parse_dynamic_prompt_format(yaml_wildcards, data, path)
                 else:
@@ -136,14 +174,14 @@ def get_embeddings(sd_model):
 
         # Add embeddings to the correct list
         if (emb_a_shape == V1_SHAPE):
-            emb_v1 = list(emb_type_a.keys())
+            emb_v1 = [(Path(v.filename), k, "v1") for (k,v) in emb_type_a.items()]
         elif (emb_a_shape == V2_SHAPE):
-            emb_v2 = list(emb_type_a.keys())
+            emb_v2 = [(Path(v.filename), k, "v2") for (k,v) in emb_type_a.items()]
 
         if (emb_b_shape == V1_SHAPE):
-            emb_v1 = list(emb_type_b.keys())
+            emb_v1 = [(Path(v.filename), k, "v1") for (k,v) in emb_type_b.items()]
         elif (emb_b_shape == V2_SHAPE):
-            emb_v2 = list(emb_type_b.keys())
+            emb_v2 = [(Path(v.filename), k, "v2") for (k,v) in emb_type_b.items()]
 
         # Get shape of current model
         #vec = sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
@@ -155,7 +193,7 @@ def get_embeddings(sd_model):
         #    results = [e + ",v2" for e in emb_v2] + [e + ",v1" for e in emb_v1]
         #else:
         #    raise AttributeError # Fallback to old method
-        results = sorted([e + ",v1" for e in emb_v1] + [e + ",v2" for e in emb_v2], key=lambda x: x.lower())
+        results = sort_models(emb_v1) + sort_models(emb_v2)
     except AttributeError:
         print("tag_autocomplete_helper: Old webui version or unrecognized model shape, using fallback for embedding completion.")
         # Get a list of all embeddings in the folder
@@ -173,9 +211,8 @@ def get_hypernetworks():
 
     # Get a list of all hypernetworks in the folder
     hyp_paths = [Path(h) for h in glob.glob(HYP_PATH.joinpath("**/*").as_posix(), recursive=True)]
-    all_hypernetworks = [str(h.name) for h in hyp_paths if h.suffix in {".pt"}]
-    # Remove file extensions
-    return sorted([h[:h.rfind('.')] for h in all_hypernetworks], key=lambda x: x.lower())
+    all_hypernetworks = [(h, h.stem) for h in hyp_paths if h.suffix in {".pt"}]
+    return sort_models(all_hypernetworks)
 
 model_keyword_installed = write_model_keyword_path()
 def get_lora():
@@ -186,17 +223,16 @@ def get_lora():
     lora_paths = [Path(l) for l in glob.glob(LORA_PATH.joinpath("**/*").as_posix(), recursive=True)]
     # Get hashes
     valid_loras = [lf for lf in lora_paths if lf.suffix in {".safetensors", ".ckpt", ".pt"}]
-    hashes = {}
+    loras_with_hash = []
     for l in valid_loras:
         name = l.relative_to(LORA_PATH).as_posix()
         if model_keyword_installed:
-            hashes[name] = get_lora_simple_hash(l)
+            hash = get_lora_simple_hash(l)
         else:
-            hashes[name] = ""
+            hash = ""
+        loras_with_hash.append((l, name, hash))
     # Sort
-    sorted_loras = dict(sorted(hashes.items()))
-    # Add hashes and return
-    return [f"\"{name}\",{hash}" for name, hash in sorted_loras.items()]
+    return sort_models(loras_with_hash)
 
 
 def get_lyco():
@@ -207,19 +243,16 @@ def get_lyco():
 
     # Get hashes
     valid_lycos = [lyf for lyf in lyco_paths if lyf.suffix in {".safetensors", ".ckpt", ".pt"}]
-    hashes = {}
+    lycos_with_hash = []
     for ly in valid_lycos:
         name = ly.relative_to(LYCO_PATH).as_posix()
         if model_keyword_installed:
-            hashes[name] = get_lora_simple_hash(ly)
+            hash = get_lora_simple_hash(ly)
         else:
-            hashes[name] = ""
-
+            hash = ""
+        lycos_with_hash.append((ly, name, hash))
     # Sort
-    sorted_lycos = dict(sorted(hashes.items()))
-    # Add hashes and return
-    return [f"\"{name}\",{hash}" for name, hash in sorted_lycos.items()]
-
+    return sort_models(lycos_with_hash)
 
 def write_tag_base_path():
     """Writes the tag base path to a fixed location temporary file"""
@@ -375,6 +408,7 @@ def on_ui_settings():
         "tac_useLycos": shared.OptionInfo(True, "Search for LyCORIS/LoHa"),
         "tac_showWikiLinks": shared.OptionInfo(False, "Show '?' next to tags, linking to its Danbooru or e621 wiki page").info("Warning: This is an external site and very likely contains NSFW examples!"),
         "tac_showExtraNetworkPreviews": shared.OptionInfo(True, "Show preview thumbnails for extra networks if available"),
+        "tac_modelSortOrder": shared.OptionInfo("Name", "Model sort order", gr.Dropdown, lambda: {"choices": list(sort_criteria.keys())}).info("Order for extra network models and wildcards in dropdown"),
         # Insertion related settings
         "tac_replaceUnderscores": shared.OptionInfo(True, "Replace underscores with spaces on insertion"),
         "tac_escapeParentheses": shared.OptionInfo(True, "Escape parentheses on insertion"),
@@ -482,6 +516,10 @@ def api_tac(_: gr.Blocks, app: FastAPI):
                     return JSONResponse({"url": urllib.parse.quote(img_candidates[0])})
         except Exception as e:
             return JSONResponse({"error": e}, status_code=500)
+
+    @app.post("/tacapi/v1/refresh-temp-files")
+    async def api_refresh_temp_files():
+        refresh_temp_files()
 
     @app.get("/tacapi/v1/lora-info/{lora_name}")
     async def get_lora_info(lora_name):

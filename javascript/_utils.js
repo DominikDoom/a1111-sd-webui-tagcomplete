@@ -223,6 +223,42 @@ function observeElement(element, property, callback, delay = 0) {
     }
 }
 
+// Sort functions
+function getSortFunction() {
+    let criterion = TAC_CFG.modelSortOrder || "Name";
+
+    const textSort = (a, b, reverse = false) => {
+        const textHolderA = a.type === ResultType.chant ? a.aliases : a.text;
+        const textHolderB = b.type === ResultType.chant ? b.aliases : b.text;
+
+        const aKey = a.sortKey || textHolderA;
+        const bKey = b.sortKey || textHolderB;
+        return reverse ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey);
+    }
+    const numericSort = (a, b, reverse = false) => {
+        const noKey = reverse ? "-1" : Number.MAX_SAFE_INTEGER;
+        let aParsed = parseFloat(a.sortKey || noKey);
+        let bParsed = parseFloat(b.sortKey || noKey);
+
+        if (aParsed === bParsed) {
+            return textSort(a, b, false);
+        }
+        
+        return reverse ? bParsed - aParsed : aParsed - bParsed;
+    }
+
+    return (a, b) => {
+        switch (criterion) {
+            case "Date Modified (newest first)":
+                return numericSort(a, b, true);
+            case "Date Modified (oldest first)":
+                return numericSort(a, b, false);
+            default:
+                return textSort(a, b);
+        }
+    }
+}
+
 // Queue calling function to process global queues
 async function processQueue(queue, context, ...args) {
     for (let i = 0; i < queue.length; i++) {

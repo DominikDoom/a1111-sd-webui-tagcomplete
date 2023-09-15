@@ -16,7 +16,7 @@ class EmbeddingParser extends BaseTagParser {
             let filterCondition = x => x[0].toLowerCase().includes(searchTerm) || x[0].toLowerCase().replaceAll(" ", "_").includes(searchTerm);
 
             if (versionString)
-                tempResults = embeddings.filter(x => filterCondition(x) && x[1] && x[1] === versionString); // Filter by tagword
+                tempResults = embeddings.filter(x => filterCondition(x) && x[2] && x[2] === versionString); // Filter by tagword
             else
                 tempResults = embeddings.filter(x => filterCondition(x)); // Filter by tagword
         } else {
@@ -27,7 +27,8 @@ class EmbeddingParser extends BaseTagParser {
         let finalResults = [];
         tempResults.forEach(t => {
             let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
-            result.meta = t[1] + " Embedding";
+            result.sortKey = t[1];
+            result.meta = t[2] + " Embedding";
             finalResults.push(result);
         });
 
@@ -38,9 +39,9 @@ class EmbeddingParser extends BaseTagParser {
 async function load() {
     if (embeddings.length === 0) {
         try {
-            embeddings = (await readFile(`${tagBasePath}/temp/emb.txt`)).split("\n")
-                .filter(x => x.trim().length > 0) // Remove empty lines
-                .map(x => x.trim().split(",")); // Split into name, version type pairs
+            embeddings = (await loadCSV(`${tagBasePath}/temp/emb.txt`))
+                .filter(x => x[0]?.trim().length > 0) // Remove empty lines
+                .map(x => [x[0].trim(), x[1], x[2]]); // Return name, sortKey, hash tuples
         } catch (e) {
             console.error("Error loading embeddings.txt: " + e);
         }
