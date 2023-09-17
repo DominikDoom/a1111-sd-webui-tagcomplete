@@ -96,8 +96,8 @@ def get_yaml_wildcards():
                         parse_dynamic_prompt_format(yaml_wildcards, data, path)
                 else:
                     print('No data found in ' + path.name)
-        except yaml.YAMLError:
-            print('Issue in parsing YAML file ' + path.name)
+        except (yaml.YAMLError, UnicodeDecodeError) as e:
+            print(f'Issue in parsing YAML file {path.name}: {e}')
             continue
 
     # Sort by count
