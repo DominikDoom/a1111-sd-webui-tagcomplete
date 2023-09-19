@@ -81,6 +81,17 @@ async function fetchAPI(url, json = true, cache = false) {
         return await response.text();
 }
 
+async function postAPI(url, body) {
+    let response = await fetch(url, { method: "POST", body: body });
+
+    if (response.status != 200) {
+        console.error(`Error posting to API endpoint "${url}": ` + response.status, response.statusText);
+        return null;
+    }
+
+    return await response.json();
+}
+
 // Extra network preview thumbnails
 async function getExtraNetworkPreviewURL(filename, type) {
     const previewJSON = await fetchAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
@@ -197,6 +208,42 @@ function observeElement(element, property, callback, delay = 0) {
                 return newValue;
             }
         });
+    }
+}
+
+// Sort functions
+function getSortFunction() {
+    let criterion = TAC_CFG.modelSortOrder || "Name";
+
+    const textSort = (a, b, reverse = false) => {
+        const textHolderA = a.type === ResultType.chant ? a.aliases : a.text;
+        const textHolderB = b.type === ResultType.chant ? b.aliases : b.text;
+
+        const aKey = a.sortKey || textHolderA;
+        const bKey = b.sortKey || textHolderB;
+        return reverse ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey);
+    }
+    const numericSort = (a, b, reverse = false) => {
+        const noKey = reverse ? "-1" : Number.MAX_SAFE_INTEGER;
+        let aParsed = parseFloat(a.sortKey || noKey);
+        let bParsed = parseFloat(b.sortKey || noKey);
+
+        if (aParsed === bParsed) {
+            return textSort(a, b, false);
+        }
+        
+        return reverse ? bParsed - aParsed : aParsed - bParsed;
+    }
+
+    return (a, b) => {
+        switch (criterion) {
+            case "Date Modified (newest first)":
+                return numericSort(a, b, true);
+            case "Date Modified (oldest first)":
+                return numericSort(a, b, false);
+            default:
+                return textSort(a, b);
+        }
     }
 }
 

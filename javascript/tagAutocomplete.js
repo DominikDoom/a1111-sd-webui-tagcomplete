@@ -217,6 +217,7 @@ async function syncOptions() {
 	    useLycos: opts["tac_useLycos"],
         showWikiLinks: opts["tac_showWikiLinks"],
         showExtraNetworkPreviews: opts["tac_showExtraNetworkPreviews"],
+        modelSortOrder: opts["tac_modelSortOrder"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
@@ -267,6 +268,17 @@ async function syncOptions() {
     if (!TAC_CFG || newCFG.tagFile !== TAC_CFG.tagFile || newCFG.extra.extraFile !== TAC_CFG.extra.extraFile) {
         allTags = [];
         await loadTags(newCFG);
+    }
+
+    // Refresh temp files if model sort order changed
+    // Contrary to the other loads, this one shouldn't happen on a first time load
+    if (TAC_CFG && newCFG.modelSortOrder !== TAC_CFG.modelSortOrder) {
+        const dropdown = gradioApp().querySelector("#setting_tac_modelSortOrder");
+        dropdown.style.opacity = 0.5;
+        dropdown.style.pointerEvents = "none";
+        await refreshTacTempFiles(true);
+        dropdown.style.opacity = null;
+        dropdown.style.pointerEvents = null;
     }
 
     // Update CSS if maxResults changed
@@ -1007,36 +1019,29 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     if (resultCandidates && resultCandidates.length > 0) {
         // Flatten our candidate(s)
         results = resultCandidates.flat();
-        // If there was more than one candidate, sort the results by text to mix them
-        // instead of having them added in the order of the parsers
-        let shouldSort = resultCandidates.length > 1;
-        if (shouldSort) {
-            results = results.sort((a, b) => {
-                let sortByA = a.type === ResultType.chant ? a.aliases : a.text;
-                let sortByB = b.type === ResultType.chant ? b.aliases : b.text;
-                return sortByA.localeCompare(sortByB);
-            });
+        // Sort results, but not if it's umi tags since they are sorted by count
+        if (!(resultCandidates.length === 1 && results[0].type === ResultType.umiWildcard))
+            results = results.sort(getSortFunction());
 
-            // Since some tags are kaomoji, we have to add the normal results in some cases
-            if (tagword.startsWith("<") || tagword.startsWith("*<")) {
-                // Create escaped search regex with support for * as a start placeholder
-                let searchRegex;
-                if (tagword.startsWith("*")) {
-                    tagword = tagword.slice(1);
-                    searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
-                } else {
-                    searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-                }
-                let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, TAC_CFG.maxResults);
-
-                genericResults.forEach(g => {
-                    let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
-                    result.category = g[1];
-                    result.count = g[2];
-                    result.aliases = g[3];
-                    results.push(result);
-                });
+        // Since some tags are kaomoji, we have to add the normal results in some cases
+        if (tagword.startsWith("<") || tagword.startsWith("*<")) {
+            // Create escaped search regex with support for * as a start placeholder
+            let searchRegex;
+            if (tagword.startsWith("*")) {
+                tagword = tagword.slice(1);
+                searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+            } else {
+                searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
             }
+            let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, TAC_CFG.maxResults);
+
+            genericResults.forEach(g => {
+                let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
+                result.category = g[1];
+                result.count = g[2];
+                result.aliases = g[3];
+                results.push(result);
+            });
         }
     }
     // Else search the normal tag list
@@ -1223,8 +1228,8 @@ function navigateInList(textArea, event) {
     event.stopPropagation();
 }
 
-async function refreshTacTempFiles() {
-    setTimeout(async () => {
+async function refreshTacTempFiles(api = false) {
+    const reload = async () => {
         wildcardFiles = [];
         wildcardExtFiles = [];
         umiWildcards = [];
@@ -1236,7 +1241,16 @@ async function refreshTacTempFiles() {
         await processQueue(QUEUE_FILE_LOAD, null);
 
         console.log("TAC: Refreshed temp files");
-    }, 2000);
+    }
+    
+    if (api) {
+        await postAPI("tacapi/v1/refresh-temp-files", null);
+        await reload();
+    } else {
+        setTimeout(async () => {
+            await reload();
+        }, 2000);
+    }
 }
 
 function addAutocompleteToArea(area) {
@@ -1324,13 +1338,12 @@ async function setup() {
         })
     });
     // Listener for internal temp files refresh button
-    const refreshButton = gradioApp().querySelector("#refresh_tac_refreshTempFiles")
-    refreshButton?.addEventListener("click", refreshTacTempFiles);
+    gradioApp().querySelector("#refresh_tac_refreshTempFiles")?.addEventListener("click", refreshTacTempFiles);
 
     // Also add listener for external network refresh button (plus triggering python code)
     ["#img2img_extra_refresh", "#txt2img_extra_refresh"].forEach(e => {
         gradioApp().querySelector(e)?.addEventListener("click", ()=>{
-            refreshButton?.click();
+            refreshTacTempFiles(true);
         });
     })
 

@@ -23,7 +23,8 @@ class LoraParser extends BaseTagParser {
 
             let result = new AutocompleteResult(name, ResultType.lora)
             result.meta = "Lora";
-            result.hash = t[1];
+            result.sortKey = t[1];
+            result.hash = t[2];
             finalResults.push(result);
         });
 
@@ -36,7 +37,7 @@ async function load() {
         try {
             loras = (await loadCSV(`${tagBasePath}/temp/lora.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
-                .map(x => [x[0]?.trim(), x[1]]); // Trim filenames and return the name, hash pairs
+                .map(x => [x[0]?.trim(), x[1], x[2]]); // Trim filenames and return the name, sortKey, hash pairs
         } catch (e) {
             console.error("Error loading lora.txt: " + e);
         }
