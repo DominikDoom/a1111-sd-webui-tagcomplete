@@ -102,10 +102,12 @@ async function load() {
     if (wildcardFiles.length === 0 && wildcardExtFiles.length === 0) {
         try {
             let wcFileArr = await loadCSV(`${tagBasePath}/temp/wc.txt`);
-            let wcBasePath = wcFileArr[0][0].trim(); // First line should be the base path
-            wildcardFiles = wcFileArr.slice(1)
-                .filter(x => x[0]?.trim().length > 0) //Remove empty lines
-                .map(x => [wcBasePath, x[0]?.trim().replace(".txt", ""), x[1]]); // Remove file extension & newlines
+            if (wcFileArr && wcFileArr.length > 0) {
+                let wcBasePath = wcFileArr[0][0].trim(); // First line should be the base path
+                wildcardFiles = wcFileArr.slice(1)
+                    .filter(x => x[0]?.trim().length > 0) //Remove empty lines
+                    .map(x => [wcBasePath, x[0]?.trim().replace(".txt", ""), x[1]]); // Remove file extension & newlines
+            }
 
             // To support multiple sources, we need to separate them using the provided "-----" strings
             let wcExtFileArr = await loadCSV(`${tagBasePath}/temp/wce.txt`);
@@ -122,11 +124,13 @@ async function load() {
                 let end = splitIndices[i];
 
                 let wcExtFile = wcExtFileArr.slice(start, end);
-                let base = wcExtFile[0][0].trim() + "/";
-                wcExtFile = wcExtFile.slice(1)
-                    .filter(x => x[0]?.trim().length > 0) //Remove empty lines
-                    .map(x => [base, x[0]?.trim().replace(base, "").replace(".txt", ""), x[1]]);
-                wildcardExtFiles.push(...wcExtFile);
+                if (wcExtFile && wcExtFile.length > 0) {
+                    let base = wcExtFile[0][0].trim() + "/";
+                    wcExtFile = wcExtFile.slice(1)
+                        .filter(x => x[0]?.trim().length > 0) //Remove empty lines
+                        .map(x => [base, x[0]?.trim().replace(base, "").replace(".txt", ""), x[1]]);
+                    wildcardExtFiles.push(...wcExtFile);
+                }
             }
 
             // Load the yaml wildcard json file and append it as a wildcard file, appending each key as a path component until we reach the end
