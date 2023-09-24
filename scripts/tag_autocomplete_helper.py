@@ -576,22 +576,36 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         except Exception as e:
             return JSONResponse({"error": e}, status_code=500)
 
+    NO_DB = JSONResponse({"error": "Database not initialized"}, status_code=500)
+
     @app.post("/tacapi/v1/increase-use-count/{tagname}")
     async def increase_use_count(tagname: str):
-        db.increase_tag_count(tagname)
+        if db is not None:
+            db.increase_tag_count(tagname)
+        else:
+            return NO_DB
 
     @app.get("/tacapi/v1/get-use-count/{tagname}")
     async def get_use_count(tagname: str):
-        db_count = db.get_tag_count(tagname)
-        return JSONResponse({"count": db_count})
-    
+        if db is not None:
+            db_count = db.get_tag_count(tagname)
+            return JSONResponse({"count": db_count})
+        else:
+            return NO_DB
+
     @app.put("/tacapi/v1/reset-use-count/{tagname}")
     async def reset_use_count(tagname: str):
-        db.reset_tag_count(tagname)
+        if db is not None:
+            db.reset_tag_count(tagname)
+        else:
+            return NO_DB
 
     @app.get("/tacapi/v1/get-all-tag-counts")
     async def get_all_tag_counts():
-        db_counts = db.get_all_tags()
-        return JSONResponse({"counts": db_counts})
-
+        if db is not None:
+            db_tags = db.get_all_tags()
+            return JSONResponse({"tags": db_tags})
+        else:
+            return NO_DB
+        
 script_callbacks.on_app_started(api_tac)
