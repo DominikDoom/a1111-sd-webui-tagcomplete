@@ -110,6 +110,20 @@ class TagFrequencyDb:
 
         return tag_count[0] if tag_count else 0
 
+    def get_tag_counts(self, tags: list[str]):
+        with transaction() as cursor:
+            for tag in tags:
+                cursor.execute(
+                    """
+                SELECT count
+                FROM tag_frequency
+                WHERE name = ?
+                """,
+                    (tag,),
+                )
+                tag_count = cursor.fetchone()
+                yield (tag, tag_count[0]) if tag_count else (tag, 0)
+
     def increase_tag_count(self, tag):
         current_count = self.get_tag_count(tag)
         with transaction() as cursor:

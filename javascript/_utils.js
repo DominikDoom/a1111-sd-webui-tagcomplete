@@ -179,7 +179,10 @@ function increaseUseCount(tagName) {
 }
 // Get use count of tag from the database
 async function getUseCount(tagName) {
-    return (await fetchAPI(`tacapi/v1/get-use-count/${tagName}`, true, false))["count"];
+    return (await fetchAPI(`tacapi/v1/get-use-count/${tagName}`, true, false))["result"];
+}
+async function getUseCounts(tagNames) {
+    return (await fetchAPI(`tacapi/v1/get-use-count-list?tags=${tagNames.join("&tags=")}`))["result"];
 }
 
 // Sliding window function to get possible combination groups of an array
