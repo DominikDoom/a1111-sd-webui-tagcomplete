@@ -92,6 +92,17 @@ async function postAPI(url, body) {
     return await response.json();
 }
 
+async function putAPI(url, body) {
+    let response = await fetch(url, { method: "PUT", body: body });
+    
+    if (response.status != 200) {
+        console.error(`Error putting to API endpoint "${url}": ` + response.status, response.statusText);
+        return null;
+    }
+
+    return await response.json();
+}
+
 // Extra network preview thumbnails
 async function getExtraNetworkPreviewURL(filename, type) {
     const previewJSON = await fetchAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);

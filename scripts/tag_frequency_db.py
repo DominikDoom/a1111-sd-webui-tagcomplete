@@ -5,7 +5,7 @@ from scripts.shared_paths import TAGS_PATH
 
 db_file = TAGS_PATH.joinpath("tag_frequency.db")
 timeout = 30
-version = 1
+db_ver = 1
 
 
 @contextmanager
@@ -35,7 +35,7 @@ class TagFrequencyDb:
             print("Tag Autocomplete: Creating frequency database")
             with transaction() as cursor:
                 self.__create_db(cursor)
-                self.__update_db_data(cursor, "version", version)
+                self.__update_db_data(cursor, "version", db_ver)
             print("Tag Autocomplete: Database successfully created")
 
         return self.__get_version()
@@ -60,7 +60,7 @@ class TagFrequencyDb:
         """
         )
 
-    def __update_db_data(cursor: sqlite3.Cursor, key, value):
+    def __update_db_data(self, cursor: sqlite3.Cursor, key, value):
         cursor.execute(
             """
         INSERT OR REPLACE
@@ -81,7 +81,7 @@ class TagFrequencyDb:
             )
             db_version = cursor.fetchone()
 
-        return db_version
+        return db_version[0] if db_version else 0
 
     def get_all_tags(self):
         with transaction() as cursor:
@@ -108,7 +108,7 @@ class TagFrequencyDb:
             )
             tag_count = cursor.fetchone()
 
-        return tag_count or 0
+        return tag_count[0] if tag_count else 0
 
     def increase_tag_count(self, tag):
         current_count = self.get_tag_count(tag)
