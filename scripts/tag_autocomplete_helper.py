@@ -608,7 +608,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         else:
             return NO_DB
 
-    @app.get("/tacapi/v1/get-all-tag-counts")
+    @app.get("/tacapi/v1/get-all-use-counts")
     async def get_all_tag_counts():
         if db is not None:
             db_tags = db.get_all_tags()
