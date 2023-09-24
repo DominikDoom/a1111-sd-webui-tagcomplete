@@ -18,6 +18,15 @@ from scripts.model_keyword_support import (get_lora_simple_hash,
                                            write_model_keyword_path)
 from scripts.shared_paths import *
 
+try:
+    from scripts.tag_frequency_db import TagFrequencyDb, version
+    db = TagFrequencyDb()
+    if db.version != version:
+        raise ValueError("Tag Autocomplete: Tag frequency database version mismatch, disabling tag frequency sorting")
+except (ImportError, ValueError):
+    print("Tag Autocomplete: Tag frequency database could not be loaded, disabling tag frequency sorting")
+    db = None
+
 # Attempt to get embedding load function, using the same call as api.
 try:
     load_textual_inversion_embeddings = sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings
@@ -569,14 +578,20 @@ def api_tac(_: gr.Blocks, app: FastAPI):
 
     @app.post("/tacapi/v1/increase-use-count/{tagname}")
     async def increase_use_count(tagname: str):
-        pass
+        db.increase_tag_count(tagname)
 
     @app.get("/tacapi/v1/get-use-count/{tagname}")
     async def get_use_count(tagname: str):
-        return JSONResponse({"count": 0})
+        db_count = db.get_tag_count(tagname)
+        return JSONResponse({"count": db_count})
     
     @app.put("/tacapi/v1/reset-use-count/{tagname}")
     async def reset_use_count(tagname: str):
-        pass
+        db.reset_tag_count(tagname)
+
+    @app.get("/tacapi/v1/get-all-tag-counts")
+    async def get_all_tag_counts():
+        db_counts = db.get_all_tags()
+        return JSONResponse({"counts": db_counts})
 
 script_callbacks.on_app_started(api_tac)
