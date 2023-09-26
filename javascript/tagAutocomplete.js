@@ -218,6 +218,7 @@ async function syncOptions() {
         showWikiLinks: opts["tac_showWikiLinks"],
         showExtraNetworkPreviews: opts["tac_showExtraNetworkPreviews"],
         modelSortOrder: opts["tac_modelSortOrder"],
+        frequencySort: opts["tac_frequencySort"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
@@ -458,6 +459,34 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             } else if (firstDifference === 0) {
                 sanitizedText = tagword;
             }
+        }
+    }
+
+    // Frequency db update
+    if (TAC_CFG.frequencySort) {
+        let name = null;
+
+        switch (tagType) {
+            case ResultType.wildcardFile:
+            case ResultType.yamlWildcard:
+                // We only want to update the frequency for a full wildcard, not partial paths
+                if (sanitizedText.endsWith("__"))
+                    name = text
+                break;
+            case ResultType.chant:
+                // Chants use a slightly different format
+                name = result.aliases;
+                break;
+            default:
+                name = text;
+                break;
+        }
+
+        if (name && name.length > 0) {
+            // Sanitize name for API call
+            name = encodeURIComponent(name)
+            // Call API & update db
+            increaseUseCount(name, tagType)
         }
     }
 
