@@ -11,12 +11,15 @@ class EmbeddingParser extends BaseTagParser {
             if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
                 versionString = searchTerm.slice(0, 2);
                 searchTerm = searchTerm.slice(2);
+            } else if (searchTerm.startsWith("vxl")) {
+                versionString = searchTerm.slice(0, 3);
+                searchTerm = searchTerm.slice(3);
             }
 
             let filterCondition = x => x[0].toLowerCase().includes(searchTerm) || x[0].toLowerCase().replaceAll(" ", "_").includes(searchTerm);
 
             if (versionString)
-                tempResults = embeddings.filter(x => filterCondition(x) && x[2] && x[2] === versionString); // Filter by tagword
+                tempResults = embeddings.filter(x => filterCondition(x) && x[2] && x[2].toLowerCase() === versionString.toLowerCase()); // Filter by tagword
             else
                 tempResults = embeddings.filter(x => filterCondition(x)); // Filter by tagword
         } else {
