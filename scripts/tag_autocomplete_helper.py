@@ -598,20 +598,20 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return JSONResponse({"error": "Database not initialized"}, status_code=500)
 
     @app.post("/tacapi/v1/increase-use-count/{tagname}")
-    async def increase_use_count(tagname: str):
-        db_request(lambda: db.increase_tag_count(tagname))
+    async def increase_use_count(tagname: str, ttype: int):
+        db_request(lambda: db.increase_tag_count(tagname, ttype))
 
     @app.get("/tacapi/v1/get-use-count/{tagname}")
-    async def get_use_count(tagname: str):
-        return db_request(lambda: db.get_tag_count(tagname), get=True)
+    async def get_use_count(tagname: str, ttype: int):
+        return db_request(lambda: db.get_tag_count(tagname, ttype), get=True)
         
     @app.get("/tacapi/v1/get-use-count-list")
-    async def get_use_count_list(tags: list[str] | None = Query(default=None)):
-        return db_request(lambda: list(db.get_tag_counts(tags)), get=True)
+    async def get_use_count_list(tags: list[str] | None = Query(default=None), ttypes: list[int] | None = Query(default=None)):
+        return db_request(lambda: list(db.get_tag_counts(tags, ttypes)), get=True)
 
     @app.put("/tacapi/v1/reset-use-count/{tagname}")
-    async def reset_use_count(tagname: str):
-        db_request(lambda: db.reset_tag_count(tagname))
+    async def reset_use_count(tagname: str, ttype: int):
+        db_request(lambda: db.reset_tag_count(tagname, ttype))
 
     @app.get("/tacapi/v1/get-all-use-counts")
     async def get_all_tag_counts():

@@ -174,21 +174,21 @@ function tagBias(count, uses) {
     return Math.log(count) + Math.log(uses);
 }
 // Call API endpoint to increase bias of tag in the database
-function increaseUseCount(tagName) {
-    postAPI(`tacapi/v1/increase-use-count/${tagName}`, null);
+function increaseUseCount(tagName, type) {
+    postAPI(`tacapi/v1/increase-use-count/${tagName}?ttype=${type}`, null);
 }
 // Get use count of tag from the database
-async function getUseCount(tagName) {
-    return (await fetchAPI(`tacapi/v1/get-use-count/${tagName}`, true, false))["result"];
+async function getUseCount(tagName, type) {
+    return (await fetchAPI(`tacapi/v1/get-use-count/${tagName}?ttype=${type}`, true, false))["result"];
 }
-async function getUseCounts(tagNames) {
-    return (await fetchAPI(`tacapi/v1/get-use-count-list?tags=${tagNames.join("&tags=")}`))["result"];
+async function getUseCounts(tagNames, types) {
+    return (await fetchAPI(`tacapi/v1/get-use-count-list?tags=${tagNames.join("&tags=")}&ttypes=${types.join("&ttypes=")}`))["result"];
 }
 async function getAllUseCounts() {
     return (await fetchAPI(`tacapi/v1/get-all-use-counts`))["result"];
 }
-async function resetUseCount(tagName) {
-    putAPI(`tacapi/v1/reset-use-count/${tagName}`, null);
+async function resetUseCount(tagName, type) {
+    putAPI(`tacapi/v1/reset-use-count/${tagName}?ttype=${type}`, null);
 }
 
 // Sliding window function to get possible combination groups of an array

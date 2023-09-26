@@ -53,9 +53,11 @@ class TagFrequencyDb:
         cursor.execute(
             """
         CREATE TABLE IF NOT EXISTS tag_frequency (
-            name TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            type INT NOT NULL,
             count INT,
-            last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (name, type)
         )
         """
         )
@@ -87,7 +89,7 @@ class TagFrequencyDb:
         with transaction() as cursor:
             cursor.execute(
                 """
-            SELECT name
+            SELECT name, type, count
             FROM tag_frequency
             ORDER BY count DESC
             """
@@ -96,53 +98,53 @@ class TagFrequencyDb:
 
         return tags
 
-    def get_tag_count(self, tag):
+    def get_tag_count(self, tag, ttype):
         with transaction() as cursor:
             cursor.execute(
                 """
             SELECT count
             FROM tag_frequency
-            WHERE name = ?
+            WHERE name = ? AND type = ?
             """,
-                (tag,),
+                (tag,ttype),
             )
             tag_count = cursor.fetchone()
 
         return tag_count[0] if tag_count else 0
 
-    def get_tag_counts(self, tags: list[str]):
+    def get_tag_counts(self, tags: list[str], ttypes: list[str]):
         with transaction() as cursor:
-            for tag in tags:
+            for tag, ttype in zip(tags, ttypes):
                 cursor.execute(
                     """
                 SELECT count
                 FROM tag_frequency
-                WHERE name = ?
+                WHERE name = ? AND type = ?
                 """,
-                    (tag,),
+                    (tag,ttype),
                 )
                 tag_count = cursor.fetchone()
                 yield (tag, tag_count[0]) if tag_count else (tag, 0)
 
-    def increase_tag_count(self, tag):
-        current_count = self.get_tag_count(tag)
+    def increase_tag_count(self, tag, ttype):
+        current_count = self.get_tag_count(tag, ttype)
         with transaction() as cursor:
             cursor.execute(
                 """
             INSERT OR REPLACE
-            INTO tag_frequency (name, count)
-            VALUES (?, ?)
+            INTO tag_frequency (name, type, count)
+            VALUES (?, ?, ?)
             """,
-                (tag, current_count + 1),
+                (tag, ttype, current_count + 1),
             )
 
-    def reset_tag_count(self, tag):
+    def reset_tag_count(self, tag, ttype):
         with transaction() as cursor:
             cursor.execute(
                 """
             UPDATE tag_frequency
             SET count = 0
-            WHERE name = ?
+            WHERE name = ? AND type = ?
             """,
-                (tag,),
+                (tag,ttype),
             )
