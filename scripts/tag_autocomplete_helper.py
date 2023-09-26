@@ -174,14 +174,14 @@ def get_embeddings(sd_model):
 
         # Add embeddings to the correct list
         if (emb_a_shape == V1_SHAPE):
-            emb_v1 = [(Path(v.filename), k, "v1") for (k,v) in emb_type_a.items()]
+            emb_v1 = [(Path(v.filename), k, "v1") for (k,v) in emb_type_a.items() if v.filename is not None]
         elif (emb_a_shape == V2_SHAPE):
-            emb_v2 = [(Path(v.filename), k, "v2") for (k,v) in emb_type_a.items()]
+            emb_v2 = [(Path(v.filename), k, "v2") for (k,v) in emb_type_a.items() if v.filename is not None]
 
         if (emb_b_shape == V1_SHAPE):
-            emb_v1 = [(Path(v.filename), k, "v1") for (k,v) in emb_type_b.items()]
+            emb_v1 = [(Path(v.filename), k, "v1") for (k,v) in emb_type_b.items() if v.filename is not None]
         elif (emb_b_shape == V2_SHAPE):
-            emb_v2 = [(Path(v.filename), k, "v2") for (k,v) in emb_type_b.items()]
+            emb_v2 = [(Path(v.filename), k, "v2") for (k,v) in emb_type_b.items() if v.filename is not None]
 
         # Get shape of current model
         #vec = sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
