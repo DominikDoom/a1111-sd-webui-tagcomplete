@@ -2,6 +2,7 @@
 # to a temporary file to expose it to the javascript side
 
 import glob
+import importlib
 import json
 import sqlite3
 import urllib.parse
@@ -19,9 +20,13 @@ from scripts.model_keyword_support import (get_lora_simple_hash,
 from scripts.shared_paths import *
 
 try:
-    from scripts.tag_frequency_db import TagFrequencyDb, db_ver
-    db = TagFrequencyDb()
-    if int(db.version) != int(db_ver):
+    import scripts.tag_frequency_db as tdb
+
+    # Ensure the db dependency is reloaded on script reload
+    importlib.reload(tdb)
+
+    db = tdb.TagFrequencyDb()
+    if int(db.version) != int(tdb.db_ver):
         raise ValueError("Database version mismatch")
 except (ImportError, ValueError, sqlite3.Error) as e:
     print(f"Tag Autocomplete: Tag frequency database error - \"{e}\"")
@@ -593,7 +598,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
                 else:
                     func()
             except sqlite3.Error as e:
-                return JSONResponse({"error": e}, status_code=500)
+                return JSONResponse({"error": e.__cause__}, status_code=500)
         else:
             return JSONResponse({"error": "Database not initialized"}, status_code=500)
 
