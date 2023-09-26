@@ -184,6 +184,12 @@ async function getUseCount(tagName) {
 async function getUseCounts(tagNames) {
     return (await fetchAPI(`tacapi/v1/get-use-count-list?tags=${tagNames.join("&tags=")}`))["result"];
 }
+async function getAllUseCounts() {
+    return (await fetchAPI(`tacapi/v1/get-all-use-counts`))["result"];
+}
+async function resetUseCount(tagName) {
+    putAPI(`tacapi/v1/reset-use-count/${tagName}`, null);
+}
 
 // Sliding window function to get possible combination groups of an array
 function toNgrams(inputArray, size) {
