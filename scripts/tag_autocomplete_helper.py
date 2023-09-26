@@ -169,7 +169,7 @@ def get_embeddings(sd_model):
 
         # Add embeddings to the correct list
         for key, emb in (loaded | skipped).items():
-            if (emb.filename is None):
+            if emb.filename is None or emb.shape is None:
                 continue
 
             if emb.shape == V1_SHAPE:
