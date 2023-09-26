@@ -602,11 +602,11 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         else:
             return JSONResponse({"error": "Database not initialized"}, status_code=500)
 
-    @app.post("/tacapi/v1/increase-use-count/{tagname}")
+    @app.post("/tacapi/v1/increase-use-count")
     async def increase_use_count(tagname: str, ttype: int):
         db_request(lambda: db.increase_tag_count(tagname, ttype))
 
-    @app.get("/tacapi/v1/get-use-count/{tagname}")
+    @app.get("/tacapi/v1/get-use-count")
     async def get_use_count(tagname: str, ttype: int):
         return db_request(lambda: db.get_tag_count(tagname, ttype), get=True)
         
@@ -614,7 +614,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     async def get_use_count_list(tags: list[str] | None = Query(default=None), ttypes: list[int] | None = Query(default=None)):
         return db_request(lambda: list(db.get_tag_counts(tags, ttypes)), get=True)
 
-    @app.put("/tacapi/v1/reset-use-count/{tagname}")
+    @app.put("/tacapi/v1/reset-use-count")
     async def reset_use_count(tagname: str, ttype: int):
         db_request(lambda: db.reset_tag_count(tagname, ttype))
 
