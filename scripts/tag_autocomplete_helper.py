@@ -594,6 +594,8 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             try:
                 if get:
                     ret = func()
+                    if ret is list:
+                        ret = [{"name": t[0], "type": t[1], "count": t[2]} for t in ret]
                     return JSONResponse({"result": ret})
                 else:
                     func()
