@@ -124,7 +124,7 @@ class TagFrequencyDb:
                     (tag,ttype),
                 )
                 tag_count = cursor.fetchone()
-                yield (tag, tag_count[0]) if tag_count else (tag, 0)
+                yield (tag, ttype, tag_count[0]) if tag_count else (tag, ttype, 0)
 
     def increase_tag_count(self, tag, ttype):
         current_count = self.get_tag_count(tag, ttype)
