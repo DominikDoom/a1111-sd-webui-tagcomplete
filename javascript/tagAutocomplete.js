@@ -747,7 +747,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         }
 
         // Post count
-        if (result.count && !isNaN(result.count)) {
+        if (result.count && !isNaN(result.count) && result.count !== Number.MAX_SAFE_INTEGER) {
             let postCount = result.count;
             let formatter;
 
@@ -1158,14 +1158,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             const aUseStats = counts.find(c => c.name === aName && c.type === a.type);
             const bUseStats = counts.find(c => c.name === bName && c.type === b.type);
 
-            let aNoCountFallback = 0;
-            let bNoCountFallback = 0;
-            if (TAC_CFG.includeEmbeddingsInNormalResults) {
-                aNoCountFallback = a.type === ResultType.embedding ? Infinity : 0;
-                bNoCountFallback = b.type === ResultType.embedding ? Infinity : 0;
-            }
-            const aWeight = calculateUsageBias(a.count || aNoCountFallback, aUseStats ? aUseStats.count : 0);
-            const bWeight = calculateUsageBias(b.count || bNoCountFallback, bUseStats ? bUseStats.count : 0);
+            const aWeight = calculateUsageBias(a.count, aUseStats ? aUseStats.count : 0);
+            const bWeight = calculateUsageBias(b.count, bUseStats ? bUseStats.count : 0);
 
             return bWeight - aWeight;
         });
