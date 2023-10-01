@@ -1065,27 +1065,6 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Sort results, but not if it's umi tags since they are sorted by count
         if (!(resultCandidates.length === 1 && results[0].type === ResultType.umiWildcard))
             results = results.sort(getSortFunction());
-
-        // Since some tags are kaomoji, we have to add the normal results in some cases
-        if (tagword.startsWith("<") || tagword.startsWith("*<")) {
-            // Create escaped search regex with support for * as a start placeholder
-            let searchRegex;
-            if (tagword.startsWith("*")) {
-                tagword = tagword.slice(1);
-                searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
-            } else {
-                searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-            }
-            let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, TAC_CFG.maxResults);
-
-            genericResults.forEach(g => {
-                let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
-                result.category = g[1];
-                result.count = g[2];
-                result.aliases = g[3];
-                results.push(result);
-            });
-        }
     }
     // Else search the normal tag list
     if (!resultCandidates || resultCandidates.length === 0
