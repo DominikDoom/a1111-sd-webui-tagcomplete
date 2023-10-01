@@ -24,6 +24,7 @@ class AutocompleteResult {
     // Additional info, only used in some cases
     category = null;
     count = null;
+    usageBias = null;
     aliases = null;
     meta = null;
     hash = null;

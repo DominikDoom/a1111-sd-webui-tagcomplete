@@ -84,6 +84,10 @@ const autocompleteCSS = `
         white-space: nowrap;
         color: var(--meta-text-color);
     }
+    .acMetaText.biased::before {
+        content: "✨";
+        margin-right: 2px;
+    }
     .acWikiLink {
         padding: 0.5rem;
         margin: -0.5rem 0 -0.5rem -0.5rem;
@@ -486,7 +490,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             // Sanitize name for API call
             name = encodeURIComponent(name)
             // Call API & update db
-            increaseUseCount(name, tagType)
+            await increaseUseCount(name, tagType)
         }
     }
 
@@ -773,6 +777,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
             flexDiv.appendChild(metaDiv);
         }
 
+        // Add small ✨ marker to indicate usage sorting
+        if (result.usageBias) {
+            flexDiv.querySelector(".acMetaText").classList.add("biased");
+        }
+
         // Add listener
         li.addEventListener("click", function () { insertTextAtCursor(textArea, result, tagword); });
         // Add element to list
@@ -1042,6 +1051,9 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     resultCountBeforeNormalTags = 0;
     tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
 
+    // Needed for slicing check later
+    let normalTags = false;
+
     // Process all parsers
     let resultCandidates = (await processParsers(textArea, prompt))?.filter(x => x.length > 0);
     // If one ore more result candidates match, use their results
@@ -1077,6 +1089,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     if (!resultCandidates || resultCandidates.length === 0
         || (TAC_CFG.includeEmbeddingsInNormalResults && !(tagword.startsWith("<") || tagword.startsWith("*<")))
     ) {
+        normalTags = true;
         resultCountBeforeNormalTags = results.length;
 
         // Create escaped search regex with support for * as a start placeholder
@@ -1131,11 +1144,6 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 results = results.concat(extraResults);
             }
         }
-
-        // Slice if the user has set a max result count
-        if (!TAC_CFG.showAllResults) {
-            results = results.slice(0, TAC_CFG.maxResults + resultCountBeforeNormalTags);
-        }
     }
 
     // Guard for empty results
@@ -1143,6 +1151,49 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         //console.log('No results found for "' + tagword + '"');
         hideResults(textArea);
         return;
+    }
+
+    // Sort again with frequency / usage count if enabled
+    if (TAC_CFG.frequencySort) {
+        // Split our results into a list of names and types
+        let names = [];
+        let types = [];
+        // We need to limit size for the request url
+        results.slice(0, 100).forEach(r => {
+            const name = r.type === ResultType.chant ? r.aliases : r.text;
+            names.push(name);
+            types.push(r.type);
+        });
+
+        // Request use counts from the DB
+        const counts = await getUseCounts(names, types);
+        const usedResults = counts.filter(c => c.count > 0).map(c => c.name);
+
+        // Sort all
+        results = results.sort((a, b) => {
+            const aName = a.type === ResultType.chant ? a.aliases : a.text;
+            const bName = b.type === ResultType.chant ? b.aliases : b.text;
+
+            const aUseStats = counts.find(c => c.name === aName && c.type === a.type);
+            const bUseStats = counts.find(c => c.name === bName && c.type === b.type);
+
+            const aWeight = calculateUsageBias(a.count || 0, aUseStats ? aUseStats.count : 0);
+            const bWeight = calculateUsageBias(b.count || 0, bUseStats ? bUseStats.count : 0);
+
+            return bWeight - aWeight;
+        });
+
+        // Mark results
+        results.forEach(r => {
+            const name = r.type === ResultType.chant ? r.aliases : r.text;
+            if (usedResults.includes(name))
+                r.usageBias = true;
+        });
+    }
+
+    // Slice if the user has set a max result count and we are not in a extra networks / wildcard list
+    if (!TAC_CFG.showAllResults && normalTags) {
+        results = results.slice(0, TAC_CFG.maxResults + resultCountBeforeNormalTags);
     }
 
     addResultsToList(textArea, results, tagword, true);
