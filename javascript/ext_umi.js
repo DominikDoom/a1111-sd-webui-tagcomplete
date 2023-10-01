@@ -129,7 +129,7 @@ class UmiParser extends BaseTagParser {
                 return;
             }
 
-            let umiTagword = diff[0] || '';
+            let umiTagword = tagCountChange < 0 ? '' : diff[0] || '';
             let tempResults = [];
             if (umiTagword && umiTagword.length > 0) {
                 umiTagword = umiTagword.toLowerCase().replace(/[\n\r]/g, "");
@@ -188,7 +188,7 @@ class UmiParser extends BaseTagParser {
     }
 }
 
-function updateUmiTags( tagType, sanitizedText, newPrompt, textArea) {
+function updateUmiTags(tagType, sanitizedText, newPrompt, textArea) {
     // If it was a umi wildcard, also update the umiPreviousTags
     if (tagType === ResultType.umiWildcard && originalTagword.length > 0) {
         let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
