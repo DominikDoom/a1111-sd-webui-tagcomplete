@@ -1158,8 +1158,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Split our results into a list of names and types
         let names = [];
         let types = [];
-        // We need to limit size for the request url
-        results.slice(0, 100).forEach(r => {
+        results.forEach(r => {
             const name = r.type === ResultType.chant ? r.aliases : r.text;
             names.push(name);
             types.push(r.type);
@@ -1324,7 +1323,7 @@ async function refreshTacTempFiles(api = false) {
     }
     
     if (api) {
-        await postAPI("tacapi/v1/refresh-temp-files", null);
+        await postAPI("tacapi/v1/refresh-temp-files");
         await reload();
     } else {
         setTimeout(async () => {

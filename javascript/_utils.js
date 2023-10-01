@@ -81,8 +81,12 @@ async function fetchAPI(url, json = true, cache = false) {
         return await response.text();
 }
 
-async function postAPI(url, body) {
-    let response = await fetch(url, { method: "POST", body: body });
+async function postAPI(url, body = null) {
+    let response = await fetch(url, {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: body
+    });
 
     if (response.status != 200) {
         console.error(`Error posting to API endpoint "${url}": ` + response.status, response.statusText);
@@ -92,7 +96,7 @@ async function postAPI(url, body) {
     return await response.json();
 }
 
-async function putAPI(url, body) {
+async function putAPI(url, body = null) {
     let response = await fetch(url, { method: "PUT", body: body });
     
     if (response.status != 200) {
@@ -179,14 +183,16 @@ function mapUseCountArray(useCounts) {
 }
 // Call API endpoint to increase bias of tag in the database
 async function increaseUseCount(tagName, type) {
-    await postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}`, null);
+    await postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}`);
 }
 // Get use count of tag from the database
 async function getUseCount(tagName, type) {
     return (await fetchAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}`, true, false))["result"];
 }
 async function getUseCounts(tagNames, types) {
-    const rawArray = (await fetchAPI(`tacapi/v1/get-use-count-list?tags=${tagNames.join("&tags=")}&ttypes=${types.join("&ttypes=")}`))["result"]
+    // While semantically weird, we have to use POST here for the body, as urls are limited in length
+    const body = JSON.stringify({"tagNames": tagNames, "tagTypes": types});
+    const rawArray = (await postAPI(`tacapi/v1/get-use-count-list`, body))["result"]
     return mapUseCountArray(rawArray);
 }
 async function getAllUseCounts() {
@@ -194,7 +200,7 @@ async function getAllUseCounts() {
     return mapUseCountArray(rawArray);
 }
 async function resetUseCount(tagName, type) {
-    await putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}`, null);
+    await putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}`);
 }
 
 // Sliding window function to get possible combination groups of an array

@@ -10,9 +10,10 @@ from pathlib import Path
 
 import gradio as gr
 import yaml
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from modules import script_callbacks, sd_hijack, shared
+from pydantic import BaseModel
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
                                            load_hash_cache, update_hash_cache,
@@ -611,10 +612,16 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     @app.get("/tacapi/v1/get-use-count")
     async def get_use_count(tagname: str, ttype: int):
         return db_request(lambda: db.get_tag_count(tagname, ttype), get=True)
-        
-    @app.get("/tacapi/v1/get-use-count-list")
-    async def get_use_count_list(tags: list[str] | None = Query(default=None), ttypes: list[int] | None = Query(default=None)):
-        return db_request(lambda: list(db.get_tag_counts(tags, ttypes)), get=True)
+    
+    # Small dataholder class
+    class UseCountListRequest(BaseModel):
+        tagNames: list[str]
+        tagTypes: list[int]
+
+    # Semantically weird to use post here, but it's required for the body on js side
+    @app.post("/tacapi/v1/get-use-count-list")
+    async def get_use_count_list(body: UseCountListRequest):
+        return db_request(lambda: list(db.get_tag_counts(body.tagNames, body.tagTypes)), get=True)
 
     @app.put("/tacapi/v1/reset-use-count")
     async def reset_use_count(tagname: str, ttype: int):
