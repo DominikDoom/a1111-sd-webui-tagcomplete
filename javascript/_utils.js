@@ -191,8 +191,8 @@ function mapUseCountArray(useCounts) {
     return useCounts.map(useCount => {return {"name": useCount[0], "type": useCount[1], "count": useCount[2]}});
 }
 // Call API endpoint to increase bias of tag in the database
-async function increaseUseCount(tagName, type) {
-    await postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}`);
+function increaseUseCount(tagName, type) {
+    postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}`);
 }
 // Get use count of tag from the database
 async function getUseCount(tagName, type) {

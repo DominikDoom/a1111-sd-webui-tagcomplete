@@ -588,7 +588,8 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
     // Uses a built-in method from the webui's ui.js which also already accounts for event target
-    tacSelfTrigger = true;
+    if (tagType === ResultType.wildcardTag || tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
+        tacSelfTrigger = true;
     updateInput(textArea);
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
