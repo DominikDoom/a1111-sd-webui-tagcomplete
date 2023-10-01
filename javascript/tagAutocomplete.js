@@ -491,7 +491,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             // Sanitize name for API call
             name = encodeURIComponent(name)
             // Call API & update db
-            await increaseUseCount(name, tagType)
+            increaseUseCount(name, tagType)
         }
     }
 
@@ -1159,7 +1159,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Split our results into a list of names and types
         let names = [];
         let types = [];
-        results.forEach(r => {
+        // Limit to 2k for performance reasons
+        results.slice(0,2000).forEach(r => {
             const name = r.type === ResultType.chant ? r.aliases : r.text;
             names.push(name);
             types.push(r.type);
