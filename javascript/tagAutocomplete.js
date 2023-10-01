@@ -223,6 +223,7 @@ async function syncOptions() {
         showExtraNetworkPreviews: opts["tac_showExtraNetworkPreviews"],
         modelSortOrder: opts["tac_modelSortOrder"],
         frequencySort: opts["tac_frequencySort"],
+        frequencyFunction: opts["tac_frequencyFunction"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],

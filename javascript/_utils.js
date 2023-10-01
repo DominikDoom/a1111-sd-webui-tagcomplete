@@ -175,7 +175,16 @@ function flatten(obj, roots = [], sep = ".") {
 
 // Calculate biased tag score based on post count and frequent usage
 function calculateUsageBias(count, uses) {
-    return Math.log(1 + count) + Math.log(1 + uses);
+    switch (TAC_CFG.frequencyFunction) {
+        case "Logarithmic (weak)":
+            return Math.log(1 + count) + Math.log(1 + uses);
+        case "Logarithmic (strong)":
+            return Math.log(1 + count) + 2 * Math.log(1 + uses);
+        case "Usage first":
+            return uses;
+        default:
+            return count;
+    }
 }
 // Beautify return type for easier parsing
 function mapUseCountArray(useCounts) {
