@@ -1,7 +1,6 @@
 # This helper script scans folders for wildcards and embeddings and writes them
 # to a temporary file to expose it to the javascript side
 
-import os
 import glob
 import json
 import urllib.parse
@@ -11,7 +10,7 @@ import gradio as gr
 import yaml
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
-from modules import script_callbacks, sd_hijack, shared
+from modules import script_callbacks, sd_hijack, shared, hashes
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
                                            load_hash_cache, update_hash_cache,
@@ -514,6 +513,18 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     @app.get("/tacapi/v1/lyco-info/{lyco_name}")
     async def get_lyco_info(lyco_name):
         return await get_json_info(LYCO_PATH, lyco_name)
+
+    @app.get("/tacapi/v1/lora-cached-hash/{lora_name}")
+    async def get_lora_cached_hash(lora_name: str):
+        path_glob = glob.glob(LORA_PATH.as_posix() + f"/**/{lora_name}.*", recursive=True)
+        paths = [lora for lora in path_glob if Path(lora).suffix in [".safetensors", ".ckpt", ".pt"]]
+        if paths is not None and len(paths) > 0:
+            path = paths[0]
+            hash = hashes.sha256_from_cache(path, f"lora/{lora_name}", path.endswith(".safetensors"))
+            if hash is not None:
+                return hash
+        
+        return None
 
     def get_path_for_type(type):
         if type == "lora":
