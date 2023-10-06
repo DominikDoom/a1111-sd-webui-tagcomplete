@@ -1,6 +1,7 @@
 // Utility functions for tag autocomplete
 
 // Parse the CSV file into a 2D array. Doesn't use regex, so it is very lightweight.
+// We are ignoring newlines in quote fields since we expect one-line entries and parsing would break for unclosed quotes otherwise
 function parseCSV(str) {
     const arr = [];
     let quote = false;  // 'true' means we're inside a quoted field
@@ -22,12 +23,10 @@ function parseCSV(str) {
         // If it's a comma and we're not in a quoted field, move on to the next column
         if (cc == ',' && !quote) { ++col; continue; }
 
-        // If it's a newline (CRLF) and we're not in a quoted field, skip the next character
-        // and move on to the next row and move to column 0 of that new row
+        // If it's a newline (CRLF), skip the next character and move on to the next row and move to column 0 of that new row
         if (cc == '\r' && nc == '\n') { ++row; col = 0; ++c; quote = false; continue; }
 
-        // If it's a newline (LF or CR) and we're not in a quoted field,
-        // move on to the next row and move to column 0 of that new row
+        // If it's a newline (LF or CR) move on to the next row and move to column 0 of that new row
         if (cc == '\n') { ++row; col = 0; quote = false; continue; }
         if (cc == '\r') { ++row; col = 0; quote = false; continue; }
 

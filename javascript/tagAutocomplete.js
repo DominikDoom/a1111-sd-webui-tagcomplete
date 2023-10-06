@@ -680,6 +680,8 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 linkPart = linkPart.split("[")[0]
             }
 
+            linkPart = encodeURIComponent(linkPart);
+
             // Set link based on selected file
             let tagFileNameLower = tagFileName.toLowerCase();
             if (tagFileNameLower.startsWith("danbooru")) {
