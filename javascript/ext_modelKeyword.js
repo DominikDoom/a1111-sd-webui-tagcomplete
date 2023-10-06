@@ -20,7 +20,7 @@ async function load() {
             // Add to the dict
             csv_lines.forEach(parts => {
                 const hash = parts[0];
-                const keywords = parts[1].replaceAll("| ", ", ").replaceAll("|", ", ").trim();
+                const keywords = parts[1]?.replaceAll("| ", ", ")?.replaceAll("|", ", ")?.trim();
                 const lastSepIndex = parts[2]?.lastIndexOf("/") + 1 || parts[2]?.lastIndexOf("\\") + 1 || 0;
                 const name = parts[2]?.substring(lastSepIndex).trim() || "none"
 

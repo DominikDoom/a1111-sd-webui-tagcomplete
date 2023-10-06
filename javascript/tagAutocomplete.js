@@ -546,6 +546,14 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             let nameDict = modelKeywordDict.get(result.hash);
             let names = [result.text + ".safetensors", result.text + ".pt", result.text + ".ckpt"];
 
+            // No match, try to find a sha256 match from the cache file
+            if (!nameDict) {
+                const sha256 = await fetchAPI(`/tacapi/v1/lora-cached-hash/${result.text}`)
+                if (sha256) {
+                    nameDict = modelKeywordDict.get(sha256);
+                }
+            }
+
             if (nameDict) {
                 let found = false;
                 names.forEach(name => {
@@ -714,6 +722,8 @@ function addResultsToList(textArea, results, tagword, resetList) {
             if (linkPart.includes("[")) {
                 linkPart = linkPart.split("[")[0]
             }
+
+            linkPart = encodeURIComponent(linkPart);
 
             // Set link based on selected file
             let tagFileNameLower = tagFileName.toLowerCase();
