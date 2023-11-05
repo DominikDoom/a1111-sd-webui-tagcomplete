@@ -255,7 +255,7 @@ def write_to_temp_file(name, data):
 
 csv_files = []
 csv_files_withnone = []
-def update_tag_files():
+def update_tag_files(*args, **kwargs):
     """Returns a list of all potential tag files"""
     global csv_files, csv_files_withnone
     files = [str(t.relative_to(TAGS_PATH)) for t in TAGS_PATH.glob("*.csv") if t.is_file()]
@@ -264,7 +264,7 @@ def update_tag_files():
 
 json_files = []
 json_files_withnone = []
-def update_json_files():
+def update_json_files(*args, **kwargs):
     """Returns a list of all potential json files"""
     global json_files, json_files_withnone
     files = [str(j.relative_to(TAGS_PATH)) for j in TAGS_PATH.glob("*.json") if j.is_file()]
@@ -303,7 +303,7 @@ if EMB_PATH.exists():
     # Get embeddings after the model loaded callback
     script_callbacks.on_model_loaded(get_embeddings)
 
-def refresh_temp_files():
+def refresh_temp_files(*args, **kwargs):
     global WILDCARD_EXT_PATHS
     WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
     load_textual_inversion_embeddings(force_reload = True) # Instant embedding reload.
