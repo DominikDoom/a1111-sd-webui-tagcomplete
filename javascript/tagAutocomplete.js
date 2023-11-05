@@ -523,6 +523,10 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         optionalSeparator = TAC_CFG.extraNetworksSeparator || " ";
     }
 
+    // Escape $ signs since they are special chars for the replace function
+    // We need four since we're also escaping them in replaceAll in the first place
+    sanitizedText = sanitizedText.replaceAll("$", "$$$$");
+
     // Replace partial tag word with new text, add comma if needed
     let insert = surrounding.replace(match, sanitizedText + optionalSeparator);
 
