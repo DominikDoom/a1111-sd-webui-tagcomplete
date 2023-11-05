@@ -61,7 +61,8 @@ def get_wildcards():
     wildcard_files = list(WILDCARD_PATH.rglob("*.txt"))
     resolved = [(w, w.relative_to(WILDCARD_PATH).as_posix())
                 for w in wildcard_files
-                if w.name != "put wildcards here.txt"]
+                if w.name != "put wildcards here.txt"
+                and w.is_file()]
     return sort_models(resolved, name_has_subpath=True)
 
 
@@ -73,7 +74,8 @@ def get_ext_wildcards():
         wildcard_files.append(path.as_posix())
         resolved = [(w, w.relative_to(path).as_posix())
                     for w in path.rglob("*.txt")
-                    if w.name != "put wildcards here.txt"]
+                    if w.name != "put wildcards here.txt"
+                    and w.is_file()]
         wildcard_files.extend(sort_models(resolved, name_has_subpath=True))
         wildcard_files.append("-----")
 
@@ -114,8 +116,8 @@ def get_yaml_wildcards():
     """Returns a list of all tags found in extension YAML files found under a Tags: key."""
     yaml_files = []
     for path in WILDCARD_EXT_PATHS:
-        yaml_files.extend(p for p in path.rglob("*.yml"))
-        yaml_files.extend(p for p in path.rglob("*.yaml"))
+        yaml_files.extend(p for p in path.rglob("*.yml") if p.is_file())
+        yaml_files.extend(p for p in path.rglob("*.yaml") if p.is_file())
 
     yaml_wildcards = {}
 
@@ -182,7 +184,7 @@ def get_embeddings(sd_model):
     except AttributeError:
         print("tag_autocomplete_helper: Old webui version or unrecognized model shape, using fallback for embedding completion.")
         # Get a list of all embeddings in the folder
-        all_embeds = [str(e.relative_to(EMB_PATH)) for e in EMB_PATH.rglob("*") if e.suffix in {".bin", ".pt", ".png",'.webp', '.jxl', '.avif'}]
+        all_embeds = [str(e.relative_to(EMB_PATH)) for e in EMB_PATH.rglob("*") if e.suffix in {".bin", ".pt", ".png",'.webp', '.jxl', '.avif'} and e.is_file()]
         # Remove files with a size of 0
         all_embeds = [e for e in all_embeds if EMB_PATH.joinpath(e).stat().st_size > 0]
         # Remove file extensions
@@ -196,7 +198,7 @@ def get_hypernetworks():
 
     # Get a list of all hypernetworks in the folder
     hyp_paths = [Path(h) for h in glob.glob(HYP_PATH.joinpath("**/*").as_posix(), recursive=True)]
-    all_hypernetworks = [(h, h.stem) for h in hyp_paths if h.suffix in {".pt"}]
+    all_hypernetworks = [(h, h.stem) for h in hyp_paths if h.suffix in {".pt"} and h.is_file()]
     return sort_models(all_hypernetworks)
 
 model_keyword_installed = write_model_keyword_path()
@@ -207,7 +209,7 @@ def get_lora():
     # Get a list of all lora in the folder
     lora_paths = [Path(l) for l in glob.glob(LORA_PATH.joinpath("**/*").as_posix(), recursive=True)]
     # Get hashes
-    valid_loras = [lf for lf in lora_paths if lf.suffix in {".safetensors", ".ckpt", ".pt"}]
+    valid_loras = [lf for lf in lora_paths if lf.suffix in {".safetensors", ".ckpt", ".pt"} and lf.is_file()]
     loras_with_hash = []
     for l in valid_loras:
         name = l.relative_to(LORA_PATH).as_posix()
@@ -227,7 +229,7 @@ def get_lyco():
     lyco_paths = [Path(ly) for ly in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)]
 
     # Get hashes
-    valid_lycos = [lyf for lyf in lyco_paths if lyf.suffix in {".safetensors", ".ckpt", ".pt"}]
+    valid_lycos = [lyf for lyf in lyco_paths if lyf.suffix in {".safetensors", ".ckpt", ".pt"} and lyf.is_file()]
     lycos_with_hash = []
     for ly in valid_lycos:
         name = ly.relative_to(LYCO_PATH).as_posix()
@@ -256,7 +258,7 @@ csv_files_withnone = []
 def update_tag_files():
     """Returns a list of all potential tag files"""
     global csv_files, csv_files_withnone
-    files = [str(t.relative_to(TAGS_PATH)) for t in TAGS_PATH.glob("*.csv")]
+    files = [str(t.relative_to(TAGS_PATH)) for t in TAGS_PATH.glob("*.csv") if t.is_file()]
     csv_files = files
     csv_files_withnone = ["None"] + files
 
@@ -265,7 +267,7 @@ json_files_withnone = []
 def update_json_files():
     """Returns a list of all potential json files"""
     global json_files, json_files_withnone
-    files = [str(j.relative_to(TAGS_PATH)) for j in TAGS_PATH.glob("*.json")]
+    files = [str(j.relative_to(TAGS_PATH)) for j in TAGS_PATH.glob("*.json") if j.is_file()]
     json_files = files
     json_files_withnone = ["None"] + files
 
@@ -482,7 +484,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
 
         try:
             json_candidates = glob.glob(base_path.as_posix() + f"/**/{filename}.json", recursive=True)
-            if json_candidates is not None and len(json_candidates) > 0:
+            if json_candidates is not None and len(json_candidates) > 0 and Path(json_candidates[0]).is_file():
                 return FileResponse(json_candidates[0])
         except Exception as e:
             return JSONResponse({"error": e}, status_code=500)
@@ -493,7 +495,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
 
         try:
             img_glob = glob.glob(base_path.as_posix() + f"/**/{filename}.*", recursive=True)
-            img_candidates = [img for img in img_glob if Path(img).suffix in [".png", ".jpg", ".jpeg", ".webp", ".gif"]]
+            img_candidates = [img for img in img_glob if Path(img).suffix in [".png", ".jpg", ".jpeg", ".webp", ".gif"] and Path(img).is_file()]
             if img_candidates is not None and len(img_candidates) > 0:
                 if blob:
                     return FileResponse(img_candidates[0])
@@ -517,7 +519,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     @app.get("/tacapi/v1/lora-cached-hash/{lora_name}")
     async def get_lora_cached_hash(lora_name: str):
         path_glob = glob.glob(LORA_PATH.as_posix() + f"/**/{lora_name}.*", recursive=True)
-        paths = [lora for lora in path_glob if Path(lora).suffix in [".safetensors", ".ckpt", ".pt"]]
+        paths = [lora for lora in path_glob if Path(lora).suffix in [".safetensors", ".ckpt", ".pt"] and Path(lora).is_file()]
         if paths is not None and len(paths) > 0:
             path = paths[0]
             hash = hashes.sha256_from_cache(path, f"lora/{lora_name}", path.endswith(".safetensors"))
@@ -557,7 +559,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
 
         try:
             wildcard_path = base.joinpath(filename)
-            if wildcard_path.exists():
+            if wildcard_path.exists() and wildcard_path.is_file():
                 return FileResponse(wildcard_path)
             else:
                 return JSONResponse({}, status_code=404)
