@@ -13,6 +13,12 @@
 你可以按照[以下方法](#installation)下载或拷贝文件，也可以使用[Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases)中打包好的文件。
 
 ## 常见问题 & 已知缺陷:
+- 很多中国用户都报告过此扩展名和其他扩展名的 JavaScript 文件被阻止的问题。
+常见的罪魁祸首是 IDM / Internet Download Manager 浏览器插件，它似乎出于安全目的阻止了本地文件请求。
+如果您安装了 IDM，请确保在使用 webui 时禁用以下插件：
+
+    ![image](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/assets/34448969/d253a4a9-71ab-4b5f-80c4-5aa926fc1fc9)
+
 - 当`replaceUnderscores`选项开启时, 脚本只会替换Tag的一部分如果Tag包含多个单词,比如将`atago (azur lane)`修改`atago`为`taihou`并使用自动补全时.会得到 `taihou (azur lane), lane)`的结果, 因为脚本没有把后面的部分认为成同一个Tag。
 
 ## 演示与截图
