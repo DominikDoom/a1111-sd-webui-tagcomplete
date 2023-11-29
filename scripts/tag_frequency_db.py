@@ -91,7 +91,7 @@ class TagFrequencyDb:
         with transaction() as cursor:
             cursor.execute(
                 f"""
-            SELECT name, type, {count_str}
+            SELECT name, type, {count_str}, last_used
             FROM tag_frequency
             ORDER BY {count_str} DESC
             """
@@ -105,15 +105,15 @@ class TagFrequencyDb:
         with transaction() as cursor:
             cursor.execute(
                 f"""
-            SELECT {count_str}
+            SELECT {count_str}, last_used
             FROM tag_frequency
             WHERE name = ? AND type = ?
             """,
-                (tag,ttype),
+                (tag, ttype),
             )
             tag_count = cursor.fetchone()
 
-        return tag_count[0] if tag_count else 0
+        return tag_count[0], tag_count[1] if tag_count else 0
 
     def get_tag_counts(self, tags: list[str], ttypes: list[str], negative=False):
         count_str = "count_neg" if negative else "count_pos"
@@ -121,18 +121,18 @@ class TagFrequencyDb:
             for tag, ttype in zip(tags, ttypes):
                 cursor.execute(
                     f"""
-                SELECT {count_str}
+                SELECT {count_str}, last_used
                 FROM tag_frequency
                 WHERE name = ? AND type = ?
                 """,
-                    (tag,ttype),
+                    (tag, ttype),
                 )
                 tag_count = cursor.fetchone()
-                yield (tag, ttype, tag_count[0]) if tag_count else (tag, ttype, 0)
+                yield (tag, ttype, tag_count[0], tag_count[1]) if tag_count else (tag, ttype, 0)
 
     def increase_tag_count(self, tag, ttype, negative=False):
-        pos_count = self.get_tag_count(tag, ttype, False)
-        neg_count = self.get_tag_count(tag, ttype, True)
+        pos_count = self.get_tag_count(tag, ttype, False)[0]
+        neg_count = self.get_tag_count(tag, ttype, True)[0]
 
         if negative:
             neg_count += 1
@@ -156,7 +156,7 @@ class TagFrequencyDb:
             set_str = "count_pos = 0"
         elif negative:
             set_str = "count_neg = 0"
-        
+
         with transaction() as cursor:
             cursor.execute(
                 f"""
@@ -164,5 +164,5 @@ class TagFrequencyDb:
             SET {set_str}
             WHERE name = ? AND type = ?
             """,
-                (tag,ttype),
+                (tag, ttype),
             )

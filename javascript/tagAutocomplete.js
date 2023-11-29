@@ -1,4 +1,4 @@
-const styleColors = {
+﻿const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
     "--results-border-width": ["1px", "1.5px"],
@@ -224,6 +224,8 @@ async function syncOptions() {
         modelSortOrder: opts["tac_modelSortOrder"],
         frequencySort: opts["tac_frequencySort"],
         frequencyFunction: opts["tac_frequencyFunction"],
+        frequencyMinCount: opts["tac_frequencyMinCount"],
+        frequencyMaxAge: opts["tac_frequencyMaxAge"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
@@ -1169,7 +1171,6 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         // Request use counts from the DB
         const counts = await getUseCounts(names, types, isNegative);
-        const usedResults = counts.filter(c => c.count > 0).map(c => c.name);
 
         // Sort all
         results = results.sort((a, b) => {
@@ -1178,18 +1179,15 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
             const aUseStats = counts.find(c => c.name === aName && c.type === a.type);
             const bUseStats = counts.find(c => c.name === bName && c.type === b.type);
+            const aUses = aUseStats?.count || 0;
+            const bUses = bUseStats?.count || 0;
+            const aLastUseDate = Date.parse(aUseStats?.lastUseDate);
+            const bLastUseDate = Date.parse(bUseStats?.lastUseDate);
 
-            const aWeight = calculateUsageBias(a.count, aUseStats ? aUseStats.count : 0);
-            const bWeight = calculateUsageBias(b.count, bUseStats ? bUseStats.count : 0);
+            const aWeight = calculateUsageBias(a, a.count, aUses, aLastUseDate);
+            const bWeight = calculateUsageBias(b, b.count, bUses, bLastUseDate);
 
             return bWeight - aWeight;
-        });
-
-        // Mark results
-        results.forEach(r => {
-            const name = r.type === ResultType.chant ? r.aliases : r.text;
-            if (usedResults.includes(name))
-                r.usageBias = true;
         });
     }
 

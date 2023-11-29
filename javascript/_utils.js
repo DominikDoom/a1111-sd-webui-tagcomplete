@@ -173,7 +173,16 @@ function flatten(obj, roots = [], sep = ".") {
 }
 
 // Calculate biased tag score based on post count and frequent usage
-function calculateUsageBias(count, uses) {
+function calculateUsageBias(result, count, uses, lastUseDate) {
+    // Guard for minimum usage count & last usage date
+    const diffTime = Math.abs(Date.now() - (lastUseDate || Date.now()));
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (uses < TAC_CFG.frequencyMinCount || diffDays > TAC_CFG.frequencyMaxAge) {
+        uses = 0;
+    } else if (uses != 0) {
+        result.usageBias = true;
+    }
+
     switch (TAC_CFG.frequencyFunction) {
         case "Logarithmic (weak)":
             return Math.log(1 + count) + Math.log(1 + uses);
@@ -187,7 +196,14 @@ function calculateUsageBias(count, uses) {
 }
 // Beautify return type for easier parsing
 function mapUseCountArray(useCounts) {
-    return useCounts.map(useCount => {return {"name": useCount[0], "type": useCount[1], "count": useCount[2]}});
+    return useCounts.map(useCount => {
+        return {
+            "name": useCount[0],
+            "type": useCount[1],
+            "count": useCount[2],
+            "lastUseDate": useCount[3]
+        }
+    });
 }
 // Call API endpoint to increase bias of tag in the database
 function increaseUseCount(tagName, type, negative = false) {
