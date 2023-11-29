@@ -174,10 +174,15 @@ function flatten(obj, roots = [], sep = ".") {
 
 // Calculate biased tag score based on post count and frequent usage
 function calculateUsageBias(result, count, uses, lastUseDate) {
-    // Guard for minimum usage count & last usage date
+    // Calculate days since last use
     const diffTime = Math.abs(Date.now() - (lastUseDate || Date.now()));
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (uses < TAC_CFG.frequencyMinCount || diffDays > TAC_CFG.frequencyMaxAge) {
+    // Check setting conditions
+    if (
+        uses < TAC_CFG.frequencyMinCount ||
+        diffDays > TAC_CFG.frequencyMaxAge ||
+        (!TAC_CFG.frequencyIncludeAlias && !result.text.includes(tagword))
+    ) {
         uses = 0;
     } else if (uses != 0) {
         result.usageBias = true;

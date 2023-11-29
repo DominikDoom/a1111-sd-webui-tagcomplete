@@ -226,6 +226,7 @@ async function syncOptions() {
         frequencyFunction: opts["tac_frequencyFunction"],
         frequencyMinCount: opts["tac_frequencyMinCount"],
         frequencyMaxAge: opts["tac_frequencyMaxAge"],
+        frequencyIncludeAlias: opts["tac_frequencyIncludeAlias"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
