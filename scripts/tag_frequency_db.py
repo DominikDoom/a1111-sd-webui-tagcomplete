@@ -113,7 +113,10 @@ class TagFrequencyDb:
             )
             tag_count = cursor.fetchone()
 
-        return tag_count[0], tag_count[1] if tag_count else 0
+        if tag_count:
+            return tag_count[0], tag_count[1]
+        else:
+            return 0, None
 
     def get_tag_counts(self, tags: list[str], ttypes: list[str], negative=False):
         count_str = "count_neg" if negative else "count_pos"
@@ -128,7 +131,10 @@ class TagFrequencyDb:
                     (tag, ttype),
                 )
                 tag_count = cursor.fetchone()
-                yield (tag, ttype, tag_count[0], tag_count[1]) if tag_count else (tag, ttype, 0)
+                if tag_count:
+                    yield (tag, ttype, tag_count[0], tag_count[1]) 
+                else:
+                    yield (tag, ttype, 0, None)
 
     def increase_tag_count(self, tag, ttype, negative=False):
         pos_count = self.get_tag_count(tag, ttype, False)[0]
