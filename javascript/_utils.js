@@ -181,7 +181,7 @@ function calculateUsageBias(result, count, uses, lastUseDate) {
     if (
         uses < TAC_CFG.frequencyMinCount ||
         diffDays > TAC_CFG.frequencyMaxAge ||
-        (!TAC_CFG.frequencyIncludeAlias && !result.text.includes(tagword))
+        (!TAC_CFG.frequencyIncludeAlias && result.aliases && !result.text.includes(tagword))
     ) {
         uses = 0;
     } else if (uses != 0) {
