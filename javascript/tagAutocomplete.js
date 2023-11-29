@@ -1,4 +1,4 @@
-﻿const styleColors = {
+const styleColors = {
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
     "--results-border-width": ["1px", "1.5px"],
@@ -488,10 +488,13 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         }
 
         if (name && name.length > 0) {
+            // Check if it's a negative prompt
+            let textAreaId = getTextAreaIdentifier(textArea);
+            let isNegative = textAreaId.includes("n");
             // Sanitize name for API call
             name = encodeURIComponent(name)
             // Call API & update db
-            increaseUseCount(name, tagType)
+            increaseUseCount(name, tagType, isNegative)
         }
     }
 
@@ -1160,8 +1163,12 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             types.push(r.type);
         });
 
+        // Check if it's a negative prompt
+        let textAreaId = getTextAreaIdentifier(textArea);
+        let isNegative = textAreaId.includes("n");
+
         // Request use counts from the DB
-        const counts = await getUseCounts(names, types);
+        const counts = await getUseCounts(names, types, isNegative);
         const usedResults = counts.filter(c => c.count > 0).map(c => c.name);
 
         // Sort all

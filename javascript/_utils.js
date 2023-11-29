@@ -190,25 +190,25 @@ function mapUseCountArray(useCounts) {
     return useCounts.map(useCount => {return {"name": useCount[0], "type": useCount[1], "count": useCount[2]}});
 }
 // Call API endpoint to increase bias of tag in the database
-function increaseUseCount(tagName, type) {
-    postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}`);
+function increaseUseCount(tagName, type, negative = false) {
+    postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`);
 }
 // Get use count of tag from the database
-async function getUseCount(tagName, type) {
-    return (await fetchAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}`, true, false))["result"];
+async function getUseCount(tagName, type, negative = false) {
+    return (await fetchAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false))["result"];
 }
-async function getUseCounts(tagNames, types) {
+async function getUseCounts(tagNames, types, negative = false) {
     // While semantically weird, we have to use POST here for the body, as urls are limited in length
-    const body = JSON.stringify({"tagNames": tagNames, "tagTypes": types});
+    const body = JSON.stringify({"tagNames": tagNames, "tagTypes": types, "neg": negative});
     const rawArray = (await postAPI(`tacapi/v1/get-use-count-list`, body))["result"]
     return mapUseCountArray(rawArray);
 }
-async function getAllUseCounts() {
-    const rawArray = (await fetchAPI(`tacapi/v1/get-all-use-counts`))["result"];
+async function getAllUseCounts(negative = false) {
+    const rawArray = (await fetchAPI(`tacapi/v1/get-all-use-counts?neg=${negative}`))["result"];
     return mapUseCountArray(rawArray);
 }
-async function resetUseCount(tagName, type) {
-    await putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}`);
+async function resetUseCount(tagName, type, resetPosCount, resetNegCount) {
+    await putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
 }
 
 // Sliding window function to get possible combination groups of an array

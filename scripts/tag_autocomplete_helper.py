@@ -607,29 +607,30 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return JSONResponse({"error": "Database not initialized"}, status_code=500)
 
     @app.post("/tacapi/v1/increase-use-count")
-    async def increase_use_count(tagname: str, ttype: int):
-        db_request(lambda: db.increase_tag_count(tagname, ttype))
+    async def increase_use_count(tagname: str, ttype: int, neg: bool):
+        db_request(lambda: db.increase_tag_count(tagname, ttype, neg))
 
     @app.get("/tacapi/v1/get-use-count")
-    async def get_use_count(tagname: str, ttype: int):
-        return db_request(lambda: db.get_tag_count(tagname, ttype), get=True)
+    async def get_use_count(tagname: str, ttype: int, neg: bool):
+        return db_request(lambda: db.get_tag_count(tagname, ttype, neg), get=True)
     
     # Small dataholder class
     class UseCountListRequest(BaseModel):
         tagNames: list[str]
         tagTypes: list[int]
+        neg: bool = False
 
     # Semantically weird to use post here, but it's required for the body on js side
     @app.post("/tacapi/v1/get-use-count-list")
     async def get_use_count_list(body: UseCountListRequest):
-        return db_request(lambda: list(db.get_tag_counts(body.tagNames, body.tagTypes)), get=True)
+        return db_request(lambda: list(db.get_tag_counts(body.tagNames, body.tagTypes, body.neg)), get=True)
 
     @app.put("/tacapi/v1/reset-use-count")
-    async def reset_use_count(tagname: str, ttype: int):
-        db_request(lambda: db.reset_tag_count(tagname, ttype))
+    async def reset_use_count(tagname: str, ttype: int, pos: bool, neg: bool):
+        db_request(lambda: db.reset_tag_count(tagname, ttype, pos, neg))
 
     @app.get("/tacapi/v1/get-all-use-counts")
-    async def get_all_tag_counts():
-        return db_request(lambda: db.get_all_tags(), get=True)
+    async def get_all_tag_counts(neg: bool = False):
+        return db_request(lambda: db.get_all_tags(neg), get=True)
         
 script_callbacks.on_app_started(api_tac)
