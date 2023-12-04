@@ -722,6 +722,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             let wikiLink = document.createElement("a");
             wikiLink.classList.add("acWikiLink");
             wikiLink.innerText = "?";
+            wikiLink.title = "Open external wiki page for this tag"
 
             let linkPart = displayText;
             // Only use alias result if it is one
@@ -802,10 +803,21 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Add small ✨ marker to indicate usage sorting
         if (result.usageBias) {
             flexDiv.querySelector(".acMetaText").classList.add("biased");
+            flexDiv.title = "✨ Frequent tag. Ctrl/Cmd + click to reset usage count."
         }
 
+        // Check if it's a negative prompt
+        let isNegative = textAreaId.includes("n");
+
         // Add listener
-        li.addEventListener("click", function () { insertTextAtCursor(textArea, result, tagword); });
+        li.addEventListener("click", (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                resetUseCount(result.text, result.type, !isNegative, isNegative);
+                flexDiv.querySelector(".acMetaText").classList.remove("biased");
+            } else {
+                insertTextAtCursor(textArea, result, tagword);
+            }
+        });
         // Add element to list
         resultsList.appendChild(li);
     }
