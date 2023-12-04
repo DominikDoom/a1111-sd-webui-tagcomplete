@@ -634,7 +634,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         db_request(lambda: db.reset_tag_count(tagname, ttype, pos, neg))
 
     @app.get("/tacapi/v1/get-all-use-counts")
-    async def get_all_tag_counts(neg: bool = False):
-        return db_request(lambda: db.get_all_tags(neg), get=True)
+    async def get_all_tag_counts():
+        return db_request(lambda: db.get_all_tags(), get=True)
         
 script_callbacks.on_app_started(api_tac)

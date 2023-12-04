@@ -200,8 +200,17 @@ function calculateUsageBias(result, count, uses, lastUseDate) {
     }
 }
 // Beautify return type for easier parsing
-function mapUseCountArray(useCounts) {
+function mapUseCountArray(useCounts, posAndNeg = false) {
     return useCounts.map(useCount => {
+        if (posAndNeg) {
+            return {
+                "name": useCount[0],
+                "type": useCount[1],
+                "count": useCount[2],
+                "negCount": useCount[3],
+                "lastUseDate": useCount[4]
+            }
+        }
         return {
             "name": useCount[0],
             "type": useCount[1],
@@ -224,12 +233,49 @@ async function getUseCounts(tagNames, types, negative = false) {
     const rawArray = (await postAPI(`tacapi/v1/get-use-count-list`, body))["result"]
     return mapUseCountArray(rawArray);
 }
-async function getAllUseCounts(negative = false) {
-    const rawArray = (await fetchAPI(`tacapi/v1/get-all-use-counts?neg=${negative}`))["result"];
-    return mapUseCountArray(rawArray);
+async function getAllUseCounts() {
+    const rawArray = (await fetchAPI(`tacapi/v1/get-all-use-counts`))["result"];
+    return mapUseCountArray(rawArray, true);
 }
 async function resetUseCount(tagName, type, resetPosCount, resetNegCount) {
     await putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
+}
+
+function createTagUsageTable(tagCounts) {
+    // Create table
+    let tagTable = document.createElement("table");
+    tagTable.innerHTML =
+    `<thead>
+        <tr>
+            <td>Name</td>
+            <td>Type</td>
+            <td>Count(+)</td>
+            <td>Count(-)</td>
+            <td>Last used</td>
+        </tr>
+    </thead>`;
+    tagTable.id = "tac_tagUsageTable"
+
+    tagCounts.forEach(t => {
+        let tr = document.createElement("tr");
+        
+        // Fill values
+        let values = [t.name, t.type-1, t.count, t.negCount, t.lastUseDate]
+        values.forEach(v => {
+            let td = document.createElement("td");
+            td.innerText = v;
+            tr.append(td);
+        });
+        // Add delete/reset button
+        let delButton = document.createElement("button");
+        delButton.innerText = "🗑️";
+        delButton.title = "Reset count";
+        tr.append(delButton);
+        
+        tagTable.append(tr)
+    });
+
+    return tagTable;
 }
 
 // Sliding window function to get possible combination groups of an array

@@ -86,14 +86,14 @@ class TagFrequencyDb:
 
         return db_version[0] if db_version else 0
 
-    def get_all_tags(self, negative=False):
-        count_str = "count_neg" if negative else "count_pos"
+    def get_all_tags(self):
         with transaction() as cursor:
             cursor.execute(
                 f"""
-            SELECT name, type, {count_str}, last_used
+            SELECT name, type, count_pos, count_neg, last_used
             FROM tag_frequency
-            ORDER BY {count_str} DESC
+            WHERE count_pos > 0 OR count_neg > 0
+            ORDER BY count_pos + count_neg DESC
             """
             )
             tags = cursor.fetchall()
