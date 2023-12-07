@@ -3,6 +3,7 @@
 
 import glob
 import json
+import os
 import urllib.parse
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import yaml
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from modules import script_callbacks, sd_hijack, shared, hashes
+from typing_extensions import List
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
                                            load_hash_cache, update_hash_cache,
@@ -202,7 +204,8 @@ def get_hypernetworks():
     return sort_models(all_hypernetworks)
 
 model_keyword_installed = write_model_keyword_path()
-def get_lora():
+
+def _get_lora() -> List[Path]: 
     """Write a list of all lora"""
     global model_keyword_installed
 
@@ -210,6 +213,82 @@ def get_lora():
     lora_paths = [Path(l) for l in glob.glob(LORA_PATH.joinpath("**/*").as_posix(), recursive=True)]
     # Get hashes
     valid_loras = [lf for lf in lora_paths if lf.suffix in {".safetensors", ".ckpt", ".pt"} and lf.is_file()]
+
+    return valid_loras
+
+def _get_lyco() -> List[Path]: 
+
+    """Write a list of all LyCORIS/LOHA from https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris"""
+
+    # Get a list of all LyCORIS in the folder
+    lyco_paths = [Path(ly) for ly in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)]
+
+    # Get hashes
+    valid_lycos = [lyf for lyf in lyco_paths if lyf.suffix in {".safetensors", ".ckpt", ".pt"} and lyf.is_file()]
+    return valid_lycos
+
+try:
+    '''
+    Attempt to use the build-in Lora.networks Lora/LyCORIS models lists
+    The function definitions above provide fallbacks if the folowing fails
+    '''
+    import importlib
+    lora_networks = importlib.import_module("extensions-builtin.Lora.networks")
+    
+    LORA_PATH_ABSPATH = os.path.abspath(LORA_PATH)
+
+    def _get_lora() -> List[Path]:
+        return [ 
+            Path(lora_networks.available_networks[name].filename).relative_to(os.getcwd())
+            for name 
+            in lora_networks.available_networks
+            if str(
+                os.path.abspath(
+                    lora_networks.available_networks[name].filename
+                )
+            ).startswith(
+                LORA_PATH_ABSPATH
+            )
+        ]
+    
+    LYCO_PATH_ABSPATH = os.path.abspath(LYCO_PATH)
+
+    assert any(
+        str(
+            os.path.abspath(
+                lora_networks.available_networks[name].filename
+            )
+        ).startswith(
+            LYCO_PATH_ABSPATH
+        )
+        for name 
+        in lora_networks.available_networks
+    ), 'the Lora Extension does not handle LyCORIS models'
+
+    
+    def _get_lyco() -> List[Path]:
+        return [ 
+            Path(lora_networks.available_networks[name].filename).relative_to(os.getcwd())
+            for name 
+            in lora_networks.available_networks
+            if str(
+                os.path.abspath(
+                    lora_networks.available_networks[name].filename
+                )
+            ).startswith(
+                LYCO_PATH_ABSPATH
+            )
+        ]
+    
+except Exception as e:
+    print(f'Exception setting-up performant fetchers: {e}')
+
+def get_lora():
+    """Write a list of all lora"""
+    global model_keyword_installed
+    
+    # Get hashes
+    valid_loras = _get_lora()
     loras_with_hash = []
     for l in valid_loras:
         name = l.relative_to(LORA_PATH).as_posix()
@@ -223,13 +302,11 @@ def get_lora():
 
 
 def get_lyco():
+
     """Write a list of all LyCORIS/LOHA from https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris"""
 
-    # Get a list of all LyCORIS in the folder
-    lyco_paths = [Path(ly) for ly in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)]
-
     # Get hashes
-    valid_lycos = [lyf for lyf in lyco_paths if lyf.suffix in {".safetensors", ".ckpt", ".pt"} and lyf.is_file()]
+    valid_lycos = _get_lyco()
     lycos_with_hash = []
     for ly in valid_lycos:
         name = ly.relative_to(LYCO_PATH).as_posix()
