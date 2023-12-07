@@ -723,6 +723,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 cat = "-1";
 
             flexDiv.style = `color: ${colorGroup[cat][mode]};`;
+        } else {
+            light_dark = [
+                'lightslategray', 'darkslategray'
+            ]
+            flexDiv.style = `color: ${light_dark[mode]};`;
         }
 
         // Post count
