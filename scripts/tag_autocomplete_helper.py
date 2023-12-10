@@ -211,7 +211,7 @@ def _get_lora():
     """
     # Get a list of all lora in the folder
     lora_paths = [
-        Path(l)
+        Path(l).absolute()
         for l in glob.glob(LORA_PATH.joinpath("**/*").as_posix(), recursive=True)
     ]
     # Get hashes
@@ -231,7 +231,7 @@ def _get_lyco():
     """
     # Get a list of all LyCORIS in the folder
     lyco_paths = [
-        Path(ly)
+        Path(ly).absolute()
         for ly in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)
     ]
 
