@@ -11,7 +11,6 @@ import yaml
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from modules import script_callbacks, sd_hijack, shared, hashes
-from typing_extensions import List
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
                                            load_hash_cache, update_hash_cache,
