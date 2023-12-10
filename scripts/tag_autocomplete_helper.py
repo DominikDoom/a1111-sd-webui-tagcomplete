@@ -232,31 +232,25 @@ try:
     '''
     import importlib
     lora_networks = importlib.import_module("extensions-builtin.Lora.networks")
-    
-    LORA_ABSPATH = LORA_PATH.absolute()
 
     def _get_lora():
-        return [ 
-            Path(model.filename)
-                .relative_to(FILE_DIR)
+        return [
+            Path(model.filename).absolute()
             for model
             in lora_networks.available_networks.values()
             if Path(model.filename)
                 .absolute()
-                .is_relative_to(LORA_ABSPATH)
+                .is_relative_to(LORA_PATH.absolute())
         ]
    
-    LYCO_ABSPATH = LYCO_PATH.absolute()
-
     def _get_lyco():
         return [ 
-            Path(model.filename)
-                .relative_to(FILE_DIR)
+            Path(model.filename).absolute()
             for model
             in lora_networks.available_networks.values()
             if Path(model.filename)
                 .absolute()
-                .is_relative_to(LYCO_ABSPATH)
+                .is_relative_to(LYCO_PATH.absolute())
         ]
     
 except Exception as e:
@@ -272,7 +266,7 @@ def get_lora():
     valid_loras = _get_lora()
     loras_with_hash = []
     for l in valid_loras:
-        name = l.relative_to(LORA_PATH).as_posix()
+        name = l.relative_to(LORA_PATH.absolute()).as_posix()
         if model_keyword_installed:
             hash = get_lora_simple_hash(l)
         else:
@@ -290,7 +284,7 @@ def get_lyco():
     valid_lycos = _get_lyco()
     lycos_with_hash = []
     for ly in valid_lycos:
-        name = ly.relative_to(LYCO_PATH).as_posix()
+        name = ly.relative_to(LYCO_PATH.absolute()).as_posix()
         if model_keyword_installed:
             hash = get_lora_simple_hash(ly)
         else:
