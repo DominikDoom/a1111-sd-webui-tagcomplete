@@ -239,36 +239,24 @@ try:
 
     def _get_lora() -> List[Path]:
         return [ 
-            Path(lora_networks.available_networks[name].filename)
+            Path(model.filename)
                 .relative_to(os.getcwd())
-            for name 
-            in lora_networks.available_networks
-            if Path(lora_networks.available_networks[name].filename)
+            for model
+            in lora_networks.available_networks.values()
+            if Path(model.filename)
                 .absolute()
                 .is_relative_to(LORA_ABSPATH)
         ]
    
     LYCO_ABSPATH = LYCO_PATH.absolute()
 
-    '''
-    needed for edge-case where user has opted out of having the Lora Extension
-    handle LyCORIS networks, will trigger fallback
-    '''
-    assert any(
-        Path(lora_networks.available_networks[name].filename)
-            .absolute()
-            .is_relative_to(LYCO_ABSPATH)
-        for name 
-        in lora_networks.available_networks
-    ), 'the Lora Extension does not handle LyCORIS models'
-
     def _get_lyco() -> List[Path]:
         return [ 
-            Path(lora_networks.available_networks[name].filename)
+            Path(model.filename)
                 .relative_to(os.getcwd())
-            for name 
-            in lora_networks.available_networks
-            if Path(lora_networks.available_networks[name].filename)
+            for model
+            in lora_networks.available_networks.values()
+            if Path(model.filename)
                 .absolute()
                 .is_relative_to(LYCO_ABSPATH)
         ]
