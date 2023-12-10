@@ -3,7 +3,6 @@
 
 import glob
 import json
-import os
 import urllib.parse
 from pathlib import Path
 
@@ -205,7 +204,7 @@ def get_hypernetworks():
 
 model_keyword_installed = write_model_keyword_path()
 
-def _get_lora() -> List[Path]: 
+def _get_lora(): 
     """Write a list of all lora"""
     global model_keyword_installed
 
@@ -216,7 +215,7 @@ def _get_lora() -> List[Path]:
 
     return valid_loras
 
-def _get_lyco() -> List[Path]: 
+def _get_lyco(): 
 
     """Write a list of all LyCORIS/LOHA from https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris"""
 
@@ -237,10 +236,10 @@ try:
     
     LORA_ABSPATH = LORA_PATH.absolute()
 
-    def _get_lora() -> List[Path]:
+    def _get_lora():
         return [ 
             Path(model.filename)
-                .relative_to(os.getcwd())
+                .relative_to(FILE_DIR)
             for model
             in lora_networks.available_networks.values()
             if Path(model.filename)
@@ -250,10 +249,10 @@ try:
    
     LYCO_ABSPATH = LYCO_PATH.absolute()
 
-    def _get_lyco() -> List[Path]:
+    def _get_lyco():
         return [ 
             Path(model.filename)
-                .relative_to(os.getcwd())
+                .relative_to(FILE_DIR)
             for model
             in lora_networks.available_networks.values()
             if Path(model.filename)
