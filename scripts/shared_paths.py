@@ -25,7 +25,7 @@ EMB_PATH = Path(shared.cmd_opts.embeddings_dir)
 HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir)
 
 try:
-    LORA_PATH = Path(shared.cmd_opts.lora_dir)
+    LORA_PATH = Path(shared.cmd_opts.lora_dir).absolute()
 except AttributeError:
     LORA_PATH = None
 
@@ -34,6 +34,7 @@ try:
         LYCO_PATH = Path(shared.cmd_opts.lyco_dir_backcompat)
     except:
         LYCO_PATH = Path(shared.cmd_opts.lyco_dir) # attempt original non-backcompat path
+    LYCO_PATH = LYCO_PATH.absolute()
 except AttributeError:
     LYCO_PATH = None
 

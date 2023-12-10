@@ -233,30 +233,26 @@ try:
     import importlib
     lora_networks = importlib.import_module("extensions-builtin.Lora.networks")
     
-    LORA_ABSPATH = LORA_PATH.absolute()
-
     def _get_lora():
         return [ 
             Path(model.filename)
-                .relative_to(FILE_DIR)
+                .absolute()
             for model
             in lora_networks.available_networks.values()
             if Path(model.filename)
                 .absolute()
-                .is_relative_to(LORA_ABSPATH)
+                .is_relative_to(LORA_PATH)
         ]
    
-    LYCO_ABSPATH = LYCO_PATH.absolute()
-
     def _get_lyco():
         return [ 
             Path(model.filename)
-                .relative_to(FILE_DIR)
+                .absolute()
             for model
             in lora_networks.available_networks.values()
             if Path(model.filename)
                 .absolute()
-                .is_relative_to(LYCO_ABSPATH)
+                .is_relative_to(LYCO_PATH)
         ]
     
 except Exception as e:
