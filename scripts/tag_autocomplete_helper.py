@@ -235,53 +235,48 @@ try:
     import importlib
     lora_networks = importlib.import_module("extensions-builtin.Lora.networks")
     
-    LORA_PATH_ABSPATH = os.path.abspath(LORA_PATH)
+    LORA_ABSPATH = LORA_PATH.absolute()
 
     def _get_lora() -> List[Path]:
         return [ 
-            Path(lora_networks.available_networks[name].filename).relative_to(os.getcwd())
+            Path(lora_networks.available_networks[name].filename)
+                .relative_to(os.getcwd())
             for name 
             in lora_networks.available_networks
-            if str(
-                os.path.abspath(
-                    lora_networks.available_networks[name].filename
-                )
-            ).startswith(
-                LORA_PATH_ABSPATH
-            )
+            if Path(lora_networks.available_networks[name].filename)
+                .absolute()
+                .is_relative_to(LORA_ABSPATH)
         ]
-    
-    LYCO_PATH_ABSPATH = os.path.abspath(LYCO_PATH)
+   
+    LYCO_ABSPATH = LYCO_PATH.absolute()
 
+    '''
+    needed for edge-case where user has opted out of having the Lora Extension
+    handle LyCORIS networks, will trigger fallback
+    '''
     assert any(
-        str(
-            os.path.abspath(
-                lora_networks.available_networks[name].filename
-            )
-        ).startswith(
-            LYCO_PATH_ABSPATH
-        )
+        Path(lora_networks.available_networks[name].filename)
+            .absolute()
+            .is_relative_to(LYCO_ABSPATH)
         for name 
         in lora_networks.available_networks
     ), 'the Lora Extension does not handle LyCORIS models'
 
-    
     def _get_lyco() -> List[Path]:
         return [ 
-            Path(lora_networks.available_networks[name].filename).relative_to(os.getcwd())
+            Path(lora_networks.available_networks[name].filename)
+                .relative_to(os.getcwd())
             for name 
             in lora_networks.available_networks
-            if str(
-                os.path.abspath(
-                    lora_networks.available_networks[name].filename
-                )
-            ).startswith(
-                LYCO_PATH_ABSPATH
-            )
+            if Path(lora_networks.available_networks[name].filename)
+                .absolute()
+                .is_relative_to(LYCO_ABSPATH)
         ]
     
 except Exception as e:
-    print(f'Exception setting-up performant fetchers: {e}')
+    pass
+    # no need to report
+    # print(f'Exception setting-up performant fetchers: {e}')
 
 def get_lora():
     """Write a list of all lora"""
