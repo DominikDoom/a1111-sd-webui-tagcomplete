@@ -211,7 +211,7 @@ def _get_lora():
     """
     # Get a list of all lora in the folder
     lora_paths = [
-        Path(l).absolute()
+        Path(l)
         for l in glob.glob(LORA_PATH.joinpath("**/*").as_posix(), recursive=True)
     ]
     # Get hashes
@@ -231,7 +231,7 @@ def _get_lyco():
     """
     # Get a list of all LyCORIS in the folder
     lyco_paths = [
-        Path(ly).absolute()
+        Path(ly)
         for ly in glob.glob(LYCO_PATH.joinpath("**/*").as_posix(), recursive=True)
     ]
 
@@ -253,14 +253,14 @@ try:
         return [
             Path(model.filename).absolute()
             for model in lora_networks.available_networks.values()
-            if Path(model.filename).absolute().is_relative_to(LORA_PATH.absolute())
+            if Path(model.filename).absolute().is_relative_to(LORA_PATH)
         ]
 
     def _get_lyco():
         return [
             Path(model.filename).absolute()
             for model in lora_networks.available_networks.values()
-            if Path(model.filename).absolute().is_relative_to(LYCO_PATH.absolute())
+            if Path(model.filename).absolute().is_relative_to(LYCO_PATH)
         ]
 
 except Exception as e:
@@ -275,7 +275,7 @@ def get_lora():
     valid_loras = _get_lora()
     loras_with_hash = []
     for l in valid_loras:
-        name = l.relative_to(LORA_PATH.absolute()).as_posix()
+        name = l.relative_to(LORA_PATH).as_posix()
         if model_keyword_installed:
             hash = get_lora_simple_hash(l)
         else:
@@ -291,7 +291,7 @@ def get_lyco():
     valid_lycos = _get_lyco()
     lycos_with_hash = []
     for ly in valid_lycos:
-        name = ly.relative_to(LYCO_PATH.absolute()).as_posix()
+        name = ly.relative_to(LYCO_PATH).as_posix()
         if model_keyword_installed:
             hash = get_lora_simple_hash(ly)
         else:
