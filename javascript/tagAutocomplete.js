@@ -1,4 +1,5 @@
 ﻿const styleColors = {
+    "--results-neutral-text": ["#e0e0e0","black"],
     "--results-bg": ["#0b0f19", "#ffffff"],
     "--results-border-color": ["#4b5563", "#e5e7eb"],
     "--results-border-width": ["1px", "1.5px"],
@@ -35,6 +36,7 @@ const autocompleteCSS = `
     .autocompleteResults {
         background-color: var(--results-bg) !important;
         border: var(--results-border-width) solid var(--results-border-color) !important;
+        color: var(--results-neutral-text) !important;
         border-radius: 12px !important;
         height: fit-content;
         flex-basis: fit-content;
