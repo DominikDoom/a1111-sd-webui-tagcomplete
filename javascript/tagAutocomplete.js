@@ -1348,6 +1348,13 @@ async function refreshTacTempFiles(api = false) {
     }
 }
 
+async function refreshEmbeddings() {
+    await postAPI("tacapi/v1/refresh-embeddings", null);
+    embeddings = [];
+    await processQueue(QUEUE_FILE_LOAD, null);
+    console.log("TAC: Refreshed embeddings");
+}
+
 function addAutocompleteToArea(area) {
     // Return if autocomplete is disabled for the current area type in config
     let textAreaId = getTextAreaIdentifier(area);
@@ -1452,6 +1459,7 @@ async function setup() {
                 if (mutation.type === "attributes" && mutation.attributeName === "title") {
                     currentModelHash = mutation.target.title;
                     updateModelName();
+                    refreshEmbeddings();
                 }
             }
         });
