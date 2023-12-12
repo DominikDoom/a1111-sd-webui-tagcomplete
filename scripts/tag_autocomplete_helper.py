@@ -246,20 +246,22 @@ def _get_lyco():
 
 # Attempt to use the build-in Lora.networks Lora/LyCORIS models lists.
 try:
-    import importlib
-    lora_networks = importlib.import_module("extensions-builtin.Lora.networks")
+    import sys
+    from modules import extensions
+    sys.path.append(Path(extensions.extensions_builtin_dir).joinpath("Lora").as_posix())
+    import lora # pyright: ignore [reportMissingImports]
 
     def _get_lora():
         return [
             Path(model.filename).absolute()
-            for model in lora_networks.available_networks.values()
+            for model in lora.available_loras.values()
             if Path(model.filename).absolute().is_relative_to(LORA_PATH)
         ]
 
     def _get_lyco():
         return [
             Path(model.filename).absolute()
-            for model in lora_networks.available_networks.values()
+            for model in lora.available_loras.values()
             if Path(model.filename).absolute().is_relative_to(LYCO_PATH)
         ]
 
