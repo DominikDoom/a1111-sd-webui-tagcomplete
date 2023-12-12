@@ -366,9 +366,19 @@ if EMB_PATH.exists():
 def refresh_temp_files(*args, **kwargs):
     global WILDCARD_EXT_PATHS
     WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
-    load_textual_inversion_embeddings(force_reload = True) # Instant embedding reload.
     write_temp_files()
-    get_embeddings(shared.sd_model)
+
+    try:
+        # Fix for SD.Next infinite refresh loop due to gradio not updating after model load on demand.
+        # This will just skip embedding loading if no model is loaded yet (or there really are no embeddings).
+        # Try catch is just for safety incase sd_hijack access fails for some reason.
+        loaded = sd_hijack.model_hijack.embedding_db.word_embeddings
+        skipped = sd_hijack.model_hijack.embedding_db.skipped_embeddings
+        if len((loaded | skipped)) > 0:
+            load_textual_inversion_embeddings(force_reload = True)
+            get_embeddings(None)
+    except Exception:
+        pass
 
 def write_temp_files():
     # Write wildcards to wc.txt if found
