@@ -16,6 +16,8 @@ hash_dict = {}
 
 
 def load_hash_cache():
+    if not known_hashes_file.exists():
+        known_hashes_file.touch()
     with open(known_hashes_file, "r", encoding="utf-8") as file:
         reader = csv.reader(
             file.readlines(), delimiter=",", quotechar='"', skipinitialspace=True
@@ -28,6 +30,8 @@ def load_hash_cache():
 def update_hash_cache():
     global file_needs_update
     if file_needs_update:
+        if not known_hashes_file.exists():
+            known_hashes_file.touch()
         with open(known_hashes_file, "w", encoding="utf-8", newline='') as file:
             writer = csv.writer(file)
             for name, (hash, mtime) in hash_dict.items():

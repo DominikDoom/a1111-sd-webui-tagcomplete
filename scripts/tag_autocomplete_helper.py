@@ -277,6 +277,8 @@ def get_lora():
     valid_loras = _get_lora()
     loras_with_hash = []
     for l in valid_loras:
+        if not l.exists() or not l.is_file():
+            continue
         name = l.relative_to(LORA_PATH).as_posix()
         if model_keyword_installed:
             hash = get_lora_simple_hash(l)
@@ -293,6 +295,8 @@ def get_lyco():
     valid_lycos = _get_lyco()
     lycos_with_hash = []
     for ly in valid_lycos:
+        if not ly.exists() or not ly.is_file():
+            continue
         name = ly.relative_to(LYCO_PATH).as_posix()
         if model_keyword_installed:
             hash = get_lora_simple_hash(ly)
