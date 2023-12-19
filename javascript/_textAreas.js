@@ -79,6 +79,13 @@ const thirdParty = {
             "[id^=script_img2img_adetailer_ad_prompt] textarea",
             "[id^=script_img2img_adetailer_ad_negative_prompt] textarea"
         ]
+    },
+    "deepdanbooru-object-recognition": {
+        "base": "#tab_deepdanboru_object_recg_tab",
+        "hasIds": false,
+        "selectors": [
+            "Found tags",
+        ]
     }
 }
 
