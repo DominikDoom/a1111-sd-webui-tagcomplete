@@ -410,8 +410,9 @@ https://www.w3.org/TR/uievents-key/#named-key-attribute-value
 ![english-input](https://user-images.githubusercontent.com/34448969/200126513-bf6b3940-6e22-41b0-a369-f2b4640f87d6.png)
 
 ## 翻訳リスト
-- [🇨🇳 Chinese tags](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/23) by @HalfMAI, 最も一般的なタグを機械翻訳と手作業で修正（レガシーフォーマットを使用）
-- [🇨🇳 Chinese tags](https://github.com/sgmklp/tag-for-autocompletion-with-translation) by @sgmklp, [こちら](https://github.com/zcyzcy88/TagTable)をベースにして、より小さくした手動での翻訳セット。
+- [🇨🇳 中国語訳](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/23) by @HalfMAI, 最も一般的なタグを機械翻訳と手作業で修正（レガシーフォーマットを使用）
+- [🇨🇳 中国語訳](https://github.com/sgmklp/tag-for-autocompletion-with-translation) by @sgmklp, [こちら](https://github.com/zcyzcy88/TagTable)をベースにして、より小さくした手動での翻訳セット。
+- [🇯🇵 日本語訳](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/265) by @applemango, 機械翻訳と人力翻訳の両方が利用可能。
 
 > ### 🫵 あなたの助けが必要です！
 > 翻訳はコミュニティの努力により支えられています。もしあなたがタグファイルを翻訳したことがある場合、または作成したい場合は、あなたの成果をここに追加できるように、Pull RequestまたはIssueを開いてください。
