@@ -486,6 +486,7 @@ Example with Chinese translation:
 ## List of translations
 - [🇨🇳 Chinese tags](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/23) by @HalfMAI, using machine translation and manual correction for the most common tags (uses legacy format)
 - [🇨🇳 Chinese tags](https://github.com/sgmklp/tag-for-autocompletion-with-translation) by @sgmklp, smaller set of manual translations based on https://github.com/zcyzcy88/TagTable
+- [🇯🇵 Japanese tags](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/265) by @applemango, both machine and human translations available
 
 > ### 🫵 I need your help!
 > Translations are a community effort. If you have translated a tag file or want to create one, please open a Pull Request or Issue so your link can be added here.
