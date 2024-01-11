@@ -153,7 +153,7 @@ function sanitize(tagType, text) {
     if (tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard) {
         return `__${text}__`;
     } else if (tagType === ResultType.wildcardTag) {
-        return text.replace(/^.*?: /g, "");
+        return text;
     }
     return null;
 }
