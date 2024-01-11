@@ -53,7 +53,7 @@ async function load() {
 
 function sanitize(tagType, text) {
     if (tagType === ResultType.embedding) {
-        return text.replace(/^.*?: /g, "");
+        return text;
     }
     return null;
 }
