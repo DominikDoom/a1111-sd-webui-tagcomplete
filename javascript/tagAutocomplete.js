@@ -1188,21 +1188,23 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         const counts = await getUseCounts(names, types, isNegative);
 
         // Sort all
+
+        // Pre-calculate weights to prevent duplicate work
+        const resultBiasMap = new Map();
+        results.forEach(result => {
+            const name = result.type === ResultType.chant ? result.aliases : result.text;
+            const type = result.type;
+            // Find matching pair from DB results
+            const useStats = counts.find(c => c.name === name && c.type === type);
+            const uses = useStats?.count || 0;
+            const lastUseDate = Date.parse(useStats?.lastUseDate);
+            // Calculate & set weight
+            const weight = calculateUsageBias(result, result.count, uses, lastUseDate)
+            resultBiasMap.set(result, weight);
+        });
+        // Actual sorting with the pre-calculated weights
         results = results.sort((a, b) => {
-            const aName = a.type === ResultType.chant ? a.aliases : a.text;
-            const bName = b.type === ResultType.chant ? b.aliases : b.text;
-
-            const aUseStats = counts.find(c => c.name === aName && c.type === a.type);
-            const bUseStats = counts.find(c => c.name === bName && c.type === b.type);
-            const aUses = aUseStats?.count || 0;
-            const bUses = bUseStats?.count || 0;
-            const aLastUseDate = Date.parse(aUseStats?.lastUseDate);
-            const bLastUseDate = Date.parse(bUseStats?.lastUseDate);
-
-            const aWeight = calculateUsageBias(a, a.count, aUses, aLastUseDate);
-            const bWeight = calculateUsageBias(b, b.count, bUses, bLastUseDate);
-
-            return bWeight - aWeight;
+            return resultBiasMap.get(b) - resultBiasMap.get(a);
         });
     }
 
