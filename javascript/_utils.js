@@ -335,12 +335,19 @@ function getSortFunction() {
     let criterion = TAC_CFG.modelSortOrder || "Name";
 
     const textSort = (a, b, reverse = false) => {
-        const textHolderA = a.type === ResultType.chant ? a.aliases : a.text;
-        const textHolderB = b.type === ResultType.chant ? b.aliases : b.text;
+        // Assign keys so next sort is faster
+        if (!a.sortKey) {
+            a.sortKey = a.type === ResultType.chant
+                ? a.aliases
+                : a.text;
+        }
+        if (!b.sortKey) {
+            b.sortKey = b.type === ResultType.chant
+                ? b.aliases
+                : b.text;
+        }
 
-        const aKey = a.sortKey || textHolderA;
-        const bKey = b.sortKey || textHolderB;
-        return reverse ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey);
+        return reverse ? b.sortKey.localeCompare(a.sortKey) : a.sortKey.localeCompare(b.sortKey);
     }
     const numericSort = (a, b, reverse = false) => {
         const noKey = reverse ? "-1" : Number.MAX_SAFE_INTEGER;
