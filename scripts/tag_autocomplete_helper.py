@@ -712,7 +712,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         global last_style_mtime
         
         mtime = get_style_mtime()
-        if mtime > last_style_mtime:
+        if mtime is not None and mtime > last_style_mtime:
             last_style_mtime = mtime
             # Update temp file
             if shared.prompt_styles is not None:
