@@ -123,6 +123,29 @@ async function getExtraNetworkPreviewURL(filename, type) {
     }
 }
 
+lastStyleRefresh = 0;
+// Refresh style file if needed
+async function refreshStyleNamesIfChanged() {
+    // Only refresh once per second
+    currentTimestamp = new Date().getTime();
+    if (currentTimestamp - lastStyleRefresh < 1000) return;
+    lastStyleRefresh = currentTimestamp;
+
+    const response = await fetch(`tacapi/v1/refresh-styles-if-changed?${new Date().getTime()}`)
+    if (response.status === 304) {
+        // Not modified
+    } else if (response.status === 200) {
+        // Reload
+        QUEUE_FILE_LOAD.forEach(async fn => {
+            if (fn.toString().includes("styleNames"))
+                await fn.call(null, true);
+        })
+    } else {
+        // Error
+        console.error(`Error refreshing styles.txt: ` + response.status, response.statusText);
+    }
+}
+
 // Debounce function to prevent spamming the autocomplete function
 var dbTimeOut;
 const debounce = (func, wait = 300) => {

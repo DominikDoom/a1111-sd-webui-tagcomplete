@@ -41,7 +41,7 @@ async function load() {
 
 function sanitize(tagType, text) {
     if (tagType === ResultType.chant) {
-        return text.replace(/^.*?: /g, "");
+        return text;
     }
     return null;
 }

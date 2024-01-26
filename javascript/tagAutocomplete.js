@@ -221,6 +221,7 @@ async function syncOptions() {
         useHypernetworks: opts["tac_useHypernetworks"],
         useLoras: opts["tac_useLoras"],
 	    useLycos: opts["tac_useLycos"],
+        useLoraPrefixForLycos: opts["tac_useLoraPrefixForLycos"],
         showWikiLinks: opts["tac_showWikiLinks"],
         showExtraNetworkPreviews: opts["tac_showExtraNetworkPreviews"],
         modelSortOrder: opts["tac_modelSortOrder"],
@@ -229,6 +230,7 @@ async function syncOptions() {
         frequencyMinCount: opts["tac_frequencyMinCount"],
         frequencyMaxAge: opts["tac_frequencyMaxAge"],
         frequencyIncludeAlias: opts["tac_frequencyIncludeAlias"],
+        useStyleVars: opts["tac_useStyleVars"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         escapeParentheses: opts["tac_escapeParentheses"],
@@ -407,9 +409,10 @@ function isEnabled() {
 const WEIGHT_REGEX = /[([]([^()[\]:|]+)(?::(?:\d+(?:\.\d+)?|\.\d+))?[)\]]/g;
 const POINTY_REGEX = /<[^\s,<](?:[^\t\n\r,<>]*>|[^\t\n\r,> ]*)/g;
 const COMPLETED_WILDCARD_REGEX = /__[^\s,_][^\t\n\r,_]*[^\s,_]__[^\s,_]*/g;
+const STYLE_VAR_REGEX = /\$\(?[^$|\]\s]*\)?/g;
 const NORMAL_TAG_REGEX = /[^\s,|<>\]:]+_\([^\s,|<>\]:]*\)?|[^\s,|<>():\]]+|</g;
 const RUBY_TAG_REGEX = /[\w\d<][\w\d' \-?!/$%]{2,}>?/g;
-const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
+const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${STYLE_VAR_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithoutChoice = false) {
@@ -606,6 +609,9 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     textArea.selectionStart = afterInsertCursorPos + optionalSeparator.length + keywordsLength;
     textArea.selectionEnd = textArea.selectionStart
 
+    // Set self trigger flag to show wildcard contents after the filename was inserted
+    if ([ResultType.wildcardFile, ResultType.yamlWildcard, ResultType.umiWildcard].includes(result.type))
+        tacSelfTrigger = true;
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
     // Uses a built-in method from the webui's ui.js which also already accounts for event target
     if (tagType === ResultType.wildcardTag || tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
@@ -1050,7 +1056,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             .map(match => match[1]);
         let tags = prompt.match(TAG_REGEX)
         if (weightedTags !== null && tags !== null) {
-            tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted) && !tag.startsWith("<[")))
+            tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted) && !tag.startsWith("<[") && !tag.startsWith("$(")))
                 .concat(weightedTags);
         }
 

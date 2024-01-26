@@ -5,8 +5,8 @@ class LycoParser extends BaseTagParser {
     parse() {
         // Show lyco
         let tempResults = [];
-        if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lyco:") {
-            let searchTerm = tagword.replace("<lyco:", "").replace("<l:", "").replace("<", "");
+        if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lyco:" && tagword !== "<lora:") {
+            let searchTerm = tagword.replace("<lyco:", "").replace("<lora:", "").replace("<l:", "").replace("<", "");
             let filterCondition = x => x.toLowerCase().includes(searchTerm) || x.toLowerCase().replaceAll(" ", "_").includes(searchTerm);
             tempResults = lycos.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
@@ -52,7 +52,8 @@ async function sanitize(tagType, text) {
             multiplier = info["preferred weight"];
         }
 
-        return `<lyco:${text}:${multiplier}>`;
+        let prefix = TAC_CFG.useLoraPrefixForLycos ? "lora" : "lyco";
+        return `<${prefix}:${text}:${multiplier}>`;
     }
     return null;
 }
