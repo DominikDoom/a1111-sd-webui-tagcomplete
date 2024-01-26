@@ -12,7 +12,8 @@ const ResultType = Object.freeze({
     "hypernetwork": 8,
     "lora": 9,
     "lyco": 10,
-    "chant": 11
+    "chant": 11,
+    "styleName": 12
 });
 
 // Class to hold result data and annotations to make it clearer to use

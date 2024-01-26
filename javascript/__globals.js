@@ -19,6 +19,7 @@ var loras = [];
 var lycos = [];
 var modelKeywordDict = new Map();
 var chants = [];
+var styleNames = [];
 
 // Selected model info for black/whitelisting
 var currentModelHash = "";
