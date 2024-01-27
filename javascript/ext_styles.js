@@ -1,4 +1,4 @@
-const STYLE_REGEX = /(\$(\d*)\(?)[^$|\]\s]*\)?/;
+const STYLE_REGEX = /(\$(\d*)\(?)[^$|\[\],\s]*\)?/;
 const STYLE_TRIGGER = () => TAC_CFG.useStyleVars && tagword.match(STYLE_REGEX);
 
 var lastStyleVarIndex = "";
