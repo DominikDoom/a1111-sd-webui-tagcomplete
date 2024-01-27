@@ -578,10 +578,17 @@ def on_ui_settings():
 script_callbacks.on_ui_settings(on_ui_settings)
 
 def get_style_mtime():
-    style_file = getattr(shared, "styles_filename", "styles.csv")
-    style_file = Path(FILE_DIR).joinpath(style_file)
-    if Path.exists(style_file):
-        return style_file.stat().st_mtime
+    try:
+        style_file = getattr(shared, "styles_filename", "styles.csv")
+        # Check in case a list is returned
+        if isinstance(style_file, list):
+            style_file = style_file[0]
+        
+        style_file = Path(FILE_DIR).joinpath(style_file)
+        if Path.exists(style_file):
+            return style_file.stat().st_mtime
+    except Exception:
+        return None
 
 last_style_mtime = get_style_mtime()
 
