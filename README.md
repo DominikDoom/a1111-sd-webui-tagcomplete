@@ -20,6 +20,10 @@ Booru style tag autocompletion for the AUTOMATIC1111 Stable Diffusion WebUI
 </div>
 <br/>
 
+#### ⚠️ Notice:
+I am currently looking for feedback on a new feature I'm working on and want to release soon.<br/>
+Please check [the announcement post](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/270) for more info if you are interested to help.
+
 # 📄 Description
 
 Tag Autocomplete is an extension for the popular [AUTOMATIC1111 web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) for Stable Diffusion.

@@ -288,13 +288,21 @@ except Exception as e:
     # print(f'Exception setting-up performant fetchers: {e}')
 
 
+def is_visible(p: Path) -> bool:
+    if getattr(shared.opts, "extra_networks_hidden_models", "When searched") != "Never":
+        return True
+    for part in p.parts:
+        if part.startswith('.'):
+            return False
+    return True
+
 def get_lora():
     """Write a list of all lora"""
     # Get hashes
     valid_loras = _get_lora()
     loras_with_hash = []
     for l in valid_loras:
-        if not l.exists() or not l.is_file():
+        if not l.exists() or not l.is_file() or not is_visible(l):
             continue
         name = l.relative_to(LORA_PATH).as_posix()
         if model_keyword_installed:
@@ -312,7 +320,7 @@ def get_lyco():
     valid_lycos = _get_lyco()
     lycos_with_hash = []
     for ly in valid_lycos:
-        if not ly.exists() or not ly.is_file():
+        if not ly.exists() or not ly.is_file() or not is_visible(ly):
             continue
         name = ly.relative_to(LYCO_PATH).as_posix()
         if model_keyword_installed:
