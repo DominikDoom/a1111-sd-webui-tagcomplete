@@ -162,26 +162,41 @@ def get_embeddings(sd_model):
     emb_v1 = []
     emb_v2 = []
     emb_vXL = []
+    emb_unknown = []
     results = []
 
     try:
+        # The sd_model embedding_db reference only exists in sd.next with diffusers backend
+        try:
+            loaded_sdnext = sd_model.embedding_db.word_embeddings
+            skipped_sdnext = sd_model.embedding_db.skipped_embeddings
+        except (NameError, AttributeError):
+            loaded_sdnext = {}
+            skipped_sdnext = {}
+        
         # Get embedding dict from sd_hijack to separate v1/v2 embeddings
         loaded = sd_hijack.model_hijack.embedding_db.word_embeddings
         skipped = sd_hijack.model_hijack.embedding_db.skipped_embeddings
+        loaded = loaded | loaded_sdnext
+        skipped = skipped | skipped_sdnext
 
         # Add embeddings to the correct list
         for key, emb in (loaded | skipped).items():
-            if emb.filename is None or emb.shape is None:
+            if emb.filename is None:
                 continue
 
-            if emb.shape == V1_SHAPE:
+            if emb.shape is None:
+                emb_unknown.append((Path(emb.filename), key, ""))
+            elif emb.shape == V1_SHAPE:
                 emb_v1.append((Path(emb.filename), key, "v1"))
             elif emb.shape == V2_SHAPE:
                 emb_v2.append((Path(emb.filename), key, "v2"))
             elif emb.shape == VXL_SHAPE:
                 emb_vXL.append((Path(emb.filename), key, "vXL"))
+            else:
+                emb_unknown.append((Path(emb.filename), key, ""))
 
-        results = sort_models(emb_v1) + sort_models(emb_v2) + sort_models(emb_vXL)
+        results = sort_models(emb_v1) + sort_models(emb_v2) + sort_models(emb_vXL) + sort_models(emb_unknown)
     except AttributeError:
         print("tag_autocomplete_helper: Old webui version or unrecognized model shape, using fallback for embedding completion.")
         # Get a list of all embeddings in the folder
