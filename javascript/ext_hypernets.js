@@ -1,13 +1,20 @@
 const HYP_REGEX = /<(?!e:|l:|c:)[^,> ]*>?/g;
 const HYP_TRIGGER = () => TAC_CFG.useHypernetworks && tagword.match(HYP_REGEX);
 
+function escapeRegex(text) {
+    // Escape all characters except asterisks.
+    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+}
 class HypernetParser extends BaseTagParser {
     parse() {
         // Show hypernetworks
         let tempResults = [];
         if (tagword !== "<" && tagword !== "<h:" && tagword !== "<hypernet:") {
             let searchTerm = tagword.replace("<hypernet:", "").replace("<h:", "").replace("<", "");
-            let filterCondition = x => x.toLowerCase().includes(searchTerm) || x.toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegex(searchTerm), 'i');
+                return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
+            };
             tempResults = hypernetworks.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
             tempResults = hypernetworks;
