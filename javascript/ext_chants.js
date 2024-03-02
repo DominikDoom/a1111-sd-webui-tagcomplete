@@ -1,13 +1,20 @@
 const CHANT_REGEX = /<(?!e:|h:|l:)[^,> ]*>?/g;
 const CHANT_TRIGGER = () => TAC_CFG.chantFile && TAC_CFG.chantFile !== "None" && tagword.match(CHANT_REGEX);
 
+function escapeRegex(text) {
+    // Escape all characters except asterisks.
+    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+}
 class ChantParser extends BaseTagParser {
     parse() {
         // Show Chant
         let tempResults = [];
         if (tagword !== "<" && tagword !== "<c:") {
             let searchTerm = tagword.replace("<chant:", "").replace("<c:", "").replace("<", "");
-            let filterCondition = x => x.terms.toLowerCase().includes(searchTerm) || x.name.toLowerCase().includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegex(searchTerm), 'i');
+                return regex.test(x.terms.toLowerCase()) || regex.test(x.name.toLowerCase());
+            };
             tempResults = chants.filter(x => filterCondition(x)); // Filter by tagword
         } else {
             tempResults = chants;
