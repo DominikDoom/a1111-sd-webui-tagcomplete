@@ -3,6 +3,10 @@ const STYLE_TRIGGER = () => TAC_CFG.useStyleVars && tagword.match(STYLE_REGEX);
 
 var lastStyleVarIndex = "";
 
+function escapeRegex(text) {
+    // Escape all characters except asterisks.
+    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+}
 class StyleParser extends BaseTagParser {
    async parse() {
         // Refresh if needed
