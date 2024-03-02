@@ -1,13 +1,20 @@
 const LYCO_REGEX = /<(?!e:|h:|c:)[^,> ]*>?/g;
 const LYCO_TRIGGER = () => TAC_CFG.useLycos && tagword.match(LYCO_REGEX);
 
+function escapeRegex(text) {
+    // Escape all characters except asterisks.
+    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+}
 class LycoParser extends BaseTagParser {
     parse() {
         // Show lyco
         let tempResults = [];
         if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lyco:" && tagword !== "<lora:") {
             let searchTerm = tagword.replace("<lyco:", "").replace("<lora:", "").replace("<l:", "").replace("<", "");
-            let filterCondition = x => x.toLowerCase().includes(searchTerm) || x.toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegex(searchTerm), 'i');
+                return regex.test(x) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
+            };
             tempResults = lycos.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
             tempResults = lycos;
