@@ -1,6 +1,10 @@
 const EMB_REGEX = /<(?!l:|h:|c:)[^,> ]*>?/g;
 const EMB_TRIGGER = () => TAC_CFG.useEmbeddings && (tagword.match(EMB_REGEX) || TAC_CFG.includeEmbeddingsInNormalResults);
 
+function escapeRegex(text) {
+    // Escape all characters except asterisks.
+    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+}
 class EmbeddingParser extends BaseTagParser {
     parse() {
         // Show embeddings
@@ -16,7 +20,10 @@ class EmbeddingParser extends BaseTagParser {
                 searchTerm = searchTerm.slice(3);
             }
 
-            let filterCondition = x => x[0].toLowerCase().includes(searchTerm) || x[0].toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegex(searchTerm), 'i');
+                return regex.test(x[0].toLowerCase()) || regex.test(x[0].toLowerCase().replaceAll(" ", "_"));
+            };
 
             if (versionString)
                 tempResults = embeddings.filter(x => filterCondition(x) && x[2] && x[2].toLowerCase() === versionString.toLowerCase()); // Filter by tagword
