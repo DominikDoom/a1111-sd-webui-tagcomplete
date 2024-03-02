@@ -18,7 +18,10 @@ class StyleParser extends BaseTagParser {
         if (tagword !== matchGroups[1]) {
             let searchTerm = tagword.replace(matchGroups[1], "");
             
-            let filterCondition = x => x[0].toLowerCase().includes(searchTerm) || x[0].toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegex(searchTerm), 'i');
+                return regex.test(x[0].toLowerCase()) || regex.test(x[0].toLowerCase().replaceAll(" ", "_"));
+            };
             tempResults = styleNames.filter(x => filterCondition(x)); // Filter by tagword
         } else {
             tempResults = styleNames;
