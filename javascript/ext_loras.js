@@ -1,13 +1,20 @@
 const LORA_REGEX = /<(?!e:|h:|c:)[^,> ]*>?/g;
 const LORA_TRIGGER = () => TAC_CFG.useLoras && tagword.match(LORA_REGEX);
 
+function escapeRegex(text) {
+    // Escape all characters except asterisks.
+    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+}
 class LoraParser extends BaseTagParser {
     parse() {
         // Show lora
         let tempResults = [];
         if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lora:") {
             let searchTerm = tagword.replace("<lora:", "").replace("<l:", "").replace("<", "");
-            let filterCondition = x => x.toLowerCase().includes(searchTerm) || x.toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegex(searchTerm), 'i');
+                return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
+            };
             tempResults = loras.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
             tempResults = loras;
