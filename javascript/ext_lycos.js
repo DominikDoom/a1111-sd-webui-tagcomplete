@@ -3,7 +3,7 @@ const LYCO_TRIGGER = () => TAC_CFG.useLycos && tagword.match(LYCO_REGEX);
 
 function escapeRegex(text) {
     // Escape all characters except asterisks.
-    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+    return text.replace(/[-[\]{}()+.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
 }
 class LycoParser extends BaseTagParser {
     parse() {
