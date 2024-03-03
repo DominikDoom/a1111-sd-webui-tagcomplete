@@ -3,7 +3,7 @@ const CHANT_TRIGGER = () => TAC_CFG.chantFile && TAC_CFG.chantFile !== "None" &&
 
 function escapeRegex(text) {
     // Escape all characters except asterisks.
-    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+    return text.replace(/[-[\]{}()+.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
 }
 class ChantParser extends BaseTagParser {
     parse() {
