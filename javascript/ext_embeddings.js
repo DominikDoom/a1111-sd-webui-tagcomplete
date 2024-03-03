@@ -3,7 +3,7 @@ const EMB_TRIGGER = () => TAC_CFG.useEmbeddings && (tagword.match(EMB_REGEX) || 
 
 function escapeRegex(text) {
     // Escape all characters except asterisks.
-    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+    return text.replace(/[-[\]{}()+.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
 }
 class EmbeddingParser extends BaseTagParser {
     parse() {
