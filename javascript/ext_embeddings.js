@@ -16,7 +16,10 @@ class EmbeddingParser extends BaseTagParser {
                 searchTerm = searchTerm.slice(3);
             }
 
-            let filterCondition = x => x[0].toLowerCase().includes(searchTerm) || x[0].toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                return regex.test(x[0].toLowerCase()) || regex.test(x[0].toLowerCase().replaceAll(" ", "_"));
+            };
 
             if (versionString)
                 tempResults = embeddings.filter(x => filterCondition(x) && x[2] && x[2].toLowerCase() === versionString.toLowerCase()); // Filter by tagword
