@@ -216,7 +216,7 @@ async function syncOptions() {
         includeEmbeddingsInNormalResults: opts["tac_includeEmbeddingsInNormalResults"],
         useHypernetworks: opts["tac_useHypernetworks"],
         useLoras: opts["tac_useLoras"],
-	    useLycos: opts["tac_useLycos"],
+        useLycos: opts["tac_useLycos"],
         useLoraPrefixForLycos: opts["tac_useLoraPrefixForLycos"],
         showWikiLinks: opts["tac_showWikiLinks"],
         showExtraNetworkPreviews: opts["tac_showExtraNetworkPreviews"],
@@ -1165,7 +1165,7 @@ function navigateInList(textArea, event) {
     if (event.altKey) modKey += "Alt+";
     if (event.shiftKey) modKey += "Shift+";
     if (event.metaKey) modKey += "Meta+";
-	modKey += event.key;
+        modKey += event.key;
 
     oldSelectedTag = selectedTag;
 
@@ -1240,8 +1240,8 @@ function navigateInList(textArea, event) {
         case keys["Close"]:
             hideResults(textArea);
             break;
-	default:
-	    if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) return;
+        default:
+            if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) return;
     }
     let moveKeys = [keys["MoveUp"], keys["MoveDown"], keys["JumpUp"], keys["JumpDown"], keys["JumpToStart"], keys["JumpToEnd"]];
     if (selectedTag === resultCount - 1 && moveKeys.includes(event.key)) {
