@@ -1159,12 +1159,17 @@ function navigateInList(textArea, event) {
 
     if (!validKeys.includes(event.key)) return;
     if (!isVisible(textArea)) return
-    // Return if ctrl key is pressed to not interfere with weight editing shortcut
-    if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) return;
+    // Add modifier keys to base as text+.
+    let modKey = "";
+    if (event.ctrlKey) modKey += "Ctrl+";
+    if (event.altKey) modKey += "Alt+";
+    if (event.shiftKey) modKey += "Shift+";
+    if (event.metaKey) modKey += "Meta+";
+	modKey += event.key;
 
     oldSelectedTag = selectedTag;
 
-    switch (event.key) {
+    switch (modKey) {
         case keys["MoveUp"]:
             if (selectedTag === null) {
                 selectedTag = resultCount - 1;
@@ -1235,6 +1240,8 @@ function navigateInList(textArea, event) {
         case keys["Close"]:
             hideResults(textArea);
             break;
+	default:
+	    if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) return;
     }
     let moveKeys = [keys["MoveUp"], keys["MoveDown"], keys["JumpUp"], keys["JumpDown"], keys["JumpToStart"], keys["JumpToEnd"]];
     if (selectedTag === resultCount - 1 && moveKeys.includes(event.key)) {
