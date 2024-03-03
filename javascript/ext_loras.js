@@ -3,7 +3,7 @@ const LORA_TRIGGER = () => TAC_CFG.useLoras && tagword.match(LORA_REGEX);
 
 function escapeRegex(text) {
     // Escape all characters except asterisks.
-    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+    return text.replace(/[-[\]{}()+.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
 }
 class LoraParser extends BaseTagParser {
     parse() {
