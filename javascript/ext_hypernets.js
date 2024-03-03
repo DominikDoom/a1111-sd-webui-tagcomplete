@@ -3,7 +3,7 @@ const HYP_TRIGGER = () => TAC_CFG.useHypernetworks && tagword.match(HYP_REGEX);
 
 function escapeRegex(text) {
     // Escape all characters except asterisks.
-    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+    return text.replace(/[-[\]{}()+.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
 }
 class HypernetParser extends BaseTagParser {
     parse() {
