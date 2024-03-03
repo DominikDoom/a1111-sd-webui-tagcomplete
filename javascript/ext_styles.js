@@ -5,7 +5,7 @@ var lastStyleVarIndex = "";
 
 function escapeRegex(text) {
     // Escape all characters except asterisks.
-    return text.replace(/[-[\]{}()+?.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*');
+    return text.replace(/[-[\]{}()+.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
 }
 class StyleParser extends BaseTagParser {
    async parse() {
