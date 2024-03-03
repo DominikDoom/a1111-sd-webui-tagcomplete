@@ -186,15 +186,15 @@ def get_embeddings(sd_model):
                 continue
 
             if emb.shape is None:
-                emb_unknown.append((Path(emb.filename), key, ""))
+                emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
             elif emb.shape == V1_SHAPE:
-                emb_v1.append((Path(emb.filename), key, "v1"))
+                emb_v1.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v1"))
             elif emb.shape == V2_SHAPE:
-                emb_v2.append((Path(emb.filename), key, "v2"))
+                emb_v2.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v2"))
             elif emb.shape == VXL_SHAPE:
-                emb_vXL.append((Path(emb.filename), key, "vXL"))
+                emb_vXL.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "vXL"))
             else:
-                emb_unknown.append((Path(emb.filename), key, ""))
+                emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
 
         results = sort_models(emb_v1) + sort_models(emb_v2) + sort_models(emb_vXL) + sort_models(emb_unknown)
     except AttributeError:
