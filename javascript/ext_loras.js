@@ -7,7 +7,10 @@ class LoraParser extends BaseTagParser {
         let tempResults = [];
         if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lora:") {
             let searchTerm = tagword.replace("<lora:", "").replace("<l:", "").replace("<", "");
-            let filterCondition = x => x.toLowerCase().includes(searchTerm) || x.toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
+            };
             tempResults = loras.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
             tempResults = loras;

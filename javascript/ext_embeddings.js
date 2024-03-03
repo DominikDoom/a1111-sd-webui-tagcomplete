@@ -16,7 +16,10 @@ class EmbeddingParser extends BaseTagParser {
                 searchTerm = searchTerm.slice(3);
             }
 
-            let filterCondition = x => x[0].toLowerCase().includes(searchTerm) || x[0].toLowerCase().replaceAll(" ", "_").includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                return regex.test(x[0].toLowerCase()) || regex.test(x[0].toLowerCase().replaceAll(" ", "_"));
+            };
 
             if (versionString)
                 tempResults = embeddings.filter(x => filterCondition(x) && x[2] && x[2].toLowerCase() === versionString.toLowerCase()); // Filter by tagword
@@ -29,7 +32,11 @@ class EmbeddingParser extends BaseTagParser {
         // Add final results
         let finalResults = [];
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.embedding)
+            let lastDot = t[0].lastIndexOf(".") > -1 ? t[0].lastIndexOf(".") : t[0].length;
+            let lastSlash = t[0].lastIndexOf("/") > -1 ? t[0].lastIndexOf("/") : -1;
+            let name = t[0].trim().substring(lastSlash + 1, lastDot);
+
+            let result = new AutocompleteResult(name, ResultType.embedding)
             result.sortKey = t[1];
             result.meta = t[2] + " Embedding";
             finalResults.push(result);

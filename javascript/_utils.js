@@ -309,7 +309,11 @@ function toNgrams(inputArray, size) {
     );
 }
 
-function escapeRegExp(string) {
+function escapeRegExp(string, wildcardMatching = false) {
+    if (wildcardMatching) {
+        // Escape all characters except asterisks and ?, which should be treated separately as placeholders.
+        return string.replace(/[-[\]{}()+.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+    }
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 function escapeHTML(unsafeText) {

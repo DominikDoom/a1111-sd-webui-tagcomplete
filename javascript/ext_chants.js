@@ -7,7 +7,10 @@ class ChantParser extends BaseTagParser {
         let tempResults = [];
         if (tagword !== "<" && tagword !== "<c:") {
             let searchTerm = tagword.replace("<chant:", "").replace("<c:", "").replace("<", "");
-            let filterCondition = x => x.terms.toLowerCase().includes(searchTerm) || x.name.toLowerCase().includes(searchTerm);
+            let filterCondition = x => {
+                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                return regex.test(x.terms.toLowerCase()) || regex.test(x.name.toLowerCase());
+            };
             tempResults = chants.filter(x => filterCondition(x)); // Filter by tagword
         } else {
             tempResults = chants;
