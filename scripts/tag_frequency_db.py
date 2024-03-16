@@ -13,15 +13,19 @@ def transaction(db=db_file):
     """Context manager for database transactions.
     Ensures that the connection is properly closed after the transaction.
     """
-    conn = sqlite3.connect(db, timeout=timeout)
     try:
+        conn = sqlite3.connect(db, timeout=timeout)
+        
         conn.isolation_level = None
         cursor = conn.cursor()
         cursor.execute("BEGIN")
         yield cursor
         cursor.execute("COMMIT")
+    except sqlite3.Error as e:
+        print("Tag Autocomplete: Frequency database error:", e)
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 class TagFrequencyDb:
@@ -118,18 +122,29 @@ class TagFrequencyDb:
         else:
             return 0, None
 
-    def get_tag_counts(self, tags: list[str], ttypes: list[str], negative=False):
+    def get_tag_counts(self, tags: list[str], ttypes: list[str], negative=False, date_limit=None):
         count_str = "count_neg" if negative else "count_pos"
         with transaction() as cursor:
             for tag, ttype in zip(tags, ttypes):
-                cursor.execute(
-                    f"""
-                SELECT {count_str}, last_used
-                FROM tag_frequency
-                WHERE name = ? AND type = ?
-                """,
-                    (tag, ttype),
-                )
+                if date_limit is not None:
+                    cursor.execute(
+                        f"""
+                    SELECT {count_str}, last_used
+                    FROM tag_frequency
+                    WHERE name = ? AND type = ?
+                    AND last_used > datetime('now', '-' || ? || ' days')
+                    """,
+                        (tag, ttype, date_limit),
+                    )
+                else:
+                    cursor.execute(
+                        f"""
+                    SELECT {count_str}, last_used
+                    FROM tag_frequency
+                    WHERE name = ? AND type = ?
+                    """,
+                        (tag, ttype),
+                    )
                 tag_count = cursor.fetchone()
                 if tag_count:
                     yield (tag, ttype, tag_count[0], tag_count[1]) 

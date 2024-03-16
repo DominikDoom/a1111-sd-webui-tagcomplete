@@ -229,6 +229,7 @@ async function syncOptions() {
         frequencyFunction: opts["tac_frequencyFunction"],
         frequencyMinCount: opts["tac_frequencyMinCount"],
         frequencyMaxAge: opts["tac_frequencyMaxAge"],
+        frequencyRecommendCap: opts["tac_frequencyRecommendCap"],
         frequencyIncludeAlias: opts["tac_frequencyIncludeAlias"],
         useStyleVars: opts["tac_useStyleVars"],
         // Insertion related settings
@@ -1177,12 +1178,20 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     // Sort again with frequency / usage count if enabled
     if (TAC_CFG.frequencySort) {
         // Split our results into a list of names and types
-        let names = [];
+        let tagNames = [];
+        let aliasNames = [];
         let types = [];
         // Limit to 2k for performance reasons
+        const aliasTypes = [ResultType.tag, ResultType.extra];
         results.slice(0,2000).forEach(r => {
             const name = r.type === ResultType.chant ? r.aliases : r.text;
-            names.push(name);
+            // Add to alias list or tag list depending on if the name includes the tagword
+            // (the same criteria is used in the filter in calculateUsageBias)
+            if (aliasTypes.includes(r.type) && !name.includes(tagword)) {
+                aliasNames.push(name);
+            } else {
+                tagNames.push(name);
+            }
             types.push(r.type);
         });
 
@@ -1191,9 +1200,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let isNegative = textAreaId.includes("n");
 
         // Request use counts from the DB
+        const names = TAC_CFG.frequencyIncludeAlias ? tagNames.concat(aliasNames) : tagNames;
         const counts = await getUseCounts(names, types, isNegative);
-
-        // Sort all
 
         // Pre-calculate weights to prevent duplicate work
         const resultBiasMap = new Map();
@@ -1203,9 +1211,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             // Find matching pair from DB results
             const useStats = counts.find(c => c.name === name && c.type === type);
             const uses = useStats?.count || 0;
-            const lastUseDate = Date.parse(useStats?.lastUseDate);
             // Calculate & set weight
-            const weight = calculateUsageBias(result, result.count, uses, lastUseDate)
+            const weight = calculateUsageBias(result, result.count, uses)
             resultBiasMap.set(result, weight);
         });
         // Actual sorting with the pre-calculated weights

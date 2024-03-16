@@ -546,7 +546,8 @@ def on_ui_settings():
         "tac_frequencySort": shared.OptionInfo(True, "Locally record tag usage and sort frequent tags higher").info("Will also work for extra networks, keeping the specified base order"),
         "tac_frequencyFunction": shared.OptionInfo("Logarithmic (weak)", "Function to use for frequency sorting", gr.Dropdown, lambda: {"choices": list(frequency_sort_functions.keys())}).info("; ".join([f'<b>{key}</b>: {val}' for key, val in frequency_sort_functions.items()])),
         "tac_frequencyMinCount": shared.OptionInfo(3, "Minimum number of uses for a tag to be considered frequent").info("Tags with less uses than this will not be sorted higher, even if the sorting function would normally result in a higher position."),
-        "tac_frequencyMaxAge": shared.OptionInfo(30, "Maximum days since last use for a tag to be considered frequent").info("Similar to the above, tags that haven't been used in this many days will not be sorted higher."),
+        "tac_frequencyMaxAge": shared.OptionInfo(30, "Maximum days since last use for a tag to be considered frequent").info("Similar to the above, tags that haven't been used in this many days will not be sorted higher. Set to 0 to disable."),
+        "tac_frequencyRecommendCap": shared.OptionInfo(10, "Maximum number of recommended tags").info("Limits the maximum number of recommended tags to not drown out normal results. Set to 0 to disable."),
         "tac_frequencyIncludeAlias": shared.OptionInfo(False, "Frequency sorting matches aliases for frequent tags").info("Tag frequency will be increased for the main tag even if an alias is used for completion. This option can be used to override the default behavior of alias results being ignored for frequency sorting."),
         # Insertion related settings
         "tac_replaceUnderscores": shared.OptionInfo(True, "Replace underscores with spaces on insertion"),
@@ -783,7 +784,20 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     # Semantically weird to use post here, but it's required for the body on js side
     @app.post("/tacapi/v1/get-use-count-list")
     async def get_use_count_list(body: UseCountListRequest):
-        return db_request(lambda: list(db.get_tag_counts(body.tagNames, body.tagTypes, body.neg)), get=True)
+        # If a date limit is set > 0, pass it to the db
+        date_limit = getattr(shared.opts, "tac_frequencyMaxAge", 30)
+        date_limit = date_limit if date_limit > 0 else None
+
+        count_list = list(db.get_tag_counts(body.tagNames, body.tagTypes, body.neg, date_limit))
+    
+        # If a limit is set, return at max the top n results by count
+        if count_list and len(count_list):
+            limit = int(min(getattr(shared.opts, "tac_frequencyRecommendCap", 10), len(count_list)))
+            # Sort by count and return the top n
+            if limit > 0:
+                count_list = sorted(count_list, key=lambda x: x[2], reverse=True)[:limit]
+
+        return db_request(lambda: count_list, get=True)
 
     @app.put("/tacapi/v1/reset-use-count")
     async def reset_use_count(tagname: str, ttype: int, pos: bool, neg: bool):
