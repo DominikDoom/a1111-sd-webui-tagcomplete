@@ -1124,6 +1124,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         else
             fil = (x) => baseFilter(x);
 
+        /*
         // Add final results
         allTags.filter(fil).forEach(t => {
             let result = new AutocompleteResult(t[0].trim(), ResultType.tag)
@@ -1150,7 +1151,20 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             } else {
                 results = results.concat(extraResults);
             }
-        }
+        }*/
+        let mappedAllTags = allTags.map(t => {
+            return {text: t[0], cat: t[1], count: t[2], aliases: t[3]};
+        });
+        const fuzResult = fuzzysort.go(tagword, mappedAllTags, {
+            key: 'text'
+        })
+        fuzResult.forEach(r => {
+            let result = new AutocompleteResult(r.target.trim(), ResultType.tag)
+            result.category = r.obj["cat"];
+            result.count = r.obj["count"];
+            result.aliases = r.obj["aliases"];
+            results.push(result);
+        });
     }
 
     // Guard for empty results
