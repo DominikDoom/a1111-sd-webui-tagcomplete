@@ -80,11 +80,26 @@ async function fetchAPI(url, json = true, cache = false) {
         return await response.text();
 }
 
-async function postAPI(url, body) {
-    let response = await fetch(url, { method: "POST", body: body });
+async function postAPI(url, body = null) {
+    let response = await fetch(url, {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: body
+    });
 
     if (response.status != 200) {
         console.error(`Error posting to API endpoint "${url}": ` + response.status, response.statusText);
+        return null;
+    }
+
+    return await response.json();
+}
+
+async function putAPI(url, body = null) {
+    let response = await fetch(url, { method: "PUT", body: body });
+    
+    if (response.status != 200) {
+        console.error(`Error putting to API endpoint "${url}": ` + response.status, response.statusText);
         return null;
     }
 
@@ -180,6 +195,104 @@ function flatten(obj, roots = [], sep = ".") {
   );
 }
 
+// Calculate biased tag score based on post count and frequent usage
+function calculateUsageBias(result, count, uses) {
+    // Check setting conditions
+    if (uses < TAC_CFG.frequencyMinCount) {
+        uses = 0;
+    } else if (uses != 0) {
+        result.usageBias = true;
+    }
+
+    switch (TAC_CFG.frequencyFunction) {
+        case "Logarithmic (weak)":
+            return Math.log(1 + count) + Math.log(1 + uses);
+        case "Logarithmic (strong)":
+            return Math.log(1 + count) + 2 * Math.log(1 + uses);
+        case "Usage first":
+            return uses;
+        default:
+            return count;
+    }
+}
+// Beautify return type for easier parsing
+function mapUseCountArray(useCounts, posAndNeg = false) {
+    return useCounts.map(useCount => {
+        if (posAndNeg) {
+            return {
+                "name": useCount[0],
+                "type": useCount[1],
+                "count": useCount[2],
+                "negCount": useCount[3],
+                "lastUseDate": useCount[4]
+            }
+        }
+        return {
+            "name": useCount[0],
+            "type": useCount[1],
+            "count": useCount[2],
+            "lastUseDate": useCount[3]
+        }
+    });
+}
+// Call API endpoint to increase bias of tag in the database
+function increaseUseCount(tagName, type, negative = false) {
+    postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`);
+}
+// Get use count of tag from the database
+async function getUseCount(tagName, type, negative = false) {
+    return (await fetchAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false))["result"];
+}
+async function getUseCounts(tagNames, types, negative = false) {
+    // While semantically weird, we have to use POST here for the body, as urls are limited in length
+    const body = JSON.stringify({"tagNames": tagNames, "tagTypes": types, "neg": negative});
+    const rawArray = (await postAPI(`tacapi/v1/get-use-count-list`, body))["result"]
+    return mapUseCountArray(rawArray);
+}
+async function getAllUseCounts() {
+    const rawArray = (await fetchAPI(`tacapi/v1/get-all-use-counts`))["result"];
+    return mapUseCountArray(rawArray, true);
+}
+async function resetUseCount(tagName, type, resetPosCount, resetNegCount) {
+    await putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
+}
+
+function createTagUsageTable(tagCounts) {
+    // Create table
+    let tagTable = document.createElement("table");
+    tagTable.innerHTML =
+    `<thead>
+        <tr>
+            <td>Name</td>
+            <td>Type</td>
+            <td>Count(+)</td>
+            <td>Count(-)</td>
+            <td>Last used</td>
+        </tr>
+    </thead>`;
+    tagTable.id = "tac_tagUsageTable"
+
+    tagCounts.forEach(t => {
+        let tr = document.createElement("tr");
+        
+        // Fill values
+        let values = [t.name, t.type-1, t.count, t.negCount, t.lastUseDate]
+        values.forEach(v => {
+            let td = document.createElement("td");
+            td.innerText = v;
+            tr.append(td);
+        });
+        // Add delete/reset button
+        let delButton = document.createElement("button");
+        delButton.innerText = "🗑️";
+        delButton.title = "Reset count";
+        tr.append(delButton);
+        
+        tagTable.append(tr)
+    });
+
+    return tagTable;
+}
 
 // Sliding window function to get possible combination groups of an array
 function toNgrams(inputArray, size) {
@@ -242,12 +355,19 @@ function getSortFunction() {
     let criterion = TAC_CFG.modelSortOrder || "Name";
 
     const textSort = (a, b, reverse = false) => {
-        const textHolderA = a.type === ResultType.chant ? a.aliases : a.text;
-        const textHolderB = b.type === ResultType.chant ? b.aliases : b.text;
+        // Assign keys so next sort is faster
+        if (!a.sortKey) {
+            a.sortKey = a.type === ResultType.chant
+                ? a.aliases
+                : a.text;
+        }
+        if (!b.sortKey) {
+            b.sortKey = b.type === ResultType.chant
+                ? b.aliases
+                : b.text;
+        }
 
-        const aKey = a.sortKey || textHolderA;
-        const bKey = b.sortKey || textHolderB;
-        return reverse ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey);
+        return reverse ? b.sortKey.localeCompare(a.sortKey) : a.sortKey.localeCompare(b.sortKey);
     }
     const numericSort = (a, b, reverse = false) => {
         const noKey = reverse ? "-1" : Number.MAX_SAFE_INTEGER;

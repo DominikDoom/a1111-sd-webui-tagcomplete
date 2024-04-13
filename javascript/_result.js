@@ -24,7 +24,8 @@ class AutocompleteResult {
 
     // Additional info, only used in some cases
     category = null;
-    count = null;
+    count = Number.MAX_SAFE_INTEGER;
+    usageBias = null;
     aliases = null;
     meta = null;
     hash = null;

@@ -86,6 +86,10 @@ const autocompleteCSS = `
         white-space: nowrap;
         color: var(--meta-text-color);
     }
+    .acMetaText.biased::before {
+        content: "✨";
+        margin-right: 2px;
+    }
     .acWikiLink {
         padding: 0.5rem;
         margin: -0.5rem 0 -0.5rem -0.5rem;
@@ -221,6 +225,12 @@ async function syncOptions() {
         showWikiLinks: opts["tac_showWikiLinks"],
         showExtraNetworkPreviews: opts["tac_showExtraNetworkPreviews"],
         modelSortOrder: opts["tac_modelSortOrder"],
+        frequencySort: opts["tac_frequencySort"],
+        frequencyFunction: opts["tac_frequencyFunction"],
+        frequencyMinCount: opts["tac_frequencyMinCount"],
+        frequencyMaxAge: opts["tac_frequencyMaxAge"],
+        frequencyRecommendCap: opts["tac_frequencyRecommendCap"],
+        frequencyIncludeAlias: opts["tac_frequencyIncludeAlias"],
         useStyleVars: opts["tac_useStyleVars"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
@@ -466,6 +476,37 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         }
     }
 
+    // Frequency db update
+    if (TAC_CFG.frequencySort) {
+        let name = null;
+
+        switch (tagType) {
+            case ResultType.wildcardFile:
+            case ResultType.yamlWildcard:
+                // We only want to update the frequency for a full wildcard, not partial paths
+                if (sanitizedText.endsWith("__"))
+                    name = text
+                break;
+            case ResultType.chant:
+                // Chants use a slightly different format
+                name = result.aliases;
+                break;
+            default:
+                name = text;
+                break;
+        }
+
+        if (name && name.length > 0) {
+            // Check if it's a negative prompt
+            let textAreaId = getTextAreaIdentifier(textArea);
+            let isNegative = textAreaId.includes("n");
+            // Sanitize name for API call
+            name = encodeURIComponent(name)
+            // Call API & update db
+            increaseUseCount(name, tagType, isNegative)
+        }
+    }
+
     var prompt = textArea.value;
 
     // Edit prompt text
@@ -574,6 +615,8 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         tacSelfTrigger = true;
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
     // Uses a built-in method from the webui's ui.js which also already accounts for event target
+    if (tagType === ResultType.wildcardTag || tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
+        tacSelfTrigger = true;
     updateInput(textArea);
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
@@ -688,6 +731,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             let wikiLink = document.createElement("a");
             wikiLink.classList.add("acWikiLink");
             wikiLink.innerText = "?";
+            wikiLink.title = "Open external wiki page for this tag"
 
             let linkPart = displayText;
             // Only use alias result if it is one
@@ -733,7 +777,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         }
 
         // Post count
-        if (result.count && !isNaN(result.count)) {
+        if (result.count && !isNaN(result.count) && result.count !== Number.MAX_SAFE_INTEGER) {
             let postCount = result.count;
             let formatter;
 
@@ -765,8 +809,24 @@ function addResultsToList(textArea, results, tagword, resetList) {
             flexDiv.appendChild(metaDiv);
         }
 
+        // Add small ✨ marker to indicate usage sorting
+        if (result.usageBias) {
+            flexDiv.querySelector(".acMetaText").classList.add("biased");
+            flexDiv.title = "✨ Frequent tag. Ctrl/Cmd + click to reset usage count."
+        }
+
+        // Check if it's a negative prompt
+        let isNegative = textAreaId.includes("n");
+
         // Add listener
-        li.addEventListener("click", function () { insertTextAtCursor(textArea, result, tagword); });
+        li.addEventListener("click", (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                resetUseCount(result.text, result.type, !isNegative, isNegative);
+                flexDiv.querySelector(".acMetaText").classList.remove("biased");
+            } else {
+                insertTextAtCursor(textArea, result, tagword);
+            }
+        });
         // Add element to list
         resultsList.appendChild(li);
     }
@@ -1034,6 +1094,9 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     resultCountBeforeNormalTags = 0;
     tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
 
+    // Needed for slicing check later
+    let normalTags = false;
+
     // Process all parsers
     let resultCandidates = (await processParsers(textArea, prompt))?.filter(x => x.length > 0);
     // If one ore more result candidates match, use their results
@@ -1043,32 +1106,12 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Sort results, but not if it's umi tags since they are sorted by count
         if (!(resultCandidates.length === 1 && results[0].type === ResultType.umiWildcard))
             results = results.sort(getSortFunction());
-
-        // Since some tags are kaomoji, we have to add the normal results in some cases
-        if (tagword.startsWith("<") || tagword.startsWith("*<")) {
-            // Create escaped search regex with support for * as a start placeholder
-            let searchRegex;
-            if (tagword.startsWith("*")) {
-                tagword = tagword.slice(1);
-                searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
-            } else {
-                searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
-            }
-            let genericResults = allTags.filter(x => x[0].toLowerCase().search(searchRegex) > -1).slice(0, TAC_CFG.maxResults);
-
-            genericResults.forEach(g => {
-                let result = new AutocompleteResult(g[0].trim(), ResultType.tag)
-                result.category = g[1];
-                result.count = g[2];
-                result.aliases = g[3];
-                results.push(result);
-            });
-        }
     }
     // Else search the normal tag list
     if (!resultCandidates || resultCandidates.length === 0
         || (TAC_CFG.includeEmbeddingsInNormalResults && !(tagword.startsWith("<") || tagword.startsWith("*<")))
     ) {
+        normalTags = true;
         resultCountBeforeNormalTags = results.length;
 
         // Create escaped search regex with support for * as a start placeholder
@@ -1123,11 +1166,6 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 results = results.concat(extraResults);
             }
         }
-
-        // Slice if the user has set a max result count
-        if (!TAC_CFG.showAllResults) {
-            results = results.slice(0, TAC_CFG.maxResults + resultCountBeforeNormalTags);
-        }
     }
 
     // Guard for empty results
@@ -1135,6 +1173,57 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         //console.log('No results found for "' + tagword + '"');
         hideResults(textArea);
         return;
+    }
+
+    // Sort again with frequency / usage count if enabled
+    if (TAC_CFG.frequencySort) {
+        // Split our results into a list of names and types
+        let tagNames = [];
+        let aliasNames = [];
+        let types = [];
+        // Limit to 2k for performance reasons
+        const aliasTypes = [ResultType.tag, ResultType.extra];
+        results.slice(0,2000).forEach(r => {
+            const name = r.type === ResultType.chant ? r.aliases : r.text;
+            // Add to alias list or tag list depending on if the name includes the tagword
+            // (the same criteria is used in the filter in calculateUsageBias)
+            if (aliasTypes.includes(r.type) && !name.includes(tagword)) {
+                aliasNames.push(name);
+            } else {
+                tagNames.push(name);
+            }
+            types.push(r.type);
+        });
+
+        // Check if it's a negative prompt
+        let textAreaId = getTextAreaIdentifier(textArea);
+        let isNegative = textAreaId.includes("n");
+
+        // Request use counts from the DB
+        const names = TAC_CFG.frequencyIncludeAlias ? tagNames.concat(aliasNames) : tagNames;
+        const counts = await getUseCounts(names, types, isNegative);
+
+        // Pre-calculate weights to prevent duplicate work
+        const resultBiasMap = new Map();
+        results.forEach(result => {
+            const name = result.type === ResultType.chant ? result.aliases : result.text;
+            const type = result.type;
+            // Find matching pair from DB results
+            const useStats = counts.find(c => c.name === name && c.type === type);
+            const uses = useStats?.count || 0;
+            // Calculate & set weight
+            const weight = calculateUsageBias(result, result.count, uses)
+            resultBiasMap.set(result, weight);
+        });
+        // Actual sorting with the pre-calculated weights
+        results = results.sort((a, b) => {
+            return resultBiasMap.get(b) - resultBiasMap.get(a);
+        });
+    }
+
+    // Slice if the user has set a max result count and we are not in a extra networks / wildcard list
+    if (!TAC_CFG.showAllResults && normalTags) {
+        results = results.slice(0, TAC_CFG.maxResults + resultCountBeforeNormalTags);
     }
 
     addResultsToList(textArea, results, tagword, true);
@@ -1272,7 +1361,7 @@ async function refreshTacTempFiles(api = false) {
     }
     
     if (api) {
-        await postAPI("tacapi/v1/refresh-temp-files", null);
+        await postAPI("tacapi/v1/refresh-temp-files");
         await reload();
     } else {
         setTimeout(async () => {

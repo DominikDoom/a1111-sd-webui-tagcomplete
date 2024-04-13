@@ -2,7 +2,9 @@
 # to a temporary file to expose it to the javascript side
 
 import glob
+import importlib
 import json
+import sqlite3
 import urllib.parse
 from pathlib import Path
 
@@ -11,11 +13,25 @@ import yaml
 from fastapi import FastAPI
 from fastapi.responses import Response, FileResponse, JSONResponse
 from modules import script_callbacks, sd_hijack, shared, hashes
+from pydantic import BaseModel
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
                                            load_hash_cache, update_hash_cache,
                                            write_model_keyword_path)
 from scripts.shared_paths import *
+
+try:
+    import scripts.tag_frequency_db as tdb
+
+    # Ensure the db dependency is reloaded on script reload
+    importlib.reload(tdb)
+
+    db = tdb.TagFrequencyDb()
+    if int(db.version) != int(tdb.db_ver):
+        raise ValueError("Database version mismatch")
+except (ImportError, ValueError, sqlite3.Error) as e:
+    print(f"Tag Autocomplete: Tag frequency database error - \"{e}\"")
+    db = None
 
 # Attempt to get embedding load function, using the same call as api.
 try:
@@ -488,6 +504,13 @@ def on_ui_settings():
             return self
         shared.OptionInfo.needs_restart = needs_restart
 
+    # Dictionary of function options and their explanations
+    frequency_sort_functions = {
+        "Logarithmic (weak)": "Will respect the base order and slightly prefer often used tags",
+        "Logarithmic (strong)": "Same as Logarithmic (weak), but with a stronger bias",
+        "Usage first": "Will list used tags by frequency before all others",
+    }
+
     tac_options = {
         # Main tag file
         "tac_tagFile": shared.OptionInfo("danbooru.csv", "Tag filename", gr.Dropdown, lambda: {"choices": csv_files_withnone}, refresh=update_tag_files),
@@ -519,6 +542,13 @@ def on_ui_settings():
         "tac_showExtraNetworkPreviews": shared.OptionInfo(True, "Show preview thumbnails for extra networks if available"),
         "tac_modelSortOrder": shared.OptionInfo("Name", "Model sort order", gr.Dropdown, lambda: {"choices": list(sort_criteria.keys())}).info("Order for extra network models and wildcards in dropdown"),
         "tac_useStyleVars": shared.OptionInfo(False, "Search for webui style names").info("Suggests style names from the webui dropdown with '$'. Currently requires a secondary extension like <a href=\"https://github.com/SirVeggie/extension-style-vars\" target=\"_blank\">style-vars</a> to actually apply the styles before generating."),
+        # Frequency sorting settings
+        "tac_frequencySort": shared.OptionInfo(True, "Locally record tag usage and sort frequent tags higher").info("Will also work for extra networks, keeping the specified base order"),
+        "tac_frequencyFunction": shared.OptionInfo("Logarithmic (weak)", "Function to use for frequency sorting", gr.Dropdown, lambda: {"choices": list(frequency_sort_functions.keys())}).info("; ".join([f'<b>{key}</b>: {val}' for key, val in frequency_sort_functions.items()])),
+        "tac_frequencyMinCount": shared.OptionInfo(3, "Minimum number of uses for a tag to be considered frequent").info("Tags with less uses than this will not be sorted higher, even if the sorting function would normally result in a higher position."),
+        "tac_frequencyMaxAge": shared.OptionInfo(30, "Maximum days since last use for a tag to be considered frequent").info("Similar to the above, tags that haven't been used in this many days will not be sorted higher. Set to 0 to disable."),
+        "tac_frequencyRecommendCap": shared.OptionInfo(10, "Maximum number of recommended tags").info("Limits the maximum number of recommended tags to not drown out normal results. Set to 0 to disable."),
+        "tac_frequencyIncludeAlias": shared.OptionInfo(False, "Frequency sorting matches aliases for frequent tags").info("Tag frequency will be increased for the main tag even if an alias is used for completion. This option can be used to override the default behavior of alias results being ignored for frequency sorting."),
         # Insertion related settings
         "tac_replaceUnderscores": shared.OptionInfo(True, "Replace underscores with spaces on insertion"),
         "tac_escapeParentheses": shared.OptionInfo(True, "Escape parentheses on insertion"),
@@ -736,5 +766,59 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return Response(status_code=200) # Success
         else:
             return Response(status_code=304) # Not modified
+    def db_request(func, get = False):
+        if db is not None:
+            try:
+                if get:
+                    ret = func()
+                    if ret is list:
+                        ret = [{"name": t[0], "type": t[1], "count": t[2], "lastUseDate": t[3]} for t in ret]
+                    return JSONResponse({"result": ret})
+                else:
+                    func()
+            except sqlite3.Error as e:
+                return JSONResponse({"error": e.__cause__}, status_code=500)
+        else:
+            return JSONResponse({"error": "Database not initialized"}, status_code=500)
 
+    @app.post("/tacapi/v1/increase-use-count")
+    async def increase_use_count(tagname: str, ttype: int, neg: bool):
+        db_request(lambda: db.increase_tag_count(tagname, ttype, neg))
+
+    @app.get("/tacapi/v1/get-use-count")
+    async def get_use_count(tagname: str, ttype: int, neg: bool):
+        return db_request(lambda: db.get_tag_count(tagname, ttype, neg), get=True)
+    
+    # Small dataholder class
+    class UseCountListRequest(BaseModel):
+        tagNames: list[str]
+        tagTypes: list[int]
+        neg: bool = False
+
+    # Semantically weird to use post here, but it's required for the body on js side
+    @app.post("/tacapi/v1/get-use-count-list")
+    async def get_use_count_list(body: UseCountListRequest):
+        # If a date limit is set > 0, pass it to the db
+        date_limit = getattr(shared.opts, "tac_frequencyMaxAge", 30)
+        date_limit = date_limit if date_limit > 0 else None
+
+        count_list = list(db.get_tag_counts(body.tagNames, body.tagTypes, body.neg, date_limit))
+    
+        # If a limit is set, return at max the top n results by count
+        if count_list and len(count_list):
+            limit = int(min(getattr(shared.opts, "tac_frequencyRecommendCap", 10), len(count_list)))
+            # Sort by count and return the top n
+            if limit > 0:
+                count_list = sorted(count_list, key=lambda x: x[2], reverse=True)[:limit]
+
+        return db_request(lambda: count_list, get=True)
+
+    @app.put("/tacapi/v1/reset-use-count")
+    async def reset_use_count(tagname: str, ttype: int, pos: bool, neg: bool):
+        db_request(lambda: db.reset_tag_count(tagname, ttype, pos, neg))
+
+    @app.get("/tacapi/v1/get-all-use-counts")
+    async def get_all_tag_counts():
+        return db_request(lambda: db.get_all_tags(), get=True)
+        
 script_callbacks.on_app_started(api_tac)
