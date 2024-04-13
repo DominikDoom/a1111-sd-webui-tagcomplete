@@ -38,7 +38,7 @@ class WildcardParser extends BaseTagParser {
                 }
                 wildcards = wildcards.concat(getDescendantProp(yamlWildcards[basePath], fileName));
             } else {
-                const fileContent = (await fetchAPI(`tacapi/v1/wildcard-contents?basepath=${basePath}&filename=${fileName}.txt`, false))
+                const fileContent = (await fetchTacAPI(`tacapi/v1/wildcard-contents?basepath=${basePath}&filename=${fileName}.txt`, false))
                     .split("\n")
                     .filter(x => x.trim().length > 0 && !x.startsWith('#'));  // Remove empty lines and comments
                 wildcards = wildcards.concat(fileContent);

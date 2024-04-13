@@ -552,7 +552,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         let keywords = null;
         // Check built-in activation words first
         if (tagType === ResultType.lora || tagType === ResultType.lyco) {
-            let info = await fetchAPI(`tacapi/v1/lora-info/${result.text}`)
+            let info = await fetchTacAPI(`tacapi/v1/lora-info/${result.text}`)
             if (info && info["activation text"]) {
                 keywords = info["activation text"];
             }
@@ -564,7 +564,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
             // No match, try to find a sha256 match from the cache file
             if (!nameDict) {
-                const sha256 = await fetchAPI(`/tacapi/v1/lora-cached-hash/${result.text}`)
+                const sha256 = await fetchTacAPI(`/tacapi/v1/lora-cached-hash/${result.text}`)
                 if (sha256) {
                     nameDict = modelKeywordDict.get(sha256);
                 }
@@ -887,7 +887,7 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex) {
 
             let img = previewDiv.querySelector("img");
 
-            let url = await getExtraNetworkPreviewURL(selectedFilename, shorthandType);
+            let url = await getTacExtraNetworkPreviewURL(selectedFilename, shorthandType);
             if (url) {
                 img.src = url;
                 previewDiv.style.display = "block";
@@ -1361,7 +1361,7 @@ async function refreshTacTempFiles(api = false) {
     }
     
     if (api) {
-        await postAPI("tacapi/v1/refresh-temp-files");
+        await postTacAPI("tacapi/v1/refresh-temp-files");
         await reload();
     } else {
         setTimeout(async () => {
@@ -1371,7 +1371,7 @@ async function refreshTacTempFiles(api = false) {
 }
 
 async function refreshEmbeddings() {
-    await postAPI("tacapi/v1/refresh-embeddings", null);
+    await postTacAPI("tacapi/v1/refresh-embeddings", null);
     embeddings = [];
     await processQueue(QUEUE_FILE_LOAD, null);
     console.log("TAC: Refreshed embeddings");

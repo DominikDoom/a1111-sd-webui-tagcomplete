@@ -61,7 +61,7 @@ async function loadCSV(path) {
 }
 
 // Fetch API
-async function fetchAPI(url, json = true, cache = false) {
+async function fetchTacAPI(url, json = true, cache = false) {
     if (!cache) {
         const appendChar = url.includes("?") ? "&" : "?";
         url += `${appendChar}${new Date().getTime()}`
@@ -80,7 +80,7 @@ async function fetchAPI(url, json = true, cache = false) {
         return await response.text();
 }
 
-async function postAPI(url, body = null) {
+async function postTacAPI(url, body = null) {
     let response = await fetch(url, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
@@ -95,7 +95,7 @@ async function postAPI(url, body = null) {
     return await response.json();
 }
 
-async function putAPI(url, body = null) {
+async function putTacAPI(url, body = null) {
     let response = await fetch(url, { method: "PUT", body: body });
     
     if (response.status != 200) {
@@ -107,8 +107,8 @@ async function putAPI(url, body = null) {
 }
 
 // Extra network preview thumbnails
-async function getExtraNetworkPreviewURL(filename, type) {
-    const previewJSON = await fetchAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
+async function getTacExtraNetworkPreviewURL(filename, type) {
+    const previewJSON = await fetchTacAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
     if (previewJSON?.url) {
         const properURL = `sd_extra_networks/thumb?filename=${previewJSON.url}`;
         if ((await fetch(properURL)).status == 200) {
@@ -237,24 +237,24 @@ function mapUseCountArray(useCounts, posAndNeg = false) {
 }
 // Call API endpoint to increase bias of tag in the database
 function increaseUseCount(tagName, type, negative = false) {
-    postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`);
+    postTacAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`);
 }
 // Get use count of tag from the database
 async function getUseCount(tagName, type, negative = false) {
-    return (await fetchAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false))["result"];
+    return (await fetchTacAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false))["result"];
 }
 async function getUseCounts(tagNames, types, negative = false) {
     // While semantically weird, we have to use POST here for the body, as urls are limited in length
     const body = JSON.stringify({"tagNames": tagNames, "tagTypes": types, "neg": negative});
-    const rawArray = (await postAPI(`tacapi/v1/get-use-count-list`, body))["result"]
+    const rawArray = (await postTacAPI(`tacapi/v1/get-use-count-list`, body))["result"]
     return mapUseCountArray(rawArray);
 }
 async function getAllUseCounts() {
-    const rawArray = (await fetchAPI(`tacapi/v1/get-all-use-counts`))["result"];
+    const rawArray = (await fetchTacAPI(`tacapi/v1/get-all-use-counts`))["result"];
     return mapUseCountArray(rawArray, true);
 }
 async function resetUseCount(tagName, type, resetPosCount, resetNegCount) {
-    await putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
+    await putTacAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
 }
 
 function createTagUsageTable(tagCounts) {

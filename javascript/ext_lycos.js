@@ -50,7 +50,7 @@ async function load() {
 async function sanitize(tagType, text) {
     if (tagType === ResultType.lyco) {
         let multiplier = TAC_CFG.extraNetworksDefaultMultiplier;
-        let info = await fetchAPI(`tacapi/v1/lyco-info/${text}`)
+        let info = await fetchTacAPI(`tacapi/v1/lyco-info/${text}`)
         if (info && info["preferred weight"]) {
             multiplier = info["preferred weight"];
         }
