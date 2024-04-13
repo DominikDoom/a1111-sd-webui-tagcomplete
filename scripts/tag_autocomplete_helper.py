@@ -802,7 +802,10 @@ def api_tac(_: gr.Blocks, app: FastAPI):
         date_limit = getattr(shared.opts, "tac_frequencyMaxAge", 30)
         date_limit = date_limit if date_limit > 0 else None
 
-        count_list = list(db.get_tag_counts(body.tagNames, body.tagTypes, body.neg, date_limit))
+        if db:
+            count_list = list(db.get_tag_counts(body.tagNames, body.tagTypes, body.neg, date_limit))
+        else:
+            count_list = None
     
         # If a limit is set, return at max the top n results by count
         if count_list and len(count_list):
