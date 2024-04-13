@@ -6,7 +6,7 @@ var lastStyleVarIndex = "";
 class StyleParser extends BaseTagParser {
    async parse() {
         // Refresh if needed
-        await refreshStyleNamesIfChanged();
+        await TacUtils.refreshStyleNamesIfChanged();
 
         // Show styles
         let tempResults = [];
@@ -19,7 +19,7 @@ class StyleParser extends BaseTagParser {
             let searchTerm = tagword.replace(matchGroups[1], "");
             
             let filterCondition = x => {
-                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x[0].toLowerCase()) || regex.test(x[0].toLowerCase().replaceAll(" ", "_"));
             };
             tempResults = styleNames.filter(x => filterCondition(x)); // Filter by tagword
@@ -42,7 +42,7 @@ class StyleParser extends BaseTagParser {
 async function load(force = false) {
     if (styleNames.length === 0 || force) {
         try {
-            styleNames = (await loadCSV(`${tagBasePath}/temp/styles.txt`))
+            styleNames = (await TacUtils.loadCSV(`${tagBasePath}/temp/styles.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
                 .filter(x => x[0] !== "None") // Remove "None" style
                 .map(x => [x[0].trim()]); // Trim name

@@ -17,7 +17,7 @@ class EmbeddingParser extends BaseTagParser {
             }
 
             let filterCondition = x => {
-                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x[0].toLowerCase()) || regex.test(x[0].toLowerCase().replaceAll(" ", "_"));
             };
 
@@ -49,7 +49,7 @@ class EmbeddingParser extends BaseTagParser {
 async function load() {
     if (embeddings.length === 0) {
         try {
-            embeddings = (await loadCSV(`${tagBasePath}/temp/emb.txt`))
+            embeddings = (await TacUtils.loadCSV(`${tagBasePath}/temp/emb.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
                 .map(x => [x[0].trim(), x[1], x[2]]); // Return name, sortKey, hash tuples
         } catch (e) {

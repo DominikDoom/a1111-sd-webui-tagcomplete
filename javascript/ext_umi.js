@@ -117,7 +117,7 @@ class UmiParser extends BaseTagParser {
         if (umiTags.length > 0) {
             // Get difference for subprompt
             let tagCountChange = umiTags.length - umiPreviousTags.length;
-            let diff = difference(umiTags, umiPreviousTags);
+            let diff = TacUtils.difference(umiTags, umiPreviousTags);
             umiPreviousTags = umiTags;
 
             // Show all condition
@@ -136,7 +136,7 @@ class UmiParser extends BaseTagParser {
                 originalTagword = tagword;
                 tagword = umiTagword;
                 let filteredWildcardsSorted = filteredWildcards(umiTagword);
-                let searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(umiTagword)}`, 'i')
+                let searchRegex = new RegExp(`(^|[^a-zA-Z])${TacUtils.escapeRegExp(umiTagword)}`, 'i')
                 let baseFilter = x => x[0].toLowerCase().search(searchRegex) > -1;
                 let spaceIncludeFilter = x => x[0].toLowerCase().replaceAll(" ", "_").search(searchRegex) > -1;
                 tempResults = filteredWildcardsSorted.filter(x => baseFilter(x) || spaceIncludeFilter(x)) // Filter by tagword
@@ -210,7 +210,7 @@ function updateUmiTags(tagType, sanitizedText, newPrompt, textArea) {
 async function load() {
     if (umiWildcards.length === 0) {
         try {
-            let umiTags = (await readFile(`${tagBasePath}/temp/umi_tags.txt`)).split("\n");
+            let umiTags = (await TacUtils.readFile(`${tagBasePath}/temp/umi_tags.txt`)).split("\n");
             // Split into tag, count pairs
             umiWildcards = umiTags.map(x => x
                 .trim()

@@ -8,7 +8,7 @@ class LycoParser extends BaseTagParser {
         if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lyco:" && tagword !== "<lora:") {
             let searchTerm = tagword.replace("<lyco:", "").replace("<lora:", "").replace("<l:", "").replace("<", "");
             let filterCondition = x => {
-                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
             };
             tempResults = lycos.filter(x => filterCondition(x[0])); // Filter by tagword
@@ -38,7 +38,7 @@ class LycoParser extends BaseTagParser {
 async function load() {
     if (lycos.length === 0) {
         try {
-            lycos = (await loadCSV(`${tagBasePath}/temp/lyco.txt`))
+            lycos = (await TacUtils.loadCSV(`${tagBasePath}/temp/lyco.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
                 .map(x => [x[0]?.trim(), x[1], x[2]]); // Trim filenames and return the name, sortKey, hash pairs
         } catch (e) {
@@ -50,7 +50,7 @@ async function load() {
 async function sanitize(tagType, text) {
     if (tagType === ResultType.lyco) {
         let multiplier = TAC_CFG.extraNetworksDefaultMultiplier;
-        let info = await fetchTacAPI(`tacapi/v1/lyco-info/${text}`)
+        let info = await TacUtils.fetchAPI(`tacapi/v1/lyco-info/${text}`)
         if (info && info["preferred weight"]) {
             multiplier = info["preferred weight"];
         }

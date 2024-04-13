@@ -8,7 +8,7 @@ class ChantParser extends BaseTagParser {
         if (tagword !== "<" && tagword !== "<c:") {
             let searchTerm = tagword.replace("<chant:", "").replace("<c:", "").replace("<", "");
             let filterCondition = x => {
-                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.terms.toLowerCase()) || regex.test(x.name.toLowerCase());
             };
             tempResults = chants.filter(x => filterCondition(x)); // Filter by tagword
@@ -33,7 +33,7 @@ class ChantParser extends BaseTagParser {
 async function load() {
     if (TAC_CFG.chantFile && TAC_CFG.chantFile !== "None") {
         try {
-            chants = await readFile(`${tagBasePath}/${TAC_CFG.chantFile}?`, true);
+            chants = await TacUtils.readFile(`${tagBasePath}/${TAC_CFG.chantFile}?`, true);
         } catch (e) {
             console.error("Error loading chants.json: " + e);
         }

@@ -8,7 +8,7 @@ class HypernetParser extends BaseTagParser {
         if (tagword !== "<" && tagword !== "<h:" && tagword !== "<hypernet:") {
             let searchTerm = tagword.replace("<hypernet:", "").replace("<h:", "").replace("<", "");
             let filterCondition = x => {
-                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
             };
             tempResults = hypernetworks.filter(x => filterCondition(x[0])); // Filter by tagword
@@ -32,7 +32,7 @@ class HypernetParser extends BaseTagParser {
 async function load() {
     if (hypernetworks.length === 0) {
         try {
-            hypernetworks = (await loadCSV(`${tagBasePath}/temp/hyp.txt`))
+            hypernetworks = (await TacUtils.loadCSV(`${tagBasePath}/temp/hyp.txt`))
                 .filter(x => x[0]?.trim().length > 0) //Remove empty lines
                 .map(x => [x[0]?.trim(), x[1]]); // Remove carriage returns and padding if it exists
         } catch (e) {

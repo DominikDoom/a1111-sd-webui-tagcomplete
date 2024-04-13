@@ -151,7 +151,7 @@ async function loadTags(c) {
     // Load main tags and aliases
     if (allTags.length === 0 && c.tagFile && c.tagFile !== "None") {
         try {
-            allTags = await loadCSV(`${tagBasePath}/${c.tagFile}`);
+            allTags = await TacUtils.loadCSV(`${tagBasePath}/${c.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
@@ -163,7 +163,7 @@ async function loadTags(c) {
 async function loadExtraTags(c) {
     if (c.extra.extraFile && c.extra.extraFile !== "None") {
         try {
-            extras = await loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
+            extras = await TacUtils.loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
             // Add translations to the main translation map for extra tags that have them
             extras.forEach(e => {
                 if (e[4]) translations.set(e[0], e[4]);
@@ -178,7 +178,7 @@ async function loadExtraTags(c) {
 async function loadTranslations(c) {
     if (c.translation.translationFile && c.translation.translationFile !== "None") {
         try {
-            let tArray = await loadCSV(`${tagBasePath}/${c.translation.translationFile}`);
+            let tArray = await TacUtils.loadCSV(`${tagBasePath}/${c.translation.translationFile}`);
             tArray.forEach(t => {
                 if (c.translation.oldFormat && t[2]) // if 2 doesn't exist, it's probably a new format file and the setting is on by mistake
                     translations.set(t[0], t[2]);
@@ -313,7 +313,7 @@ async function syncOptions() {
     TAC_CFG = newCFG;
 
     // Callback
-    await processQueue(QUEUE_AFTER_CONFIG_CHANGE, null);
+    await TacUtils.processQueue(QUEUE_AFTER_CONFIG_CHANGE, null);
 }
 
 // Create the result list div and necessary styling
@@ -424,7 +424,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     var sanitizedText = text
 
     // Run sanitize queue and use first result as sanitized text
-    sanitizeResults = await processQueueReturn(QUEUE_SANITIZE, null, tagType, text);
+    sanitizeResults = await TacUtils.processQueueReturn(QUEUE_SANITIZE, null, tagType, text);
 
     if (sanitizeResults && sanitizeResults.length > 0) {
         sanitizedText = sanitizeResults[0];
@@ -445,12 +445,12 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         && TAC_CFG.wildcardCompletionMode !== "Always fully"
         && sanitizedText.includes("/")) {
         if (TAC_CFG.wildcardCompletionMode === "To next folder level") {
-            let regexMatch = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}([^/]*\\/?)`, "i"));
+            let regexMatch = sanitizedText.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}([^/]*\\/?)`, "i"));
             if (regexMatch) {
                 let pathPart = regexMatch[0];
                 // In case the completion would have just added a slash, try again one level deeper
                 if (pathPart === `${tagword}/`) {
-                    pathPart = sanitizedText.match(new RegExp(`${escapeRegExp(tagword)}\\/([^/]*\\/?)`, "i"))[0];
+                    pathPart = sanitizedText.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}\\/([^/]*\\/?)`, "i"))[0];
                 }
                 sanitizedText = pathPart;
             }
@@ -503,7 +503,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             // Sanitize name for API call
             name = encodeURIComponent(name)
             // Call API & update db
-            increaseUseCount(name, tagType, isNegative)
+            TacUtils.increaseUseCount(name, tagType, isNegative)
         }
     }
 
@@ -513,7 +513,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     let editStart = Math.max(cursorPos - tagword.length, 0);
     let editEnd = Math.min(cursorPos + tagword.length, prompt.length);
     let surrounding = prompt.substring(editStart, editEnd);
-    let match = surrounding.match(new RegExp(escapeRegExp(`${tagword}`), "i"));
+    let match = surrounding.match(new RegExp(TacUtils.escapeRegExp(`${tagword}`), "i"));
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
     var optionalSeparator = "";
@@ -521,7 +521,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     let noCommaTypes = [ResultType.wildcardFile, ResultType.yamlWildcard, ResultType.umiWildcard].concat(extraNetworkTypes);
     if (!noCommaTypes.includes(tagType)) {
         // Append comma if enabled and not already present
-        let beforeComma = surrounding.match(new RegExp(`${escapeRegExp(tagword)}[,:]`, "i")) !== null;
+        let beforeComma = surrounding.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}[,:]`, "i")) !== null;
         if (TAC_CFG.appendComma)
             optionalSeparator = beforeComma ? "" : ",";
         // Add space if enabled
@@ -529,7 +529,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             optionalSeparator += " ";
         // If at end of prompt and enabled, override the normal setting if not already added
         if (!TAC_CFG.appendSpace && TAC_CFG.alwaysSpaceAtEnd)
-            optionalSeparator += surrounding.match(new RegExp(`${escapeRegExp(tagword)}$`, "im")) !== null ? " " : "";
+            optionalSeparator += surrounding.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}$`, "im")) !== null ? " " : "";
     } else if (extraNetworkTypes.includes(tagType)) {
         // Use the dedicated separator for extra networks if it's defined, otherwise fall back to space
         optionalSeparator = TAC_CFG.extraNetworksSeparator || " ";
@@ -552,7 +552,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         let keywords = null;
         // Check built-in activation words first
         if (tagType === ResultType.lora || tagType === ResultType.lyco) {
-            let info = await fetchTacAPI(`tacapi/v1/lora-info/${result.text}`)
+            let info = await TacUtils.fetchAPI(`tacapi/v1/lora-info/${result.text}`)
             if (info && info["activation text"]) {
                 keywords = info["activation text"];
             }
@@ -564,7 +564,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
             // No match, try to find a sha256 match from the cache file
             if (!nameDict) {
-                const sha256 = await fetchTacAPI(`/tacapi/v1/lora-cached-hash/${result.text}`)
+                const sha256 = await TacUtils.fetchAPI(`/tacapi/v1/lora-cached-hash/${result.text}`)
                 if (sha256) {
                     nameDict = modelKeywordDict.get(sha256);
                 }
@@ -630,7 +630,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     previousTags = tags;
 
     // Callback
-    let returns = await processQueueReturn(QUEUE_AFTER_INSERT, null, tagType, sanitizedText, newPrompt, textArea);
+    let returns = await TacUtils.processQueueReturn(QUEUE_AFTER_INSERT, null, tagType, sanitizedText, newPrompt, textArea);
     // Return if any queue function returned true (has handled hide/show already)
     if (returns.some(x => x === true))
         return;
@@ -680,7 +680,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         let displayText = "";
         // If the tag matches the tagword, we don't need to display the alias
         if(result.type === ResultType.chant) {
-            displayText = escapeHTML(result.aliases);
+            displayText = TacUtils.escapeHTML(result.aliases);
         } else if (result.aliases && !result.text.includes(tagword)) { // Alias
             let splitAliases = result.aliases.split(",");
             let bestAlias = splitAliases.find(a => a.toLowerCase().includes(tagword));
@@ -696,7 +696,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 }
             }
 
-            displayText = escapeHTML(bestAlias);
+            displayText = TacUtils.escapeHTML(bestAlias);
 
             // Append translation for alias if it exists and is not what the user typed
             if (translations.has(bestAlias) && translations.get(bestAlias) !== bestAlias && bestAlias !== result.text)
@@ -705,7 +705,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             if (!TAC_CFG.alias.onlyShowAlias && result.text !== bestAlias)
                 displayText += " ➝ " + result.text;
         } else { // No alias
-            displayText = escapeHTML(result.text);
+            displayText = TacUtils.escapeHTML(result.text);
         }
 
         // Append translation for result if it exists
@@ -821,7 +821,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Add listener
         li.addEventListener("click", (e) => {
             if (e.ctrlKey || e.metaKey) {
-                resetUseCount(result.text, result.type, !isNegative, isNegative);
+                TacUtils.resetUseCount(result.text, result.type, !isNegative, isNegative);
                 flexDiv.querySelector(".acMetaText").classList.remove("biased");
             } else {
                 insertTextAtCursor(textArea, result, tagword);
@@ -887,7 +887,7 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex) {
 
             let img = previewDiv.querySelector("img");
 
-            let url = await getTacExtraNetworkPreviewURL(selectedFilename, shorthandType);
+            let url = await TacUtils.getExtraNetworkPreviewURL(selectedFilename, shorthandType);
             if (url) {
                 img.src = url;
                 previewDiv.style.display = "block";
@@ -933,17 +933,17 @@ function updateRuby(textArea, prompt) {
 
         const translation = translations?.get(tag) || translations?.get(unsanitizedTag); 
 
-        let escapedTag = escapeRegExp(tag);
+        let escapedTag = TacUtils.escapeRegExp(tag);
         return { tag, escapedTag, translation };
     }
 
     const replaceOccurences = (text, tuple) => {
         let { tag, escapedTag, translation } = tuple;
         let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,|: \\t\\n\\r]))(?!<rt>)`, "g");
-        return text.replaceAll(searchRegex, `<ruby>${escapeHTML(tag)}<rt>${translation}</rt></ruby>`);
+        return text.replaceAll(searchRegex, `<ruby>${TacUtils.escapeHTML(tag)}<rt>${translation}</rt></ruby>`);
     }
 
-    let html = escapeHTML(prompt);
+    let html = TacUtils.escapeHTML(prompt);
 
     // First try to find direct matches
     [...rubyTags].forEach(tag => {
@@ -972,11 +972,11 @@ function updateRuby(textArea, prompt) {
             }
 
             // Perform n-gram sliding window search
-            translateNgram(toNgrams(subTags, 3));
-            translateNgram(toNgrams(subTags, 2));
-            translateNgram(toNgrams(subTags, 1));
+            translateNgram(TacUtils.toNgrams(subTags, 3));
+            translateNgram(TacUtils.toNgrams(subTags, 1));
+            translateNgram(TacUtils.toNgrams(subTags, 2));
 
-            let escapedTag = escapeRegExp(tuple.tag);
+            let escapedTag = TacUtils.escapeRegExp(tuple.tag);
 
             let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,|: \\t\\n\\r]))(?!<rt>)`, "g");
             html = html.replaceAll(searchRegex, subHtml);
@@ -1070,7 +1070,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         }
 
         let tagCountChange = tags.length - previousTags.length;
-        let diff = difference(tags, previousTags);
+        let diff = TacUtils.difference(tags, previousTags);
         previousTags = tags;
 
         // Guard for no difference / only whitespace remaining / last edited tag was fully removed
@@ -1098,14 +1098,14 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     let normalTags = false;
 
     // Process all parsers
-    let resultCandidates = (await processParsers(textArea, prompt))?.filter(x => x.length > 0);
+    let resultCandidates = (await TacUtils.processParsers(textArea, prompt))?.filter(x => x.length > 0);
     // If one ore more result candidates match, use their results
     if (resultCandidates && resultCandidates.length > 0) {
         // Flatten our candidate(s)
         results = resultCandidates.flat();
         // Sort results, but not if it's umi tags since they are sorted by count
         if (!(resultCandidates.length === 1 && results[0].type === ResultType.umiWildcard))
-            results = results.sort(getSortFunction());
+            results = results.sort(TacUtils.getSortFunction());
     }
     // Else search the normal tag list
     if (!resultCandidates || resultCandidates.length === 0
@@ -1118,9 +1118,9 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let searchRegex;
         if (tagword.startsWith("*")) {
             tagword = tagword.slice(1);
-            searchRegex = new RegExp(`${escapeRegExp(tagword)}`, 'i');
+            searchRegex = new RegExp(`${TacUtils.escapeRegExp(tagword)}`, 'i');
         } else {
-            searchRegex = new RegExp(`(^|[^a-zA-Z])${escapeRegExp(tagword)}`, 'i');
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${TacUtils.escapeRegExp(tagword)}`, 'i');
         }
 
         // Both normal tags and aliases/translations are included depending on the config
@@ -1201,7 +1201,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         // Request use counts from the DB
         const names = TAC_CFG.frequencyIncludeAlias ? tagNames.concat(aliasNames) : tagNames;
-        const counts = await getUseCounts(names, types, isNegative);
+        const counts = await TacUtils.getUseCounts(names, types, isNegative);
 
         // Pre-calculate weights to prevent duplicate work
         const resultBiasMap = new Map();
@@ -1212,7 +1212,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             const useStats = counts.find(c => c.name === name && c.type === type);
             const uses = useStats?.count || 0;
             // Calculate & set weight
-            const weight = calculateUsageBias(result, result.count, uses)
+            const weight = TacUtils.calculateUsageBias(result, result.count, uses)
             resultBiasMap.set(result, weight);
         });
         // Actual sorting with the pre-calculated weights
@@ -1355,13 +1355,13 @@ async function refreshTacTempFiles(api = false) {
         loras = [];
         lycos = [];
         modelKeywordDict.clear();
-        await processQueue(QUEUE_FILE_LOAD, null);
+        await TacUtils.processQueue(QUEUE_FILE_LOAD, null);
 
         console.log("TAC: Refreshed temp files");
     }
     
     if (api) {
-        await postTacAPI("tacapi/v1/refresh-temp-files");
+        await TacUtils.postAPI("tacapi/v1/refresh-temp-files");
         await reload();
     } else {
         setTimeout(async () => {
@@ -1371,9 +1371,9 @@ async function refreshTacTempFiles(api = false) {
 }
 
 async function refreshEmbeddings() {
-    await postTacAPI("tacapi/v1/refresh-embeddings", null);
+    await TacUtils.postAPI("tacapi/v1/refresh-embeddings", null);
     embeddings = [];
-    await processQueue(QUEUE_FILE_LOAD, null);
+    await TacUtils.processQueue(QUEUE_FILE_LOAD, null);
     console.log("TAC: Refreshed embeddings");
 }
 
@@ -1403,11 +1403,11 @@ function addAutocompleteToArea(area) {
             if (!e.inputType && !tacSelfTrigger) return;
             tacSelfTrigger = false;
 
-            debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
+            TacUtils.debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
             checkKeywordInsertionUndo(area, e);
         });
         // Add focusout event listener
-        area.addEventListener('focusout', debounce(() => {
+        area.addEventListener('focusout', TacUtils.debounce(() => {
             if (!hideBlocked)
                 hideResults(area);
         }, 400));
@@ -1428,7 +1428,7 @@ function addAutocompleteToArea(area) {
 // One-time setup, triggered from onUiUpdate
 async function setup() {
     // Load external files needed by completion extensions
-    await processQueue(QUEUE_FILE_LOAD, null);
+    await TacUtils.processQueue(QUEUE_FILE_LOAD, null);
 
     // Find all textareas
     let textAreas = getTextAreas();
@@ -1455,7 +1455,7 @@ async function setup() {
         });
     });
     quicksettings?.querySelectorAll(`[id^=setting_tac].gradio-dropdown input`).forEach(e => {
-        observeElement(e, "value", () => {
+        TacUtils.observeElement(e, "value", () => {
             setTimeout(async () => { 
                 await syncOptions();
             }, 500);
@@ -1473,14 +1473,14 @@ async function setup() {
 
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
     let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");
-    updateModelName();
+    TacUtils.updateModelName();
     if (modelHashText) {
         currentModelHash = modelHashText.title
         let modelHashObserver = new MutationObserver((mutationList, observer) => {
             for (const mutation of mutationList) {
                 if (mutation.type === "attributes" && mutation.attributeName === "title") {
                     currentModelHash = mutation.target.title;
-                    updateModelName();
+                    TacUtils.updateModelName();
                     refreshEmbeddings();
                 }
             }
@@ -1524,7 +1524,7 @@ async function setup() {
     gradioApp().appendChild(acStyle);
 
     // Callback
-    await processQueue(QUEUE_AFTER_SETUP, null);
+    await TacUtils.processQueue(QUEUE_AFTER_SETUP, null);
 }
 var tacLoading = false;
 onUiUpdate(async () => {
@@ -1533,7 +1533,7 @@ onUiUpdate(async () => {
     if (TAC_CFG) return;
     tacLoading = true;
     // Get our tag base path from the temp file
-    tagBasePath = await readFile(`tmp/tagAutocompletePath.txt`);
+    tagBasePath = await TacUtils.readFile(`tmp/tagAutocompletePath.txt`);
     // Load config from webui opts
     await syncOptions();
     // Rest of setup

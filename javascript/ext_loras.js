@@ -8,7 +8,7 @@ class LoraParser extends BaseTagParser {
         if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lora:") {
             let searchTerm = tagword.replace("<lora:", "").replace("<l:", "").replace("<", "");
             let filterCondition = x => {
-                let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
+                let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
             };
             tempResults = loras.filter(x => filterCondition(x[0])); // Filter by tagword
@@ -38,7 +38,7 @@ class LoraParser extends BaseTagParser {
 async function load() {
     if (loras.length === 0) {
         try {
-            loras = (await loadCSV(`${tagBasePath}/temp/lora.txt`))
+            loras = (await TacUtils.loadCSV(`${tagBasePath}/temp/lora.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
                 .map(x => [x[0]?.trim(), x[1], x[2]]); // Trim filenames and return the name, sortKey, hash pairs
         } catch (e) {
@@ -50,7 +50,7 @@ async function load() {
 async function sanitize(tagType, text) {
     if (tagType === ResultType.lora) {
         let multiplier = TAC_CFG.extraNetworksDefaultMultiplier;
-        let info = await fetchTacAPI(`tacapi/v1/lora-info/${text}`)
+        let info = await TacUtils.fetchAPI(`tacapi/v1/lora-info/${text}`)
         if (info && info["preferred weight"]) {
             multiplier = info["preferred weight"];
         }
