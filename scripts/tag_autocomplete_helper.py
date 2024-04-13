@@ -1,6 +1,7 @@
 # This helper script scans folders for wildcards and embeddings and writes them
 # to a temporary file to expose it to the javascript side
 
+import os
 import glob
 import importlib
 import json
@@ -21,7 +22,11 @@ from scripts.model_keyword_support import (get_lora_simple_hash,
 from scripts.shared_paths import *
 
 try:
-    import scripts.tag_frequency_db as tdb
+    try:
+        from scripts import tag_frequency_db as tdb
+    except ModuleNotFoundError:
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
+        import tag_frequency_db as tdb
 
     # Ensure the db dependency is reloaded on script reload
     importlib.reload(tdb)
