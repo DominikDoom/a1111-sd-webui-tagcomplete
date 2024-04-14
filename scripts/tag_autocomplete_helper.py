@@ -1,7 +1,7 @@
 # This helper script scans folders for wildcards and embeddings and writes them
 # to a temporary file to expose it to the javascript side
 
-import os
+import sys
 import glob
 import importlib
 import json
@@ -25,7 +25,10 @@ try:
     try:
         from scripts import tag_frequency_db as tdb
     except ModuleNotFoundError:
-        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
+        from inspect import getframeinfo, currentframe
+        filename = getframeinfo(currentframe()).filename
+        parent = Path(filename).resolve().parent
+        sys.path.append(str(parent))
         import tag_frequency_db as tdb
 
     # Ensure the db dependency is reloaded on script reload
