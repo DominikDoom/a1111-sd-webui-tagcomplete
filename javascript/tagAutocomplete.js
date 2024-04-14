@@ -1201,7 +1201,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         // Request use counts from the DB
         const names = TAC_CFG.frequencyIncludeAlias ? tagNames.concat(aliasNames) : tagNames;
-        const counts = await getUseCounts(names, types, isNegative);
+        const counts = await getUseCounts(names, types, isNegative) || [];
 
         // Pre-calculate weights to prevent duplicate work
         const resultBiasMap = new Map();

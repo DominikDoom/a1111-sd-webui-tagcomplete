@@ -241,17 +241,27 @@ function increaseUseCount(tagName, type, negative = false) {
 }
 // Get use count of tag from the database
 async function getUseCount(tagName, type, negative = false) {
-    return (await fetchTacAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false))["result"];
+    const response = await fetchTacAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false);
+    // Guard for no db
+    if (response == null) return null;
+    // Result
+    return response["result"];
 }
 async function getUseCounts(tagNames, types, negative = false) {
     // While semantically weird, we have to use POST here for the body, as urls are limited in length
     const body = JSON.stringify({"tagNames": tagNames, "tagTypes": types, "neg": negative});
-    const rawArray = (await postTacAPI(`tacapi/v1/get-use-count-list`, body))["result"]
-    return mapUseCountArray(rawArray);
+    const response = await postTacAPI(`tacapi/v1/get-use-count-list`, body)
+    // Guard for no db
+    if (response == null) return null;
+    // Results
+    return mapUseCountArray(response["result"]);
 }
 async function getAllUseCounts() {
-    const rawArray = (await fetchTacAPI(`tacapi/v1/get-all-use-counts`))["result"];
-    return mapUseCountArray(rawArray, true);
+    const response = await fetchTacAPI(`tacapi/v1/get-all-use-counts`);
+    // Guard for no db
+    if (response == null) return null;
+    // Results
+    return mapUseCountArray(response["result"], true);
 }
 async function resetUseCount(tagName, type, resetPosCount, resetNegCount) {
     await putTacAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
