@@ -860,34 +860,19 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex) {
 
     // Show preview if enabled and the selected type supports it
     if (newIndex !== null) {
-        let selected = items[newIndex];
-        let previewTypes = ["v1 Embedding", "v2 Embedding", "Hypernetwork", "Lora", "Lyco"];
-        let selectedType = selected.querySelector(".acMetaText").innerText;
-        let selectedFilename = selected.querySelector(".acListItem").innerText;
+        let selectedResult = results[newIndex];
+        let selectedType = selectedResult.type;
+        // These types support previews (others could technically too, but are not native to the webui gallery)
+        let previewTypes = [ResultType.embedding, ResultType.hypernetwork, ResultType.lora, ResultType.lyco];
 
         let previewDiv = gradioApp().querySelector(`.autocompleteParent${textAreaId} .sideInfo`);
 
         if (TAC_CFG.showExtraNetworkPreviews && previewTypes.includes(selectedType)) {
-            let shorthandType = "";
-            switch (selectedType) {
-                case "v1 Embedding":
-                case "v2 Embedding":
-                    shorthandType = "embed";
-                    break;
-                case "Hypernetwork":
-                    shorthandType = "hyper";
-                    break;
-                case "Lora":
-                    shorthandType = "lora";
-                    break;
-                case "Lyco":
-                    shorthandType = "lyco";
-                    break;
-            }
-
             let img = previewDiv.querySelector("img");
-
-            let url = await getTacExtraNetworkPreviewURL(selectedFilename, shorthandType);
+            // String representation of our type enum
+            const typeString = Object.keys(ResultType)[selectedType - 1].toLowerCase();
+            // Get image from API
+            let url = await getTacExtraNetworkPreviewURL(selectedResult.text, typeString);
             if (url) {
                 img.src = url;
                 previewDiv.style.display = "block";

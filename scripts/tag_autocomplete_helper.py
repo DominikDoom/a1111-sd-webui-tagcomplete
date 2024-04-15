@@ -727,9 +727,9 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return LORA_PATH
         elif type == "lyco":
             return LYCO_PATH
-        elif type == "hyper":
+        elif type == "hypernetwork":
             return HYP_PATH
-        elif type == "embed":
+        elif type == "embedding":
             return EMB_PATH
         else:
             return None
