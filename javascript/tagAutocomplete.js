@@ -713,7 +713,9 @@ function addResultsToList(textArea, results, tagword, resetList) {
             displayText += `[${translations.get(result.text)}]`;
 
         // Print search term bolded in result
-        itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
+        //itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
+        itemText.innerHTML = result.highlightedText || displayText.replace(new RegExp(escapeRegExp(tagword), "ig"), "<mark>$&</mark>");
+        //itemText.innerHTML = displayText.replace(/&lt;mark&gt;(.*)&lt;\/mark&gt;/g, "<mark>$1</mark>")
 
         const splitTypes = [ResultType.wildcardFile, ResultType.yamlWildcard]
         if (splitTypes.includes(result.type) && itemText.innerHTML.includes("/")) {
@@ -1152,19 +1154,19 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 results = results.concat(extraResults);
             }
         }*/
-        let mappedAllTags = allTags.map(t => {
-            return {text: t[0], cat: t[1], count: t[2], aliases: t[3]};
-        });
-        const fuzResult = fuzzysort.go(tagword, mappedAllTags, {
-            key: 'text'
-        })
-        fuzResult.forEach(r => {
-            let result = new AutocompleteResult(r.target.trim(), ResultType.tag)
-            result.category = r.obj["cat"];
-            result.count = r.obj["count"];
-            result.aliases = r.obj["aliases"];
+        const fuzResult = TacFuzzy.search(allTags.map(t => t[0]), tagword)
+        for (let i = 0; i < fuzResult.haystackIndices.length; i++) {
+            const idx = fuzResult.haystackIndices[i];
+            const orderIdx = fuzResult.orderIndices[i];
+            const tag = allTags[idx];
+
+            let result = new AutocompleteResult(tag[0], ResultType.tag)
+            result.highlightedText = TacFuzzy.toStr(orderIdx)
+            result.category = tag[1];
+            result.count = tag[2];
+            result.aliases = tag[3];
             results.push(result);
-        });
+        }
     }
 
     // Guard for empty results

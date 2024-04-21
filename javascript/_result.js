@@ -30,6 +30,7 @@ class AutocompleteResult {
     meta = null;
     hash = null;
     sortKey = null;
+    highlightedText = null;
 
     // Constructor
     constructor(text, type) {
