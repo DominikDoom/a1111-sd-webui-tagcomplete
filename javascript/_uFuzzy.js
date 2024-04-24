@@ -51,7 +51,7 @@ class TacFuzzy {
         interIns: Infinity,
         intraChars: "[\\w\\-']", // Alphanumeric, hyphen, underscore & apostrophe
         interLft: 1, // loose
-        sort: this.#typeAheadSort
+        sort: (info, haystack, needle) => { return info["idx"].map((v, i) => i); }
     }
     static #u = new this.#uFuzzy(this.#tacFuzzyOpts);
     // Prefilter function to reduce search scope (from uFuzzy demo)
@@ -110,10 +110,7 @@ class TacFuzzy {
                     let hi = info.idx[oi];
                     return this.#uFuzzy.highlight(haystack[hi], info.ranges[oi]);
                 };
-                return {
-                    haystackIndices: order.map(oi => info.idx[oi]),
-                    orderIndices: order
-                }
+                return order.map(oi => [info.idx[oi], oi])
             }
             else if (idxs.length > 0) {
                 this.toStr = idx => haystack[idx];

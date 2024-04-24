@@ -1135,6 +1135,89 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             result.aliases = t[3];
             results.push(result);
         });
+        */
+
+        //const fuzResult = TacFuzzy.search(haystack, tagword)
+        let fuzMatchSet = new Set();
+        let extraFuzMatchSet = new Set();
+        let tagOut = [];
+        let extraOut = [];
+        let transFuzMatchSet = new Set();
+
+        const tagBaseFuzResult = TacFuzzy.search(allTags.map(t => t[0] || ""), tagword)
+        tagBaseFuzResult.forEach(pair => {
+            const idx = pair[0];
+            const orderIdx = pair[1];
+            if (!fuzMatchSet.has(idx)) {
+                const result = new AutocompleteResult(allTags[idx][0], ResultType.tag);
+                result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.category = allTags[idx][1];
+                result.count = allTags[idx][2];
+                result.aliases = allTags[idx][3];
+                tagOut.push(result);
+                fuzMatchSet.add(idx);
+            }
+        });
+        const tagAliasFuzResult = TacFuzzy.search(allTags.map(t => t[3] || ""), tagword)
+        tagAliasFuzResult.forEach(pair => {
+            const idx = pair[0];
+            const orderIdx = pair[1];
+            if (!fuzMatchSet.has(idx)) {
+                const result = new AutocompleteResult(allTags[idx][0], ResultType.tag)
+                result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.category = allTags[idx][1];
+                result.count = allTags[idx][2];
+                result.aliases = allTags[idx][3];
+                tagOut.push(result);
+                fuzMatchSet.add(idx);
+            }
+        });
+        const extraBaseFuzResult = TacFuzzy.search(extras.map(e => e[0] || ""), tagword)
+        extraBaseFuzResult.forEach(pair => {
+            const idx = pair[0];
+            const orderIdx = pair[1];
+            if (!extraFuzMatchSet.has(idx)) {
+                const result = new AutocompleteResult(extras[idx][0], ResultType.extra)
+                result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.category = extras[idx][1] || 0; // If no category is given, use 0 as the default
+                result.meta = extras[idx][2] || "Custom tag";
+                result.aliases = extras[idx][3] || "";
+                extraOut.push(result);
+                extraFuzMatchSet.add(idx);
+            }
+        });
+        const extraAliasFuzResult = TacFuzzy.search(extras.map(e => e[3] || ""), tagword)
+        extraAliasFuzResult.forEach(pair => {
+            const idx = pair[0];
+            const orderIdx = pair[1];
+            if (!extraFuzMatchSet.has(idx)) {
+                const result = new AutocompleteResult(extras[idx][0], ResultType.extra)
+                result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.category = extras[idx][1] || 0; // If no category is given, use 0 as the default
+                result.meta = extras[idx][2] || "Custom tag";
+                result.aliases = extras[idx][3] || "";
+                extraOut.push(result);
+                extraFuzMatchSet.add(idx);
+            }
+        });
+        const transFuzResult = TacFuzzy.search([...translations.keys()].filter(x => !!x), tagword)
+
+        // Append results for each set
+        results = results.concat([...extraOut]).concat([...tagOut]);
+
+        /*
+        for (let i = 0; i < fuzResult.haystackIndices.length; i++) {
+            const idx = fuzResult.haystackIndices[i];
+            const orderIdx = fuzResult.orderIndices[i];
+            const tag = allTags[idx];
+
+            let result = new AutocompleteResult(tag[0], ResultType.tag)
+            result.highlightedText = TacFuzzy.toStr(orderIdx)
+            result.category = tag[1];
+            result.count = tag[2];
+            result.aliases = tag[3];
+            results.push(result);
+        }
 
         // Add extras
         if (TAC_CFG.extra.extraFile) {
@@ -1153,20 +1236,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             } else {
                 results = results.concat(extraResults);
             }
-        }*/
-        const fuzResult = TacFuzzy.search(allTags.map(t => t[0]), tagword)
-        for (let i = 0; i < fuzResult.haystackIndices.length; i++) {
-            const idx = fuzResult.haystackIndices[i];
-            const orderIdx = fuzResult.orderIndices[i];
-            const tag = allTags[idx];
-
-            let result = new AutocompleteResult(tag[0], ResultType.tag)
-            result.highlightedText = TacFuzzy.toStr(orderIdx)
-            result.category = tag[1];
-            result.count = tag[2];
-            result.aliases = tag[3];
-            results.push(result);
         }
+        */
     }
 
     // Guard for empty results
