@@ -5,14 +5,17 @@ class LoraParser extends BaseTagParser {
     parse() {
         // Show lora
         let tempResults = [];
+        let searchTerm = tagword;
         if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lora:") {
-            let searchTerm = tagword.replace("<lora:", "").replace("<l:", "").replace("<", "");
+            searchTerm = tagword.replace("<lora:", "").replace("<l:", "").replace("<", "");
             let filterCondition = x => {
                 let regex = new RegExp(escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
             };
+            filterCondition = (x) => TacFuzzy.check(x, searchTerm);
             tempResults = loras.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
+            searchTerm = null;
             tempResults = loras;
         }
 
@@ -25,9 +28,12 @@ class LoraParser extends BaseTagParser {
             let name = text.substring(lastSlash + 1, lastDot);
 
             let result = new AutocompleteResult(name, ResultType.lora)
+            result.highlightedText = TacFuzzy.manualHighlight(name, searchTerm);
+            result.matchSource = "base";
             result.meta = "Lora";
             result.sortKey = t[1];
             result.hash = t[2];
+
             finalResults.push(result);
         });
 
