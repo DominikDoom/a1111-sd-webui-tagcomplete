@@ -30,7 +30,9 @@ class AutocompleteResult {
     meta = null;
     hash = null;
     sortKey = null;
+    // uFuzzy specific
     highlightedText = null;
+    matchSource = null;
 
     // Constructor
     constructor(text, type) {

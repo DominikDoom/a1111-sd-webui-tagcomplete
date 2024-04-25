@@ -47,13 +47,28 @@ class TacFuzzy {
     static #infoThresh = Infinity; // Make sure we are always getting info, performance isn't that bad for the default tag sets
     static #usePrefixCache = false;
     static #tacFuzzyOpts = {
-        intraIns: Infinity,
+        intraIns: 10,
         interIns: Infinity,
         intraChars: "[\\w\\-']", // Alphanumeric, hyphen, underscore & apostrophe
+        interChars: "[^\\s,|<>\\[\\]:]", // Everything except tag separators
+        interLft: 1, // loose
+        sort: (info, haystack, needle) => { return info["idx"].map((v, i) => i); }
+    }
+    static #tacFuzzyOptsUnicode = {
+        intraIns: 10,
+        interIns: Infinity,
+        unicode: true,
+        interSplit: "[^\\p{L}\\d']+",
+        intraSplit: "\\p{Ll}\\p{Lu}",
+        intraBound: "\\p{L}\\d|\\d\\p{L}|\\p{Ll}\\p{Lu}",
+        intraChars: "[\\p{L}\\d']",
+        interChars: "[^\\s,|<>\\[\\]:]", // Everything except tag separators
+        intraContr: "'\\p{L}{1,2}\\b",
         interLft: 1, // loose
         sort: (info, haystack, needle) => { return info["idx"].map((v, i) => i); }
     }
     static #u = new this.#uFuzzy(this.#tacFuzzyOpts);
+    static #uUnicode = new this.#uFuzzy(this.#tacFuzzyOptsUnicode);
     // Prefilter function to reduce search scope (from uFuzzy demo)
     static #prefixCache = [];
     static #prefilter = (haystack, needle) => {
@@ -99,16 +114,19 @@ class TacFuzzy {
      * @param {String} needle - The search term (tagword)
      * @returns A list of uFuzzy search results
      */
-    static search = (haystack, needle) => {
+    static search = (haystack, needle, unicode = false) => {
         let preFiltered = this.#usePrefixCache ? this.#prefilter(haystack, needle) : null;
 
-        let [idxs, info, order] = this.#u.search(haystack, needle, this.#oooPermute, this.#infoThresh, preFiltered);
+        let [idxs, info, order] = unicode
+            ? this.#uUnicode.search(haystack, needle, this.#oooPermute, this.#infoThresh, preFiltered)
+            : this.#u.search(haystack, needle, this.#oooPermute, this.#infoThresh, preFiltered);
 
         if (idxs != null) {
             if (info != null) {
                 this.toStr = oi => {
                     let hi = info.idx[oi];
-                    return this.#uFuzzy.highlight(haystack[hi], info.ranges[oi]);
+                    let mark = (part, matched) => matched ? '<b class="acMatchHighlight">' + part + '</b>' : part;
+                    return this.#uFuzzy.highlight(haystack[hi], info.ranges[oi], mark);
                 };
                 return order.map(oi => [info.idx[oi], oi])
             }

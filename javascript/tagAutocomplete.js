@@ -13,6 +13,7 @@
     "--live-translation-color-1": ["lightskyblue", "#2d89ef"],
     "--live-translation-color-2": ["palegoldenrod", "#eb5700"],
     "--live-translation-color-3": ["darkseagreen", "darkgreen"],
+    "--match-filter": ["brightness(1.2) drop-shadow(1px 1px 6px black)", "brightness(0.8)"]
 }
 const browserVars = {
     "--results-overflow-y": {
@@ -89,6 +90,9 @@ const autocompleteCSS = `
     .acMetaText.biased::before {
         content: "✨";
         margin-right: 2px;
+    }
+    .acMatchHighlight {
+        filter: var(--match-filter);
     }
     .acWikiLink {
         padding: 0.5rem;
@@ -713,9 +717,27 @@ function addResultsToList(textArea, results, tagword, resetList) {
             displayText += `[${translations.get(result.text)}]`;
 
         // Print search term bolded in result
-        //itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
-        itemText.innerHTML = result.highlightedText || displayText.replace(new RegExp(escapeRegExp(tagword), "ig"), "<mark>$&</mark>");
-        //itemText.innerHTML = displayText.replace(/&lt;mark&gt;(.*)&lt;\/mark&gt;/g, "<mark>$1</mark>")
+        if (result.highlightedText) {
+            switch (result.matchSource) {
+                case "base":
+                    itemText.innerHTML = result.highlightedText;
+                    break;
+                case "alias":
+                    let aliases = result.highlightedText.split(",");
+                    let matchingAlias = aliases.find(a => a.includes("<b class=\"acMatchHighlight\">"));
+                    itemText.innerHTML = matchingAlias + " ➝ " + result.text;
+                    break;
+                case "translation":
+                    console.error("Translation highlighting not implemented yet for aliases")
+                    itemText.innerHTML = `${result.text}[${result.highlightedText}]`
+                    break;
+                default:
+                    itemText.innerHTML = displayText;
+                    break;
+            }
+        } else {
+            itemText.innerHTML = displayText;
+        }
 
         const splitTypes = [ResultType.wildcardFile, ResultType.yamlWildcard]
         if (splitTypes.includes(result.type) && itemText.innerHTML.includes("/")) {
@@ -1151,6 +1173,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             if (!fuzMatchSet.has(idx)) {
                 const result = new AutocompleteResult(allTags[idx][0], ResultType.tag);
                 result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.matchSource = "base"
+
                 result.category = allTags[idx][1];
                 result.count = allTags[idx][2];
                 result.aliases = allTags[idx][3];
@@ -1165,6 +1189,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             if (!fuzMatchSet.has(idx)) {
                 const result = new AutocompleteResult(allTags[idx][0], ResultType.tag)
                 result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.matchSource = "alias"
+
                 result.category = allTags[idx][1];
                 result.count = allTags[idx][2];
                 result.aliases = allTags[idx][3];
@@ -1179,6 +1205,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             if (!extraFuzMatchSet.has(idx)) {
                 const result = new AutocompleteResult(extras[idx][0], ResultType.extra)
                 result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.matchSource = "base"
+
                 result.category = extras[idx][1] || 0; // If no category is given, use 0 as the default
                 result.meta = extras[idx][2] || "Custom tag";
                 result.aliases = extras[idx][3] || "";
@@ -1193,6 +1221,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             if (!extraFuzMatchSet.has(idx)) {
                 const result = new AutocompleteResult(extras[idx][0], ResultType.extra)
                 result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.matchSource = "alias"
+
                 result.category = extras[idx][1] || 0; // If no category is given, use 0 as the default
                 result.meta = extras[idx][2] || "Custom tag";
                 result.aliases = extras[idx][3] || "";
@@ -1200,7 +1230,36 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 extraFuzMatchSet.add(idx);
             }
         });
-        const transFuzResult = TacFuzzy.search([...translations.keys()].filter(x => !!x), tagword)
+        const transFuzResult = TacFuzzy.search([...translations.keys()].filter(x => !!x), tagword, true) // Unicode search here, slower but needed for non-latin translations
+        transFuzResult.forEach(pair => {
+            const idx = pair[0];
+            const orderIdx = pair[1];
+            if (!transFuzMatchSet.has(idx)) {
+                const translationKey = [...translations.keys()][idx];
+                const tagForTranslation = allTags.find(t => t[0] === translationKey || t[3]?.split(",").some(a => a === translationKey));
+                const extraForTranslation = extras.find(e => e[0] === translationKey || e[3]?.split(",").some(a => a === translationKey));
+                
+                const result = new AutocompleteResult(tagForTranslation[0] || extraForTranslation[0], ResultType.tag)
+                result.highlightedText = TacFuzzy.toStr(orderIdx);
+                // TODO: translations can't differentiate between tag and alias here yet
+                result.matchSource = "translation";
+                
+                result.category = tagForTranslation[1] || extraForTranslation[1] || 0;
+               
+                if (tagForTranslation)
+                    result.count = tagForTranslation[2] || 0;
+                else if (extraForTranslation)
+                    result.meta = extraForTranslation[2] || "Custom tag";
+
+                result.aliases = tagForTranslation[3] || extraForTranslation[3] || "";
+
+                if (tagForTranslation) {
+                    tagOut.push(result);
+                } else if (extraForTranslation) {
+                    extraOut.push(result);
+                }
+            }
+        });
 
         // Append results for each set
         results = results.concat([...extraOut]).concat([...tagOut]);
