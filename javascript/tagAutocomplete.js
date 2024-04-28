@@ -735,10 +735,14 @@ function addResultsToList(textArea, results, tagword, resetList) {
                     let matchingAlias = aliases.find(a => a.includes("<b class=\"acMatchHighlight\">"));
                     itemText.innerHTML = matchingAlias + " ➝ " + result.text;
                     break;
-                case "translation":
-                    console.error("Translation highlighting not implemented yet for aliases")
+                case "translatedBase":
                     itemText.innerHTML = `${result.text}[${result.highlightedText}]`
                     break;
+                case "translatedAlias":
+                    let tAliases = result.aliases.split(",");
+                    let tMatchingAlias = tAliases.find(a => a.includes("<b class=\"acMatchHighlight\">"));
+                    let baseTranslation = `[${translations.get(result.text)}];` || "";
+                    itemText.innerHTML = `${tMatchingAlias}[${result.highlightedText}] ➝ ${result.text}${baseTranslation}`;
                 default:
                     itemText.innerHTML = displayText;
                     break;
@@ -1169,7 +1173,10 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         let tagIndexSet = new Set()
         let extraIndexSet = new Set();
-        let translationIndexSet = new Set();
+        // Here we store the values instead of the index, as the same translation can apply to different keys
+        // For searching, only the first result is relevant (assuming it is also the best match)
+        let translatedValueSet = new Set();
+
         let tagOut = [];
         let extraOut = [];
         // Base text search
@@ -1187,45 +1194,48 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             TacFuzzy.search(tacHaystacks.translationValues, tagword, true).forEach(pair => {
                 const idx = pair[0];
                 const orderIdx = pair[1];
-                if (!translationIndexSet.has(idx)) {
-                    const translationKey = tacHaystacks.translationKeys[idx];
-
-                    // Placeholder to make sure we never access an index of null if no matching key was found
-                    const notFound = [null, null, null, null];
+                const translationKey = tacHaystacks.translationKeys[idx];
                     
-                    // Check if the translation belongs to a tag or its alias. Only search alias if no base text found.
-                    const translatedTagBase = allTags.find(t => t[0] === translationKey);
-                    const translatedTagAlias = !translatedTagBase
-                        ? allTags.find(t => t[3]?.split(",").some(a => a === translationKey))
-                        : null;
-                    const translatedTag = translatedTagBase || translatedTagAlias || notFound; // Combined result for easier checks later
-                    // Check if the translation belongs to an extra or its alias. Only search alias if no base text found.
-                    const translatedExtraBase = extras.find(e => e[0] === translationKey);
-                    const translatedExtraAlias = !translatedExtraBase
-                        ? extras.find(e => e[3]?.split(",").some(a => a === translationKey))
-                        : null;
-                    const translatedExtra = translatedExtraBase || translatedExtraAlias || notFound; // Combined result for easier checks later
+                // Placeholder to make sure we never access an index of null if no matching key was found
+                const notFound = [null, null, null, null];
+                
+                // Check if the translation belongs to a tag or its alias. Only search alias if no base text found.
+                const translatedTagBase = allTags.find(t => t[0] === translationKey);
+                const translatedTagAlias = !translatedTagBase
+                    ? allTags.find(t => t[3]?.split(",").some(a => a === translationKey))
+                    : null;
+                const translatedTag = translatedTagBase || translatedTagAlias || notFound; // Combined result for easier checks later
+                // Check if the translation belongs to an extra or its alias. Only search alias if no base text found.
+                const translatedExtraBase = extras.find(e => e[0] === translationKey);
+                const translatedExtraAlias = !translatedExtraBase
+                    ? extras.find(e => e[3]?.split(",").some(a => a === translationKey))
+                    : null;
+                const translatedExtra = translatedExtraBase || translatedExtraAlias || notFound; // Combined result for easier checks later
 
-                    const result = new AutocompleteResult(translatedTag[0] || translatedExtra[0], ResultType.tag)
-                    result.highlightedText = TacFuzzy.toStr(orderIdx);
+                // For translations, we can sadly only exit early after making sure we don't have a duplicate (which is most of the work).
+                // This is a side effect of translations mapping to multiple keys for the search direction, eg. different aliases.
+                if (translatedValueSet.has(translatedTag[0] || translatedExtra[0])) return;
 
-                    result.matchSource = (translatedTagBase || translatedExtraBase) ? "base" : "alias";
-                    result.category = translatedTag[1] || translatedExtra[1] || 0;
-                    
-                    if (translatedTag[0])
-                        result.count = translatedTag[2] || 0;
-                    else if (translatedExtra[0])
-                        result.meta = translatedExtra[2] || "Custom tag";
+                const resultType = translatedTag[0] ? ResultType.tag : ResultType.extra;
+                const result = new AutocompleteResult(translatedTag[0] || translatedExtra[0], resultType);
+                result.highlightedText = TacFuzzy.toStr(orderIdx);
 
-                    result.aliases = translatedTag[3] || translatedExtra[3] || "";
+                result.matchSource = (translatedTagBase || translatedExtraBase) ? "translatedBase" : "translatedAlias";
+                result.category = translatedTag[1] || translatedExtra[1] || 0;
+                
+                if (translatedTag[0])
+                    result.count = translatedTag[2] || 0;
+                else if (translatedExtra[0])
+                    result.meta = translatedExtra[2] || "Custom tag";
 
-                    if (translatedTag[0]) {
-                        tagOut.push(result);
-                    } else if (translatedExtra[0]) {
-                        extraOut.push(result);
-                    }
-                    translationIndexSet.add(idx);
+                result.aliases = translatedTag[3] || translatedExtra[3] || "";
+
+                if (translatedTag[0]) {
+                    tagOut.push(result);
+                } else if (translatedExtra[0]) {
+                    extraOut.push(result);
                 }
+                translatedValueSet.add(translatedTag[0] || translatedExtra[0]);
             });
         }
 
