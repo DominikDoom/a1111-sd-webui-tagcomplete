@@ -1318,7 +1318,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             const name = r.type === ResultType.chant ? r.aliases : r.text;
             // Add to alias list or tag list depending on if the name includes the tagword
             // (the same criteria is used in the filter in calculateUsageBias)
-            if (aliasTypes.includes(r.type) && !name.includes(tagword)) {
+            if (aliasTypes.includes(r.type) && r.matchSource === "alias") {
                 aliasNames.push(name);
             } else {
                 tagNames.push(name);
