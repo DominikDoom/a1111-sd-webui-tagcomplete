@@ -20,6 +20,15 @@ var lycos = [];
 var modelKeywordDict = new Map();
 var chants = [];
 var styleNames = [];
+// uFuzzy haystacks
+var tacHaystacks = {
+    "tag": [],
+    "extra": [],
+    "tagAlias": [],
+    "extraAlias": [],
+    "translationKeys": [],
+    "translationValues": []
+}
 
 // Selected model info for black/whitelisting
 var currentModelHash = "";

@@ -162,6 +162,14 @@ async function loadTags(c) {
         }
     }
     await loadExtraTags(c);
+
+    // Assign uFuzzy haystacks
+    tacHaystacks.tag = allTags.map(x => x[0]);
+    tacHaystacks.extra = extras.map(x => x[0]);
+    tacHaystacks.tagAlias = allTags.map(x => x[3] || "");
+    tacHaystacks.extraAlias = extras.map(e => e[3] || "");
+    tacHaystacks.translationKeys = Array.from(translations.keys());
+    tacHaystacks.translationValues = Array.from(translations.values());
 }
 
 async function loadExtraTags(c) {
@@ -1159,144 +1167,70 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         });
         */
 
-        //const fuzResult = TacFuzzy.search(haystack, tagword)
-        let fuzMatchSet = new Set();
-        let extraFuzMatchSet = new Set();
+        let tagIndexSet = new Set()
+        let extraIndexSet = new Set();
+        let translationIndexSet = new Set();
         let tagOut = [];
         let extraOut = [];
-        let transFuzMatchSet = new Set();
+        // Base text search
+        TacFuzzy.assignResults(TacFuzzy.search(tacHaystacks.tag, tagword),"base", "tag", tagIndexSet, tagOut)
+        TacFuzzy.assignResults(TacFuzzy.search(tacHaystacks.extra, tagword), "base", "extra", extraIndexSet, extraOut)
+        // Alias search
+        if (TAC_CFG.alias.searchByAlias) {
+            TacFuzzy.assignResults(TacFuzzy.search(tacHaystacks.tagAlias, tagword), "alias", "tag", tagIndexSet, tagOut)
+            TacFuzzy.assignResults(TacFuzzy.search(tacHaystacks.extraAlias, tagword), "alias", "extra", extraIndexSet, extraOut)
+        }
+        // Translation search
+        if (TAC_CFG.translation.searchByTranslation) {
+            // Translations need special treatment as they can belong to both tags and extras and need lookup based on their keys.
+            // We also use unicode search here, slower but needed for non-latin translations.
+            TacFuzzy.search(tacHaystacks.translationValues, tagword, true).forEach(pair => {
+                const idx = pair[0];
+                const orderIdx = pair[1];
+                if (!translationIndexSet.has(idx)) {
+                    const translationKey = tacHaystacks.translationKeys[idx];
 
-        const tagBaseFuzResult = TacFuzzy.search(allTags.map(t => t[0] || ""), tagword)
-        tagBaseFuzResult.forEach(pair => {
-            const idx = pair[0];
-            const orderIdx = pair[1];
-            if (!fuzMatchSet.has(idx)) {
-                const result = new AutocompleteResult(allTags[idx][0], ResultType.tag);
-                result.highlightedText = TacFuzzy.toStr(orderIdx);
-                result.matchSource = "base"
+                    // Placeholder to make sure we never access an index of null if no matching key was found
+                    const notFound = [null, null, null, null];
+                    
+                    // Check if the translation belongs to a tag or its alias. Only search alias if no base text found.
+                    const translatedTagBase = allTags.find(t => t[0] === translationKey);
+                    const translatedTagAlias = !translatedTagBase
+                        ? allTags.find(t => t[3]?.split(",").some(a => a === translationKey))
+                        : null;
+                    const translatedTag = translatedTagBase || translatedTagAlias || notFound; // Combined result for easier checks later
+                    // Check if the translation belongs to an extra or its alias. Only search alias if no base text found.
+                    const translatedExtraBase = extras.find(e => e[0] === translationKey);
+                    const translatedExtraAlias = !translatedExtraBase
+                        ? extras.find(e => e[3]?.split(",").some(a => a === translationKey))
+                        : null;
+                    const translatedExtra = translatedExtraBase || translatedExtraAlias || notFound; // Combined result for easier checks later
 
-                result.category = allTags[idx][1];
-                result.count = allTags[idx][2];
-                result.aliases = allTags[idx][3];
-                tagOut.push(result);
-                fuzMatchSet.add(idx);
-            }
-        });
-        const tagAliasFuzResult = TacFuzzy.search(allTags.map(t => t[3] || ""), tagword)
-        tagAliasFuzResult.forEach(pair => {
-            const idx = pair[0];
-            const orderIdx = pair[1];
-            if (!fuzMatchSet.has(idx)) {
-                const result = new AutocompleteResult(allTags[idx][0], ResultType.tag)
-                result.highlightedText = TacFuzzy.toStr(orderIdx);
-                result.matchSource = "alias"
+                    const result = new AutocompleteResult(translatedTag[0] || translatedExtra[0], ResultType.tag)
+                    result.highlightedText = TacFuzzy.toStr(orderIdx);
 
-                result.category = allTags[idx][1];
-                result.count = allTags[idx][2];
-                result.aliases = allTags[idx][3];
-                tagOut.push(result);
-                fuzMatchSet.add(idx);
-            }
-        });
-        const extraBaseFuzResult = TacFuzzy.search(extras.map(e => e[0] || ""), tagword)
-        extraBaseFuzResult.forEach(pair => {
-            const idx = pair[0];
-            const orderIdx = pair[1];
-            if (!extraFuzMatchSet.has(idx)) {
-                const result = new AutocompleteResult(extras[idx][0], ResultType.extra)
-                result.highlightedText = TacFuzzy.toStr(orderIdx);
-                result.matchSource = "base"
+                    result.matchSource = (translatedTagBase || translatedExtraBase) ? "base" : "alias";
+                    result.category = translatedTag[1] || translatedExtra[1] || 0;
+                    
+                    if (translatedTag[0])
+                        result.count = translatedTag[2] || 0;
+                    else if (translatedExtra[0])
+                        result.meta = translatedExtra[2] || "Custom tag";
 
-                result.category = extras[idx][1] || 0; // If no category is given, use 0 as the default
-                result.meta = extras[idx][2] || "Custom tag";
-                result.aliases = extras[idx][3] || "";
-                extraOut.push(result);
-                extraFuzMatchSet.add(idx);
-            }
-        });
-        const extraAliasFuzResult = TacFuzzy.search(extras.map(e => e[3] || ""), tagword)
-        extraAliasFuzResult.forEach(pair => {
-            const idx = pair[0];
-            const orderIdx = pair[1];
-            if (!extraFuzMatchSet.has(idx)) {
-                const result = new AutocompleteResult(extras[idx][0], ResultType.extra)
-                result.highlightedText = TacFuzzy.toStr(orderIdx);
-                result.matchSource = "alias"
+                    result.aliases = translatedTag[3] || translatedExtra[3] || "";
 
-                result.category = extras[idx][1] || 0; // If no category is given, use 0 as the default
-                result.meta = extras[idx][2] || "Custom tag";
-                result.aliases = extras[idx][3] || "";
-                extraOut.push(result);
-                extraFuzMatchSet.add(idx);
-            }
-        });
-        const transFuzResult = TacFuzzy.search([...translations.keys()].filter(x => !!x), tagword, true) // Unicode search here, slower but needed for non-latin translations
-        transFuzResult.forEach(pair => {
-            const idx = pair[0];
-            const orderIdx = pair[1];
-            if (!transFuzMatchSet.has(idx)) {
-                const translationKey = [...translations.keys()][idx];
-                const tagForTranslation = allTags.find(t => t[0] === translationKey || t[3]?.split(",").some(a => a === translationKey));
-                const extraForTranslation = extras.find(e => e[0] === translationKey || e[3]?.split(",").some(a => a === translationKey));
-                
-                const result = new AutocompleteResult(tagForTranslation[0] || extraForTranslation[0], ResultType.tag)
-                result.highlightedText = TacFuzzy.toStr(orderIdx);
-                // TODO: translations can't differentiate between tag and alias here yet
-                result.matchSource = "translation";
-                
-                result.category = tagForTranslation[1] || extraForTranslation[1] || 0;
-               
-                if (tagForTranslation)
-                    result.count = tagForTranslation[2] || 0;
-                else if (extraForTranslation)
-                    result.meta = extraForTranslation[2] || "Custom tag";
-
-                result.aliases = tagForTranslation[3] || extraForTranslation[3] || "";
-
-                if (tagForTranslation) {
-                    tagOut.push(result);
-                } else if (extraForTranslation) {
-                    extraOut.push(result);
+                    if (translatedTag[0]) {
+                        tagOut.push(result);
+                    } else if (translatedExtra[0]) {
+                        extraOut.push(result);
+                    }
+                    translationIndexSet.add(idx);
                 }
-            }
-        });
+            });
+        }
 
         // Append results for each set
         results = results.concat([...extraOut]).concat([...tagOut]);
-
-        /*
-        for (let i = 0; i < fuzResult.haystackIndices.length; i++) {
-            const idx = fuzResult.haystackIndices[i];
-            const orderIdx = fuzResult.orderIndices[i];
-            const tag = allTags[idx];
-
-            let result = new AutocompleteResult(tag[0], ResultType.tag)
-            result.highlightedText = TacFuzzy.toStr(orderIdx)
-            result.category = tag[1];
-            result.count = tag[2];
-            result.aliases = tag[3];
-            results.push(result);
-        }
-
-        // Add extras
-        if (TAC_CFG.extra.extraFile) {
-            let extraResults = [];
-
-            extras.filter(fil).forEach(e => {
-                let result = new AutocompleteResult(e[0].trim(), ResultType.extra)
-                result.category = e[1] || 0; // If no category is given, use 0 as the default
-                result.meta = e[2] || "Custom tag";
-                result.aliases = e[3] || "";
-                extraResults.push(result);
-            });
-
-            if (TAC_CFG.extra.addMode === "Insert before") {
-                results = extraResults.concat(results);
-            } else {
-                results = results.concat(extraResults);
-            }
-        }
-        */
     }
 
     // Guard for empty results

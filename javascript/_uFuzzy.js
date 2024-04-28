@@ -201,4 +201,50 @@ class TacFuzzy {
 
         return highlightedString;
     }
+
+    // Utility to construct results for a given haystack
+    /**
+     * 
+     * @param {int[][]} pairs - Size two array of [index, orderIndex] for the fuzzy results
+     * @param {"base"|"alias"} sourceName - Whether the match matches the base text or an alias
+     * @param {"tag"|"extra"} targetName - The type of the target (i.e. which haystack to use for the result data)
+     * @param {Set<Number>} indexSet - Set of indices to avoid duplicates for cases where tag and alias would both match
+     * @param {AutocompleteResult[]} output - The list to append the results to
+     */
+    static assignResults = (pairs, sourceName, targetName, indexSet, output) => {
+        pairs.forEach(pair => {
+            const idx = pair[0];
+            const orderIdx = pair[1];
+            if (!indexSet.has(idx)) {
+                let target, resultType;
+                switch (targetName) {
+                    case "tag":
+                        target = allTags[idx];
+                        resultType = ResultType.tag;
+                        break;
+                    case "extra":
+                        target = extras[idx];
+                        resultType = ResultType.extra;
+                        break;
+                    default:
+                        target = allTags[idx];
+                        resultType = ResultType.tag;
+                }
+                const result = new AutocompleteResult(target[0], resultType);
+                result.highlightedText = TacFuzzy.toStr(orderIdx);
+                result.matchSource = sourceName;
+
+                result.category = target[1];
+
+                if (targetName === "tag")
+                    result.count = target[2];
+                else if (targetName === "extra")
+                    result.meta = target[2] || "Custom tag";
+                
+                result.aliases = target[3];
+                output.push(result);
+                indexSet.add(idx);
+            }
+        });
+    }
 }
