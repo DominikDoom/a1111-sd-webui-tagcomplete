@@ -28,5 +28,17 @@
         "terms": "Water, Magic, Fancy",
         "content": "(extremely detailed CG unity 8k wallpaper), (masterpiece), (best quality), (ultra-detailed), (best illustration),(best shadow), (an extremely delicate and beautiful), classic, dynamic angle, floating, fine detail, Depth of field, classic, (painting), (sketch), (bloom), (shine), glinting stars,\n\na girl, solo, bare shoulders, flat chest, diamond and glaring eyes, beautiful detailed cold face, very long blue and sliver hair, floating black feathers, wavy hair, extremely delicate and beautiful girls, beautiful detailed eyes, glowing eyes,\n\nriver, (forest),palace, (fairyland,feather,flowers, nature),(sunlight),Hazy fog, mist",
         "color": 5
+    },
+    {
+        "name": "Pony-Positive",
+        "terms": "Pony,Score,Positive,Quality",
+        "content": "score_9, score_8_up, score_7_up, score_6_up, source_anime, source_furry, source_pony, source_cartoon",
+        "color": 1
+    },
+    {
+        "name": "Pony-Negative",
+        "terms": "Pony,Score,Negative,Quality",
+        "content": "score_1, score_2, score_3, score_4, score_5, source_anime, source_furry, source_pony, source_cartoon",
+        "color": 3
     }
 ]

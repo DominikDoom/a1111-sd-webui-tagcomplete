@@ -205,7 +205,7 @@ def get_embeddings(sd_model):
         skipped = skipped | skipped_sdnext
 
         # Add embeddings to the correct list
-        for key, emb in (loaded | skipped).items():
+        for key, emb in (skipped | loaded).items():
             if emb.filename is None:
                 continue
 
