@@ -108,21 +108,31 @@ async function putTacAPI(url, body = null) {
 
 // Extra network preview thumbnails
 async function getTacExtraNetworkPreviewURL(filename, type) {
-    const previewJSON = await fetchTacAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
-    if (previewJSON?.url) {
-        const properURL = `sd_extra_networks/thumb?filename=${previewJSON.url}`;
-        if ((await fetch(properURL)).status == 200) {
-            return properURL;
+    try {
+        // Fetch the preview JSON
+        const previewJSON = await fetchTacAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
+
+        if (previewJSON?.url) {
+            const properURL = `sd_extra_networks/thumb?filename=${previewJSON.url}`;
+            const response = await fetch(properURL);
+            if (response.status === 200) {
+                return properURL;
+            } else {
+                const blobResponse = await fetch(`tacapi/v1/thumb-preview-blob/${filename}?type=${type}`);
+                if (!blobResponse.ok) {
+                    throw new Error('Failed to fetch thumbnail blob.');
+                }
+                const blob = await blobResponse.blob();
+                return URL.createObjectURL(blob);
+            }
         } else {
-            // create blob url
-            const blob = await (await fetch(`tacapi/v1/thumb-preview-blob/${filename}?type=${type}`)).blob();
-            return URL.createObjectURL(blob);
+            return null;
         }
-    } else {
+    } catch (error) {
+        console.error('Error fetching thumbnail:', error);
         return null;
     }
 }
-
 lastStyleRefresh = 0;
 // Refresh style file if needed
 async function refreshStyleNamesIfChanged() {
