@@ -829,7 +829,15 @@ function addResultsToList(textArea, results, tagword, resetList) {
             }
         });
         // Add delayed hover listener for extra network previews
-        if (TAC_CFG.showExtraNetworkPreviews && [ResultType.embedding, ResultType.hypernetwork, ResultType.lora, ResultType.lyco].includes(result.type)) {
+        if (
+            TAC_CFG.showExtraNetworkPreviews &&
+            [
+                ResultType.embedding,
+                ResultType.hypernetwork,
+                ResultType.lora,
+                ResultType.lyco,
+            ].includes(result.type)
+        ) {
             li.addEventListener("mouseover", async () => {
                 const me = this;
                 let hoverTimeout;
@@ -845,9 +853,9 @@ function addResultsToList(textArea, results, tagword, resetList) {
                     // immediately trigger the next scroll as the items move under the cursor)
                     updateSelectionStyle(textArea, selectedTag, oldSelectedTag, false);
                 }, 400);
+                // Reset delay timer if we leave the item
                 me.addEventListener("mouseout", () => {
                     clearTimeout(hoverTimeout);
-                    //resultDiv.querySelector(".sideInfo").style.display = "none";
                 });
             });
         }
@@ -879,8 +887,8 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex, scroll = true)
         let selected = items[newIndex];
         selected.classList.add('selected');
 
-         // Set scrolltop to selected item
-       if (scroll) resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
+        // Set scrolltop to selected item
+        if (scroll) resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
     }
 
     // Show preview if enabled and the selected type supports it
