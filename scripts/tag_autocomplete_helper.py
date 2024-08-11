@@ -74,8 +74,8 @@ except Exception as e: # Not supported.
 # Sorting functions for extra networks / embeddings stuff
 sort_criteria = {
     "Name": lambda path, name, subpath: name.lower() if subpath else path.stem.lower(),
-    "Date Modified (newest first)": lambda path, name, subpath: path.stat().st_mtime,
-    "Date Modified (oldest first)": lambda path, name, subpath: path.stat().st_mtime
+    "Date Modified (newest first)": lambda path, name, subpath: path.stat().st_mtime if path.exists() else name.lower(),
+    "Date Modified (oldest first)": lambda path, name, subpath: path.stat().st_mtime if path.exists() else name.lower()
 }
 
 def sort_models(model_list, sort_method = None, name_has_subpath = False):
@@ -220,19 +220,34 @@ def get_embeddings(sd_model):
 
         # Add embeddings to the correct list
         for key, emb in (skipped | loaded).items():
-            if emb.filename is None:
-                continue
-
-            if emb.shape is None:
-                emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
-            elif emb.shape == V1_SHAPE:
-                emb_v1.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v1"))
-            elif emb.shape == V2_SHAPE:
-                emb_v2.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v2"))
-            elif emb.shape == VXL_SHAPE:
-                emb_vXL.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "vXL"))
+            filename = getattr(emb, "filename", None)
+            
+            if filename is None:
+                if emb.shape is None:
+                    emb_unknown.append((Path(key), key, ""))
+                elif emb.shape == V1_SHAPE:
+                    emb_v1.append((Path(key), key, "v1"))
+                elif emb.shape == V2_SHAPE:
+                    emb_v2.append((Path(key), key, "v2"))
+                elif emb.shape == VXL_SHAPE:
+                    emb_vXL.append((Path(key), key, "vXL"))
+                else:
+                    emb_unknown.append((Path(key), key, ""))
+            
             else:
-                emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
+                if emb.filename is None:
+                    continue
+
+                if emb.shape is None:
+                    emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
+                elif emb.shape == V1_SHAPE:
+                    emb_v1.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v1"))
+                elif emb.shape == V2_SHAPE:
+                    emb_v2.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v2"))
+                elif emb.shape == VXL_SHAPE:
+                    emb_vXL.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "vXL"))
+                else:
+                    emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
 
         results = sort_models(emb_v1) + sort_models(emb_v2) + sort_models(emb_vXL) + sort_models(emb_unknown)
     except AttributeError:
