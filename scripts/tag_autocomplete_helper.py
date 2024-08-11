@@ -214,6 +214,9 @@ def get_embeddings(sd_model):
 
     try:
         embed_db = get_embed_db(sd_model)
+        # Re-register callback if needed
+        if embed_db is not None and load_textual_inversion_embeddings != embed_db.load_textual_inversion_embeddings:
+            load_textual_inversion_embeddings = embed_db.load_textual_inversion_embeddings
         
         loaded = embed_db.word_embeddings
         skipped = embed_db.skipped_embeddings
