@@ -1483,9 +1483,16 @@ async function setup() {
     gradioApp().querySelector("#refresh_tac_refreshTempFiles")?.addEventListener("click", refreshTacTempFiles);
 
     // Also add listener for external network refresh button (plus triggering python code)
-    ["#img2img_extra_refresh", "#txt2img_extra_refresh"].forEach(e => {
-        gradioApp().querySelector(e)?.addEventListener("click", ()=>{
-            refreshTacTempFiles(true);
+    let alreadyAdded = new Set();
+    ["#img2img_extra_refresh", "#txt2img_extra_refresh", ".extra-network-control--refresh"].forEach(e => {
+        const elems = gradioApp().querySelectorAll(e);
+        elems.forEach(elem => {
+            if (!elem || alreadyAdded.has(elem)) return;
+
+            alreadyAdded.add(elem);
+            elem.addEventListener("click", ()=>{
+                refreshTacTempFiles(true);
+            });
         });
     })
 
