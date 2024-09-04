@@ -1,19 +1,20 @@
 # This helper script scans folders for wildcards and embeddings and writes them
 # to a temporary file to expose it to the javascript side
 
-import sys
 import glob
 import importlib
 import json
 import sqlite3
+import sys
 import urllib.parse
+from asyncio import sleep
 from pathlib import Path
 
 import gradio as gr
 import yaml
 from fastapi import FastAPI
-from fastapi.responses import Response, FileResponse, JSONResponse
-from modules import script_callbacks, sd_hijack, shared, hashes, sd_models
+from fastapi.responses import FileResponse, JSONResponse, Response
+from modules import hashes, script_callbacks, sd_hijack, sd_models, shared
 from pydantic import BaseModel
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
@@ -25,7 +26,7 @@ try:
     try:
         from scripts import tag_frequency_db as tdb
     except ModuleNotFoundError:
-        from inspect import getframeinfo, currentframe
+        from inspect import currentframe, getframeinfo
         filename = getframeinfo(currentframe()).filename
         parent = Path(filename).resolve().parent
         sys.path.append(str(parent))
@@ -322,7 +323,7 @@ try:
     import sys
     from modules import extensions
     sys.path.append(Path(extensions.extensions_builtin_dir).joinpath("Lora").as_posix())
-    import lora # pyright: ignore [reportMissingImports]
+    import lora  # pyright: ignore [reportMissingImports]
 
     def _get_lora():
         return [
@@ -480,7 +481,8 @@ def refresh_temp_files(*args, **kwargs):
     if skip_wildcard_refresh:
         WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
     write_temp_files(skip_wildcard_refresh)
-    refresh_embeddings(force=True)
+    force_embed_refresh = getattr(shared.opts, "tac_forceRefreshEmbeddings", False)
+    refresh_embeddings(force=force_embed_refresh)
 
 def write_style_names(*args, **kwargs):
     styles = get_style_names()
@@ -577,6 +579,7 @@ def on_ui_settings():
         "tac_wildcardExclusionList": shared.OptionInfo("", "Wildcard folder exclusion list").info("Add folder names that shouldn't be searched for wildcards, separated by comma.").needs_restart(),
         "tac_skipWildcardRefresh": shared.OptionInfo(False, "Don't re-scan for wildcard files when pressing the extra networks refresh button").info("Useful to prevent hanging if you use a very large wildcard collection."),
         "tac_useEmbeddings": shared.OptionInfo(True, "Search for embeddings"),
+        "tac_forceRefreshEmbeddings": shared.OptionInfo(False, "Force refresh embeddings when pressing the extra networks refresh button").info("Turn this on if you have issues with new embeddings not registering correctly in TAC. Warning: Seems to cause reloading issues in gradio for some users."),
         "tac_includeEmbeddingsInNormalResults": shared.OptionInfo(False, "Include embeddings in normal tag results").info("The 'JumpTo...' keybinds (End & Home key by default) will select the first non-embedding result of their direction on the first press for quick navigation in longer lists."),
         "tac_useHypernetworks": shared.OptionInfo(True, "Search for hypernetworks"),
         "tac_useLoras": shared.OptionInfo(True, "Search for Loras"),
@@ -732,6 +735,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
 
     @app.post("/tacapi/v1/refresh-temp-files")
     async def api_refresh_temp_files():
+        await sleep(0) # might help with refresh blocking gradio
         refresh_temp_files()
 
     @app.post("/tacapi/v1/refresh-embeddings")
