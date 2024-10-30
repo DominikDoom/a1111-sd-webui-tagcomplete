@@ -234,6 +234,7 @@ async function syncOptions() {
         useStyleVars: opts["tac_useStyleVars"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
+        replaceUnderscoresExclusionList: opts["tac_undersocreReplacementExclusionList"],
         escapeParentheses: opts["tac_escapeParentheses"],
         appendComma: opts["tac_appendComma"],
         appendSpace: opts["tac_appendSpace"],
@@ -430,8 +431,12 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     if (sanitizeResults && sanitizeResults.length > 0) {
         sanitizedText = sanitizeResults[0];
     } else {
-        sanitizedText = TAC_CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
-
+        const excluded_tags = TAC_CFG.replaceUnderscoresExclusionList?.split(',').map(s => s.trim()) || [];
+        if (TAC_CFG.replaceUnderscores && !excluded_tags.includes(sanitizedText)) {
+            sanitizedText = text.replaceAll("_", " ")
+        } else {
+            sanitizedText = text;
+        }
         if (TAC_CFG.escapeParentheses && tagType === ResultType.tag) {
             sanitizedText = sanitizedText
                 .replaceAll("(", "\\(")
