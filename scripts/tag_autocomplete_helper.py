@@ -598,6 +598,7 @@ def on_ui_settings():
         "tac_frequencyIncludeAlias": shared.OptionInfo(False, "Frequency sorting matches aliases for frequent tags").info("Tag frequency will be increased for the main tag even if an alias is used for completion. This option can be used to override the default behavior of alias results being ignored for frequency sorting."),
         # Insertion related settings
         "tac_replaceUnderscores": shared.OptionInfo(True, "Replace underscores with spaces on insertion"),
+        "tac_undersocreReplacementExclusionList": shared.OptionInfo("0_0,(o)_(o),+_+,+_-,._.,<o>_<o>,<|>_<|>,=_=,>_<,3_3,6_9,>_o,@_@,^_^,o_o,u_u,x_x,|_|,||_||", "Underscore replacement exclusion list").info("Add tags that shouldn't have underscores replaced with spaces, separated by comma.").needs_restart(),
         "tac_escapeParentheses": shared.OptionInfo(True, "Escape parentheses on insertion"),
         "tac_appendComma": shared.OptionInfo(True, "Append comma on tag autocompletion"),
         "tac_appendSpace": shared.OptionInfo(True, "Append space on tag autocompletion").info("will append after comma if the above is enabled"),
