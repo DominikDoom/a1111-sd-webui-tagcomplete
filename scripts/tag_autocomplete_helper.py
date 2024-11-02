@@ -134,7 +134,11 @@ def is_umi_format(data):
     """Returns True if the YAML file is in UMI format."""
     issue_found = False
     for item in data:
-        if not (data[item] and 'Tags' in data[item] and isinstance(data[item]['Tags'], list)):
+        try:
+            if not (data[item] and 'Tags' in data[item] and isinstance(data[item]['Tags'], list)):
+                issue_found = True
+                break
+        except:
             issue_found = True
             break
     return not issue_found
