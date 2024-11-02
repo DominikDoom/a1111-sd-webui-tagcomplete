@@ -160,9 +160,12 @@ def parse_dynamic_prompt_format(yaml_wildcards, data, path):
             elif not (isinstance(value, list) and all(isinstance(v, str) for v in value)):
                 del d[key]
 
-    recurse_dict(data)
-    # Add to yaml_wildcards
-    yaml_wildcards[path.name] = data
+    try:
+        recurse_dict(data)
+        # Add to yaml_wildcards
+        yaml_wildcards[path.name] = data
+    except:
+        return
 
 
 def get_yaml_wildcards():
@@ -187,8 +190,12 @@ def get_yaml_wildcards():
                         parse_dynamic_prompt_format(yaml_wildcards, data, path)
                 else:
                     print('No data found in ' + path.name)
-        except (yaml.YAMLError, UnicodeDecodeError) as e:
+        except (yaml.YAMLError, UnicodeDecodeError, AttributeError, TypeError) as e:
+            # YAML file not in wildcard format or couldn't be read
             print(f'Issue in parsing YAML file {path.name}: {e}')
+            continue
+        except Exception as e:
+            # Something else went wrong, just skip
             continue
 
     # Sort by count
