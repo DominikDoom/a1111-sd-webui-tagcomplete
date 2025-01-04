@@ -753,7 +753,14 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
             // Set link based on selected file
             let tagFileNameLower = tagFileName.toLowerCase();
-            if (tagFileNameLower.startsWith("danbooru")) {
+            if (tagFileNameLower.startsWith("danbooru_e621_merged")) {
+                // Use danbooru for categories 0-5, e621 for 6+
+                // Based on the merged categories from https://github.com/DraconicDragon/dbr-e621-lists-archive/tree/main/tag-lists/danbooru_e621_merged
+                // Danbooru is also the fallback if result.category is not set
+                wikiLink.href = result.category && result.category >= 6
+                    ? `https://e621.net/wiki_pages/${linkPart}`
+                    : `https://danbooru.donmai.us/wiki_pages/${linkPart}`;
+            } else if (tagFileNameLower.startsWith("danbooru")) {
                 wikiLink.href = `https://danbooru.donmai.us/wiki_pages/${linkPart}`;
             } else if (tagFileNameLower.startsWith("e621")) {
                 wikiLink.href = `https://e621.net/wiki_pages/${linkPart}`;

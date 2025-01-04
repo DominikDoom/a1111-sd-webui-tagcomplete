@@ -686,6 +686,23 @@ def on_ui_settings():
         "9": ["#df3647", "#8e1c2b"],
         "10": ["#c98f2b", "#7b470e"],
         "11": ["#e87ebe", "#a83583"]
+    },
+    "danbooru_e621_merged": {
+        "-1": ["red", "maroon"],
+        "0": ["lightblue", "dodgerblue"],
+        "1": ["indianred", "firebrick"],
+        "3": ["violet", "darkorchid"],
+        "4": ["lightgreen", "darkgreen"],
+        "5": ["orange", "darkorange"],
+        "6": ["red", "maroon"],
+        "7": ["lightblue", "dodgerblue"],
+        "8": ["gold", "goldenrod"],
+        "9": ["gold", "goldenrod"],
+        "10": ["violet", "darkorchid"],
+        "11": ["lightgreen", "darkgreen"],
+        "12": ["tomato", "darksalmon"],
+        "14": ["whitesmoke", "black"],
+        "15": ["seagreen", "darkseagreen"]
     }
 }\
 """
@@ -883,5 +900,5 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     @app.get("/tacapi/v1/get-all-use-counts")
     async def get_all_tag_counts():
         return db_request(lambda: db.get_all_tags(), get=True)
-        
+
 script_callbacks.on_app_started(api_tac)
