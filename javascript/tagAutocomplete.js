@@ -731,22 +731,24 @@ function addResultsToList(textArea, results, tagword, resetList) {
         }
 
         // Add wiki link if the setting is enabled and a supported tag set loaded
-        if (TAC_CFG.showWikiLinks
-            && (result.type === ResultType.tag)
-            && (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"))) {
+        if (
+            TAC_CFG.showWikiLinks &&
+            result.type === ResultType.tag &&
+            (tagFileName.toLowerCase().startsWith("danbooru") ||
+                tagFileName.toLowerCase().startsWith("e621"))
+        ) {
             let wikiLink = document.createElement("a");
             wikiLink.classList.add("acWikiLink");
             wikiLink.innerText = "?";
-            wikiLink.title = "Open external wiki page for this tag"
+            wikiLink.title = "Open external wiki page for this tag";
 
             let linkPart = displayText;
             // Only use alias result if it is one
-            if (displayText.includes("➝"))
-                linkPart = displayText.split(" ➝ ")[1];
+            if (displayText.includes("➝")) linkPart = displayText.split(" ➝ ")[1];
 
             // Remove any trailing translations
             if (linkPart.includes("[")) {
-                linkPart = linkPart.split("[")[0]
+                linkPart = linkPart.split("[")[0];
             }
 
             linkPart = encodeURIComponent(linkPart);
@@ -757,9 +759,10 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 // Use danbooru for categories 0-5, e621 for 6+
                 // Based on the merged categories from https://github.com/DraconicDragon/dbr-e621-lists-archive/tree/main/tag-lists/danbooru_e621_merged
                 // Danbooru is also the fallback if result.category is not set
-                wikiLink.href = result.category && result.category >= 6
-                    ? `https://e621.net/wiki_pages/${linkPart}`
-                    : `https://danbooru.donmai.us/wiki_pages/${linkPart}`;
+                wikiLink.href =
+                    result.category && result.category >= 6
+                        ? `https://e621.net/wiki_pages/${linkPart}`
+                        : `https://danbooru.donmai.us/wiki_pages/${linkPart}`;
             } else if (tagFileNameLower.startsWith("danbooru")) {
                 wikiLink.href = `https://danbooru.donmai.us/wiki_pages/${linkPart}`;
             } else if (tagFileNameLower.startsWith("e621")) {
