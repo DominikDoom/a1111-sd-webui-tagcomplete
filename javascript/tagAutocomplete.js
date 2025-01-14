@@ -90,6 +90,10 @@ const autocompleteCSS = `
         content: "✨";
         margin-right: 2px;
     }
+    .acMetaText span.existed::after {
+        content: "🔁";
+        margin-right: 2px;
+    }
     .acWikiLink {
         padding: 0.5rem;
         margin: -0.5rem 0 -0.5rem -0.5rem;
@@ -666,6 +670,30 @@ function addResultsToList(textArea, results, tagword, resetList) {
     let tagColors = TAC_CFG.colorMap;
     let mode = (document.querySelector(".dark") || gradioApp().querySelector(".dark")) ? 0 : 1;
     let nextLength = Math.min(results.length, resultCount + TAC_CFG.resultStepLength);
+    const IS_DAN_OR_E621_TAG_FILE =  (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"))
+
+    let prompt = "", tagCount = {}
+
+    // Indicate if has existed tag before 
+    if(IS_DAN_OR_E621_TAG_FILE) {
+        prompt = textArea.value.trim()
+        const tags = prompt.replace('\n', ',').split(',').map(tag => tag.trim()).filter(tag => tag)
+
+        const unsanitizedTags = tags.map(tag => {
+            const weightedTags = [...tag.matchAll(WEIGHT_REGEX)].flat()
+            if(weightedTags.length === 2) {
+                return weightedTags[1]
+            } else {
+                // normal tags
+                return tag
+            }
+        }).map(tag => tag.replaceAll(" ", "_").replaceAll("\\(", "(").replaceAll("\\)", ")"))
+    
+        // Split tags by `,`  and count tag 
+        for(const tag of unsanitizedTags) {
+            tagCount[tag] = tagCount[tag] ? tagCount[tag] + 1 : 1
+        }
+    }
 
     for (let i = resultCount; i < nextLength; i++) {
         let result = results[i];
@@ -734,8 +762,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         if (
             TAC_CFG.showWikiLinks &&
             result.type === ResultType.tag &&
-            (tagFileName.toLowerCase().startsWith("danbooru") ||
-                tagFileName.toLowerCase().startsWith("e621"))
+            IS_DAN_OR_E621_TAG_FILE
         ) {
             let wikiLink = document.createElement("a");
             wikiLink.classList.add("acWikiLink");
@@ -829,6 +856,15 @@ function addResultsToList(textArea, results, tagword, resetList) {
         if (result.usageBias) {
             flexDiv.querySelector(".acMetaText").classList.add("biased");
             flexDiv.title = "✨ Frequent tag. Ctrl/Cmd + click to reset usage count."
+        }
+
+        // Add 🔁 to indicate if has existed tag
+        if(IS_DAN_OR_E621_TAG_FILE && tagCount[result.text] >= 1) {
+            const textNode = flexDiv.querySelector(".acMetaText")
+            const span = document.createElement("span")
+            textNode.insertBefore(span, textNode.firstChild)
+            span.classList.add("existed")
+            span.title = `🔁 This tag has existed in before prompt.`
         }
 
         // Check if it's a negative prompt
