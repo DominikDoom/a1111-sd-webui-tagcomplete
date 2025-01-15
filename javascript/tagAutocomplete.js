@@ -670,28 +670,28 @@ function addResultsToList(textArea, results, tagword, resetList) {
     let tagColors = TAC_CFG.colorMap;
     let mode = (document.querySelector(".dark") || gradioApp().querySelector(".dark")) ? 0 : 1;
     let nextLength = Math.min(results.length, resultCount + TAC_CFG.resultStepLength);
-    const IS_DAN_OR_E621_TAG_FILE =  (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"))
+    const IS_DAN_OR_E621_TAG_FILE =  (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"));
 
     const tagCount = {};
 
     // Indicate if tag was used before 
     if (IS_DAN_OR_E621_TAG_FILE) {
         const prompt = textArea.value.trim();
-        const tags = prompt.replace('\n', ',').split(',').map(tag => tag.trim()).filter(tag => tag)
+        const tags = prompt.replace('\n', ',').split(',').map(tag => tag.trim()).filter(tag => tag);
 
         const unsanitizedTags = tags.map(tag => {
-            const weightedTags = [...tag.matchAll(WEIGHT_REGEX)].flat()
+            const weightedTags = [...tag.matchAll(WEIGHT_REGEX)].flat();
             if(weightedTags.length === 2) {
-                return weightedTags[1]
+                return weightedTags[1];
             } else {
                 // normal tags
-                return tag
+                return tag;
             }
-        }).map(tag => tag.replaceAll(" ", "_").replaceAll("\\(", "(").replaceAll("\\)", ")"))
+        }).map(tag => tag.replaceAll(" ", "_").replaceAll("\\(", "(").replaceAll("\\)", ")"));
     
         // Split tags by `,`  and count tag 
         for (const tag of unsanitizedTags) {
-            tagCount[tag] = tagCount[tag] ? tagCount[tag] + 1 : 1
+            tagCount[tag] = tagCount[tag] ? tagCount[tag] + 1 : 1;
         }
     }
 
@@ -860,9 +860,9 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         // Add 🔁 to indicate if tag was used before
         if (IS_DAN_OR_E621_TAG_FILE && tagCount[result.text] >= 1) {
-            const textNode = flexDiv.querySelector(".acMetaText")
-            const span = document.createElement("span")
-            textNode.insertBefore(span, textNode.firstChild)
+            const textNode = flexDiv.querySelector(".acMetaText");
+            const span = document.createElement("span");
+            textNode.insertBefore(span, textNode.firstChild);
             span.classList.add("used");
             span.title = "🔁 The prompt already contains this tag";
         }
