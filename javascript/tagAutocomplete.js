@@ -672,11 +672,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
     let nextLength = Math.min(results.length, resultCount + TAC_CFG.resultStepLength);
     const IS_DAN_OR_E621_TAG_FILE =  (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"))
 
-    let prompt = "", tagCount = {}
+    const tagCount = {};
 
-    // Indicate if has existed tag before 
-    if(IS_DAN_OR_E621_TAG_FILE) {
-        prompt = textArea.value.trim()
+    // Indicate if tag was used before 
+    if (IS_DAN_OR_E621_TAG_FILE) {
+        const prompt = textArea.value.trim();
         const tags = prompt.replace('\n', ',').split(',').map(tag => tag.trim()).filter(tag => tag)
 
         const unsanitizedTags = tags.map(tag => {
