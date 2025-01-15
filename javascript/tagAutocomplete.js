@@ -864,7 +864,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             const span = document.createElement("span")
             textNode.insertBefore(span, textNode.firstChild)
             span.classList.add("existed")
-            span.title = `🔁 This tag has existed in before prompt.`
+            span.title = "🔁 The prompt already contains this tag";
         }
 
         // Check if it's a negative prompt
