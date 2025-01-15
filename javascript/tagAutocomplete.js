@@ -863,7 +863,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             const textNode = flexDiv.querySelector(".acMetaText")
             const span = document.createElement("span")
             textNode.insertBefore(span, textNode.firstChild)
-            span.classList.add("existed")
+            span.classList.add("used");
             span.title = "🔁 The prompt already contains this tag";
         }
 
