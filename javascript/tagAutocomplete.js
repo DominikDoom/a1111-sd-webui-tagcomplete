@@ -690,7 +690,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         }).map(tag => tag.replaceAll(" ", "_").replaceAll("\\(", "(").replaceAll("\\)", ")"))
     
         // Split tags by `,`  and count tag 
-        for(const tag of unsanitizedTags) {
+        for (const tag of unsanitizedTags) {
             tagCount[tag] = tagCount[tag] ? tagCount[tag] + 1 : 1
         }
     }
