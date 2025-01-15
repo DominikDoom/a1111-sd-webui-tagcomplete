@@ -681,7 +681,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         const unsanitizedTags = tags.map(tag => {
             const weightedTags = [...tag.matchAll(WEIGHT_REGEX)].flat();
-            if(weightedTags.length === 2) {
+            if (weightedTags.length === 2) {
                 return weightedTags[1];
             } else {
                 // normal tags
