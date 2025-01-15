@@ -90,7 +90,7 @@ const autocompleteCSS = `
         content: "✨";
         margin-right: 2px;
     }
-    .acMetaText span.existed::after {
+    .acMetaText span.used::after {
         content: "🔁";
         margin-right: 2px;
     }
