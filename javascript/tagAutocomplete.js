@@ -677,7 +677,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
     // Indicate if tag was used before 
     if (IS_DAN_OR_E621_TAG_FILE) {
         const prompt = textArea.value.trim();
-        const tags = prompt.replace('\n', ',').split(',').map(tag => tag.trim()).filter(tag => tag);
+        const tags = prompt.replaceAll('\n', ',').split(',').map(tag => tag.trim()).filter(tag => tag);
 
         const unsanitizedTags = tags.map(tag => {
             const weightedTags = [...tag.matchAll(WEIGHT_REGEX)].flat();
