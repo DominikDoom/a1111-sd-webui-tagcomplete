@@ -855,16 +855,19 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Add small ✨ marker to indicate usage sorting
         if (result.usageBias) {
             flexDiv.querySelector(".acMetaText").classList.add("biased");
-            flexDiv.title = "✨ Frequent tag. Ctrl/Cmd + click to reset usage count."
+            flexDiv.title = "✨ Frequent tag. Ctrl/Cmd + click to reset usage count.";
         }
 
         // Add 🔁 to indicate if tag was used before
-        if (IS_DAN_OR_E621_TAG_FILE && tagCount[result.text] >= 1) {
-            const textNode = flexDiv.querySelector(".acMetaText");
-            const span = document.createElement("span");
-            textNode.insertBefore(span, textNode.firstChild);
-            span.classList.add("used");
-            span.title = "🔁 The prompt already contains this tag";
+        if (IS_DAN_OR_E621_TAG_FILE && tagCount[result.text]) {
+            // Fix PR#313#issuecomment-2592551794
+            if (!(result.text === tagword && tagCount[result.text] === 1)) {
+                const textNode = flexDiv.querySelector(".acMetaText");
+                const span = document.createElement("span");
+                textNode.insertBefore(span, textNode.firstChild);
+                span.classList.add("used");
+                span.title = "🔁 The prompt already contains this tag";
+            }
         }
 
         // Check if it's a negative prompt
