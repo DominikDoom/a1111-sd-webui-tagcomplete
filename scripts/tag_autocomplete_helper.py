@@ -515,7 +515,7 @@ def write_temp_files(skip_wildcard_refresh = False):
         # Write yaml extension wildcards to umi_tags.txt and wc_yaml.json if found
         get_yaml_wildcards()
 
-    if HYP_PATH.exists():
+    if HYP_PATH is not None and HYP_PATH.exists():
         hypernets = get_hypernetworks()
         if hypernets:
             write_to_temp_file('hyp.txt', hypernets)
