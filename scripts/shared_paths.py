@@ -22,7 +22,22 @@ TAGS_PATH = Path(scripts.basedir()).joinpath("tags").absolute()
 # The path to the folder containing the wildcards and embeddings
 WILDCARD_PATH = FILE_DIR.joinpath("scripts/wildcards").absolute()
 EMB_PATH = Path(shared.cmd_opts.embeddings_dir).absolute()
-HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir).absolute()
+
+# Forge Classic detection
+try:
+    from modules_forge.forge_version import version as forge_version
+    IS_FORGE_CLASSIC = forge_version == "classic"
+except ImportError:
+    IS_FORGE_CLASSIC = False
+
+# Forge Classic skips it
+if not IS_FORGE_CLASSIC:
+    try:
+        HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir).absolute()
+    except AttributeError:
+        HYP_PATH = None
+else:
+    HYP_PATH = None
 
 try:
     LORA_PATH = Path(shared.cmd_opts.lora_dir).absolute()
