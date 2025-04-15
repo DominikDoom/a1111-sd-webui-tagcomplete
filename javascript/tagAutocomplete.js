@@ -630,12 +630,30 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     updateInput(textArea);
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
-    let weightedTags = [...newPrompt.matchAll(WEIGHT_REGEX)]
-            .map(match => match[1]);
-    let tags = newPrompt.match(TAG_REGEX())
-    if (weightedTags !== null) {
-        tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted)))
-            .concat(weightedTags);
+    let weightedTags = [...prompt.matchAll(WEIGHT_REGEX)]
+        .map(match => match[1])
+        .sort((a, b) => a.length - b.length);
+    let tags = [...prompt.match(TAG_REGEX())].sort((a, b) => a.length - b.length);
+    
+    if (weightedTags !== null && tags !== null) {
+        // Create a working copy of the normal tags
+        let workingTags = [...tags];
+        
+        // For each weighted tag
+        for (const weightedTag of weightedTags) {
+            // Find first matching tag and remove it from working set
+            const matchIndex = workingTags.findIndex(tag => 
+                tag === weightedTag && !tag.startsWith("<[") && !tag.startsWith("$(")
+            );
+            
+            if (matchIndex !== -1) {
+                // Remove the matched tag from the working set
+                workingTags.splice(matchIndex, 1);
+            }
+        }
+        
+        // Combine filtered normal tags with weighted tags
+        tags = workingTags.concat(weightedTags);
     }
     previousTags = tags;
 
@@ -1126,11 +1144,29 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Match tags with RegEx to get the last edited one
         // We also match for the weighting format (e.g. "tag:1.0") here, and combine the two to get the full tag word set
         let weightedTags = [...prompt.matchAll(WEIGHT_REGEX)]
-            .map(match => match[1]);
-        let tags = prompt.match(TAG_REGEX())
+            .map(match => match[1])
+            .sort((a, b) => a.length - b.length);
+        let tags = [...prompt.match(TAG_REGEX())].sort((a, b) => a.length - b.length);
+        
         if (weightedTags !== null && tags !== null) {
-            tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted) && !tag.startsWith("<[") && !tag.startsWith("$(")))
-                .concat(weightedTags);
+            // Create a working copy of the normal tags
+            let workingTags = [...tags];
+            
+            // For each weighted tag
+            for (const weightedTag of weightedTags) {
+                // Find first matching tag and remove it from working set
+                const matchIndex = workingTags.findIndex(tag => 
+                    tag === weightedTag && !tag.startsWith("<[") && !tag.startsWith("$(")
+                );
+                
+                if (matchIndex !== -1) {
+                    // Remove the matched tag from the working set
+                    workingTags.splice(matchIndex, 1);
+                }
+            }
+            
+            // Combine filtered normal tags with weighted tags
+            tags = workingTags.concat(weightedTags);
         }
 
         // Guard for no tags
