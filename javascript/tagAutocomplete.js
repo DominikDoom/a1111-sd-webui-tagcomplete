@@ -1636,7 +1636,7 @@ async function setup() {
     } else {
         acStyle.appendChild(document.createTextNode(css));
     }
-    gradioApp().appendChild(acStyle);
+    document.head.appendChild(acStyle);
 
     // Callback
     await processQueue(QUEUE_AFTER_SETUP, null);
