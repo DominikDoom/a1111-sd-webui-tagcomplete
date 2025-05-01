@@ -1511,6 +1511,12 @@ function addAutocompleteToArea(area) {
             if (!e.inputType && !tacSelfTrigger) return;
             tacSelfTrigger = false;
 
+            // Block hide we are composing (IME), so enter doesn't close the results
+            if (e.isComposing) {
+                hideBlocked = true;
+                setTimeout(() => { hideBlocked = false; }, 100);
+            }
+
             debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
             checkKeywordInsertionUndo(area, e);
         });
