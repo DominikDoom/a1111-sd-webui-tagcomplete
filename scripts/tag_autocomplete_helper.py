@@ -503,7 +503,14 @@ def write_style_names(*args, **kwargs):
 def write_temp_files(skip_wildcard_refresh = False):
     # Write wildcards to wc.txt if found
     if WILDCARD_PATH.exists() and not skip_wildcard_refresh:
-        wildcards = [WILDCARD_PATH.relative_to(FILE_DIR).as_posix()] + get_wildcards()
+        try:
+            # Attempt to create a relative path, but fall back to an absolute path if not possible
+            relative_wildcard_path = WILDCARD_PATH.relative_to(FILE_DIR).as_posix()
+        except ValueError:
+            # If the paths are not relative, use the absolute path
+            relative_wildcard_path = WILDCARD_PATH.as_posix()
+
+        wildcards = [relative_wildcard_path] + get_wildcards()
         if wildcards:
             write_to_temp_file('wc.txt', wildcards)
 
