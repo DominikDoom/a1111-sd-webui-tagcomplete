@@ -364,7 +364,7 @@ function showResults(textArea) {
 
     if (TAC_CFG.slidingPopup) {
         let caretPosition = getCaretCoordinates(textArea, textArea.selectionEnd);
-        let offsetTop = textArea.offsetTop + caretPosition.top + 10; // Adjust this value for desired distance below cursor
+        let offsetTop = textArea.offsetTop + caretPosition.top - textArea.scrollTop + 10; // Adjust this value for desired distance below cursor
         let offsetLeft = Math.min(textArea.offsetLeft - textArea.scrollLeft + caretPosition.left, textArea.offsetWidth - parentDiv.offsetWidth);
 
         parentDiv.style.top = `${offsetTop}px`; // Position below the cursor
