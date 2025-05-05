@@ -21,8 +21,8 @@ TAGS_PATH = Path(scripts.basedir()).joinpath("tags").absolute()
 
 # The path to the folder containing the wildcards and embeddings
 try: # SD.Next
-    WILDCARD_PATH = Path(shared.cmd_opts.wildcards_dir).absolute()
-except AttributeError: # A1111
+    WILDCARD_PATH = Path(shared.opts.wildcards_dir).absolute()
+except Exception: # A1111
     WILDCARD_PATH = FILE_DIR.joinpath("scripts/wildcards").absolute()
 EMB_PATH = Path(shared.cmd_opts.embeddings_dir).absolute()
 
