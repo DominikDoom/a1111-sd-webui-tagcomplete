@@ -1653,10 +1653,11 @@ async function setup() {
     await TacUtils.processQueue(TAC.Ext.QUEUE_AFTER_SETUP, null);
 }
 var tacLoading = false;
+var tacSetupDone = false;
 onUiUpdate(async () => {
     if (tacLoading) return;
     if (Object.keys(opts).length === 0) return;
-    if (TAC.CFG) return;
+    if (tacSetupDone) return;
     tacLoading = true;
     // Get our tag base path from the temp file
     TAC.Globals.tagBasePath = await TacUtils.readFile(`tmp/tagAutocompletePath.txt`);
@@ -1665,4 +1666,5 @@ onUiUpdate(async () => {
     // Rest of setup
     setup();
     tacLoading = false;
+    tacSetupDone = true;
 });
