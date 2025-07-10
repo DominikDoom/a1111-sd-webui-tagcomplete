@@ -2,13 +2,13 @@
 const WC_REGEX = new RegExp(/__([^,]+)__([^, ]*)/g);
 
 // Trigger conditions
-const WC_TRIGGER = () => TAC.CFG.useWildcards && [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.CFG.wcWrap)), "g"))].length > 0;
+const WC_TRIGGER = () => TAC.CFG.useWildcards && [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", TacUtils.escapeRegExp(TAC.CFG.wcWrap)), "g"))].length > 0;
 const WC_FILE_TRIGGER = () => TAC.CFG.useWildcards && (TAC.Globals.tagword.startsWith(TAC.CFG.wcWrap) && !TAC.Globals.tagword.endsWith(TAC.CFG.wcWrap) || TAC.Globals.tagword === TAC.CFG.wcWrap);
 
 class WildcardParser extends BaseTagParser {
     async parse() {
         // Show wildcards from a file with that name
-        let wcMatch = [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.CFG.wcWrap)), "g"))];
+        let wcMatch = [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", TacUtils.escapeRegExp(TAC.CFG.wcWrap)), "g"))];
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
 

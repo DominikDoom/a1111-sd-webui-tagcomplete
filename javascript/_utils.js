@@ -242,7 +242,7 @@ class TacUtils {
                 memo,
                 Object.prototype.toString.call(obj[prop]) === "[object Object]"
                 ? // keep working if value is an object
-                    flatten(obj[prop], roots.concat([prop]), sep)
+                    this.flatten(obj[prop], roots.concat([prop]), sep)
                 : // include current prop and value and prefix prop with the roots
                     { [roots.concat([prop]).join(sep)]: obj[prop] }
             ),
