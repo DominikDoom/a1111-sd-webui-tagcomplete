@@ -5,14 +5,16 @@ import glob
 import importlib
 import json
 import sqlite3
+import sys
 import urllib.parse
+from asyncio import sleep
 from pathlib import Path
 
 import gradio as gr
 import yaml
 from fastapi import FastAPI
-from fastapi.responses import Response, FileResponse, JSONResponse
-from modules import script_callbacks, sd_hijack, shared, hashes
+from fastapi.responses import FileResponse, JSONResponse, Response
+from modules import hashes, script_callbacks, sd_hijack, sd_models, shared
 from pydantic import BaseModel
 
 from scripts.model_keyword_support import (get_lora_simple_hash,
@@ -21,7 +23,14 @@ from scripts.model_keyword_support import (get_lora_simple_hash,
 from scripts.shared_paths import *
 
 try:
-    import scripts.tag_frequency_db as tdb
+    try:
+        from scripts import tag_frequency_db as tdb
+    except ModuleNotFoundError:
+        from inspect import currentframe, getframeinfo
+        filename = getframeinfo(currentframe()).filename
+        parent = Path(filename).resolve().parent
+        sys.path.append(str(parent))
+        import tag_frequency_db as tdb
 
     # Ensure the db dependency is reloaded on script reload
     importlib.reload(tdb)
@@ -33,9 +42,32 @@ except (ImportError, ValueError, sqlite3.Error) as e:
     print(f"Tag Autocomplete: Tag frequency database error - \"{e}\"")
     db = None
 
+def get_embed_db(sd_model=None):
+    """Returns the embedding database, if available."""
+    try:
+        return sd_hijack.model_hijack.embedding_db
+    except Exception:
+        try: # sd next with diffusers backend
+            sdnext_model = sd_model if sd_model is not None else shared.sd_model
+            return sdnext_model.embedding_db
+        except Exception:
+            try: # forge webui
+                forge_model = sd_model if sd_model is not None else sd_models.model_data.get_sd_model()
+                if type(forge_model).__name__ == "FakeInitialModel":
+                    return None
+                else:
+                    processer = getattr(forge_model, "text_processing_engine", getattr(forge_model, "text_processing_engine_l"))
+                    return processer.embeddings
+            except Exception:
+                return None
+
 # Attempt to get embedding load function, using the same call as api.
 try:
-    load_textual_inversion_embeddings = sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings
+    embed_db = get_embed_db()
+    if embed_db is not None:
+        load_textual_inversion_embeddings = embed_db.load_textual_inversion_embeddings
+    else:
+        load_textual_inversion_embeddings = lambda *args, **kwargs: None
 except Exception as e: # Not supported.
     load_textual_inversion_embeddings = lambda *args, **kwargs: None
     print("Tag Autocomplete: Cannot reload embeddings instantly:", e)
@@ -43,8 +75,8 @@ except Exception as e: # Not supported.
 # Sorting functions for extra networks / embeddings stuff
 sort_criteria = {
     "Name": lambda path, name, subpath: name.lower() if subpath else path.stem.lower(),
-    "Date Modified (newest first)": lambda path, name, subpath: path.stat().st_mtime,
-    "Date Modified (oldest first)": lambda path, name, subpath: path.stat().st_mtime
+    "Date Modified (newest first)": lambda path, name, subpath: path.stat().st_mtime if path.exists() else name.lower(),
+    "Date Modified (oldest first)": lambda path, name, subpath: path.stat().st_mtime if path.exists() else name.lower()
 }
 
 def sort_models(model_list, sort_method = None, name_has_subpath = False):
@@ -102,7 +134,11 @@ def is_umi_format(data):
     """Returns True if the YAML file is in UMI format."""
     issue_found = False
     for item in data:
-        if not (data[item] and 'Tags' in data[item] and isinstance(data[item]['Tags'], list)):
+        try:
+            if not (data[item] and 'Tags' in data[item] and isinstance(data[item]['Tags'], list)):
+                issue_found = True
+                break
+        except:
             issue_found = True
             break
     return not issue_found
@@ -124,9 +160,12 @@ def parse_dynamic_prompt_format(yaml_wildcards, data, path):
             elif not (isinstance(value, list) and all(isinstance(v, str) for v in value)):
                 del d[key]
 
-    recurse_dict(data)
-    # Add to yaml_wildcards
-    yaml_wildcards[path.name] = data
+    try:
+        recurse_dict(data)
+        # Add to yaml_wildcards
+        yaml_wildcards[path.name] = data
+    except:
+        return
 
 
 def get_yaml_wildcards():
@@ -151,8 +190,12 @@ def get_yaml_wildcards():
                         parse_dynamic_prompt_format(yaml_wildcards, data, path)
                 else:
                     print('No data found in ' + path.name)
-        except (yaml.YAMLError, UnicodeDecodeError) as e:
+        except (yaml.YAMLError, UnicodeDecodeError, AttributeError, TypeError) as e:
+            # YAML file not in wildcard format or couldn't be read
             print(f'Issue in parsing YAML file {path.name}: {e}')
+            continue
+        except Exception as e:
+            # Something else went wrong, just skip
             continue
 
     # Sort by count
@@ -182,35 +225,45 @@ def get_embeddings(sd_model):
     results = []
 
     try:
-        # The sd_model embedding_db reference only exists in sd.next with diffusers backend
-        try:
-            loaded_sdnext = sd_model.embedding_db.word_embeddings
-            skipped_sdnext = sd_model.embedding_db.skipped_embeddings
-        except (NameError, AttributeError):
-            loaded_sdnext = {}
-            skipped_sdnext = {}
+        embed_db = get_embed_db(sd_model)
+        # Re-register callback if needed
+        global load_textual_inversion_embeddings
+        if embed_db is not None and load_textual_inversion_embeddings != embed_db.load_textual_inversion_embeddings:
+            load_textual_inversion_embeddings = embed_db.load_textual_inversion_embeddings
         
-        # Get embedding dict from sd_hijack to separate v1/v2 embeddings
-        loaded = sd_hijack.model_hijack.embedding_db.word_embeddings
-        skipped = sd_hijack.model_hijack.embedding_db.skipped_embeddings
-        loaded = loaded | loaded_sdnext
-        skipped = skipped | skipped_sdnext
+        loaded = embed_db.word_embeddings
+        skipped = embed_db.skipped_embeddings
 
         # Add embeddings to the correct list
-        for key, emb in (loaded | skipped).items():
-            if emb.filename is None:
-                continue
-
-            if emb.shape is None:
-                emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
-            elif emb.shape == V1_SHAPE:
-                emb_v1.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v1"))
-            elif emb.shape == V2_SHAPE:
-                emb_v2.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v2"))
-            elif emb.shape == VXL_SHAPE:
-                emb_vXL.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "vXL"))
+        for key, emb in (skipped | loaded).items():
+            filename = getattr(emb, "filename", None)
+            
+            if filename is None:
+                if emb.shape is None:
+                    emb_unknown.append((Path(key), key, ""))
+                elif emb.shape == V1_SHAPE:
+                    emb_v1.append((Path(key), key, "v1"))
+                elif emb.shape == V2_SHAPE:
+                    emb_v2.append((Path(key), key, "v2"))
+                elif emb.shape == VXL_SHAPE:
+                    emb_vXL.append((Path(key), key, "vXL"))
+                else:
+                    emb_unknown.append((Path(key), key, ""))
+            
             else:
-                emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
+                if emb.filename is None:
+                    continue
+
+                if emb.shape is None:
+                    emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
+                elif emb.shape == V1_SHAPE:
+                    emb_v1.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v1"))
+                elif emb.shape == V2_SHAPE:
+                    emb_v2.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "v2"))
+                elif emb.shape == VXL_SHAPE:
+                    emb_vXL.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), "vXL"))
+                else:
+                    emb_unknown.append((Path(emb.filename), Path(emb.filename).relative_to(EMB_PATH).as_posix(), ""))
 
         results = sort_models(emb_v1) + sort_models(emb_v2) + sort_models(emb_vXL) + sort_models(emb_unknown)
     except AttributeError:
@@ -281,7 +334,7 @@ try:
     import sys
     from modules import extensions
     sys.path.append(Path(extensions.extensions_builtin_dir).joinpath("Lora").as_posix())
-    import lora # pyright: ignore [reportMissingImports]
+    import lora  # pyright: ignore [reportMissingImports]
 
     def _get_lora():
         return [
@@ -422,8 +475,11 @@ def refresh_embeddings(force: bool, *args, **kwargs):
         # Fix for SD.Next infinite refresh loop due to gradio not updating after model load on demand.
         # This will just skip embedding loading if no model is loaded yet (or there really are no embeddings).
         # Try catch is just for safety incase sd_hijack access fails for some reason.
-        loaded = sd_hijack.model_hijack.embedding_db.word_embeddings
-        skipped = sd_hijack.model_hijack.embedding_db.skipped_embeddings
+        embed_db = get_embed_db()
+        if embed_db is None:
+            return
+        loaded = embed_db.word_embeddings
+        skipped = embed_db.skipped_embeddings
         if len((loaded | skipped)) > 0:
             load_textual_inversion_embeddings(force_reload=force)
             get_embeddings(None)
@@ -436,7 +492,8 @@ def refresh_temp_files(*args, **kwargs):
     if skip_wildcard_refresh:
         WILDCARD_EXT_PATHS = find_ext_wildcard_paths()
     write_temp_files(skip_wildcard_refresh)
-    refresh_embeddings(force=True)
+    force_embed_refresh = getattr(shared.opts, "tac_forceRefreshEmbeddings", False)
+    refresh_embeddings(force=force_embed_refresh)
 
 def write_style_names(*args, **kwargs):
     styles = get_style_names()
@@ -446,7 +503,14 @@ def write_style_names(*args, **kwargs):
 def write_temp_files(skip_wildcard_refresh = False):
     # Write wildcards to wc.txt if found
     if WILDCARD_PATH.exists() and not skip_wildcard_refresh:
-        wildcards = [WILDCARD_PATH.relative_to(FILE_DIR).as_posix()] + get_wildcards()
+        try:
+            # Attempt to create a relative path, but fall back to an absolute path if not possible
+            relative_wildcard_path = WILDCARD_PATH.relative_to(FILE_DIR).as_posix()
+        except ValueError:
+            # If the paths are not relative, use the absolute path
+            relative_wildcard_path = WILDCARD_PATH.as_posix()
+
+        wildcards = [relative_wildcard_path] + get_wildcards()
         if wildcards:
             write_to_temp_file('wc.txt', wildcards)
 
@@ -458,7 +522,7 @@ def write_temp_files(skip_wildcard_refresh = False):
         # Write yaml extension wildcards to umi_tags.txt and wc_yaml.json if found
         get_yaml_wildcards()
 
-    if HYP_PATH.exists():
+    if HYP_PATH is not None and HYP_PATH.exists():
         hypernets = get_hypernetworks()
         if hypernets:
             write_to_temp_file('hyp.txt', hypernets)
@@ -533,6 +597,7 @@ def on_ui_settings():
         "tac_wildcardExclusionList": shared.OptionInfo("", "Wildcard folder exclusion list").info("Add folder names that shouldn't be searched for wildcards, separated by comma.").needs_restart(),
         "tac_skipWildcardRefresh": shared.OptionInfo(False, "Don't re-scan for wildcard files when pressing the extra networks refresh button").info("Useful to prevent hanging if you use a very large wildcard collection."),
         "tac_useEmbeddings": shared.OptionInfo(True, "Search for embeddings"),
+        "tac_forceRefreshEmbeddings": shared.OptionInfo(False, "Force refresh embeddings when pressing the extra networks refresh button").info("Turn this on if you have issues with new embeddings not registering correctly in TAC. Warning: Seems to cause reloading issues in gradio for some users."),
         "tac_includeEmbeddingsInNormalResults": shared.OptionInfo(False, "Include embeddings in normal tag results").info("The 'JumpTo...' keybinds (End & Home key by default) will select the first non-embedding result of their direction on the first press for quick navigation in longer lists."),
         "tac_useHypernetworks": shared.OptionInfo(True, "Search for hypernetworks"),
         "tac_useLoras": shared.OptionInfo(True, "Search for Loras"),
@@ -551,6 +616,7 @@ def on_ui_settings():
         "tac_frequencyIncludeAlias": shared.OptionInfo(False, "Frequency sorting matches aliases for frequent tags").info("Tag frequency will be increased for the main tag even if an alias is used for completion. This option can be used to override the default behavior of alias results being ignored for frequency sorting."),
         # Insertion related settings
         "tac_replaceUnderscores": shared.OptionInfo(True, "Replace underscores with spaces on insertion"),
+        "tac_undersocreReplacementExclusionList": shared.OptionInfo("0_0,(o)_(o),+_+,+_-,._.,<o>_<o>,<|>_<|>,=_=,>_<,3_3,6_9,>_o,@_@,^_^,o_o,u_u,x_x,|_|,||_||", "Underscore replacement exclusion list").info("Add tags that shouldn't have underscores replaced with spaces, separated by comma."),
         "tac_escapeParentheses": shared.OptionInfo(True, "Escape parentheses on insertion"),
         "tac_appendComma": shared.OptionInfo(True, "Append comma on tag autocompletion"),
         "tac_appendSpace": shared.OptionInfo(True, "Append space on tag autocompletion").info("will append after comma if the above is enabled"),
@@ -627,6 +693,23 @@ def on_ui_settings():
         "9": ["#df3647", "#8e1c2b"],
         "10": ["#c98f2b", "#7b470e"],
         "11": ["#e87ebe", "#a83583"]
+    },
+    "danbooru_e621_merged": {
+        "-1": ["red", "maroon"],
+        "0": ["lightblue", "dodgerblue"],
+        "1": ["indianred", "firebrick"],
+        "3": ["violet", "darkorchid"],
+        "4": ["lightgreen", "darkgreen"],
+        "5": ["orange", "darkorange"],
+        "6": ["red", "maroon"],
+        "7": ["lightblue", "dodgerblue"],
+        "8": ["gold", "goldenrod"],
+        "9": ["gold", "goldenrod"],
+        "10": ["violet", "darkorchid"],
+        "11": ["lightgreen", "darkgreen"],
+        "12": ["tomato", "darksalmon"],
+        "14": ["whitesmoke", "black"],
+        "15": ["seagreen", "darkseagreen"]
     }
 }\
 """
@@ -688,6 +771,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
 
     @app.post("/tacapi/v1/refresh-temp-files")
     async def api_refresh_temp_files():
+        await sleep(0) # might help with refresh blocking gradio
         refresh_temp_files()
 
     @app.post("/tacapi/v1/refresh-embeddings")
@@ -719,9 +803,9 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return LORA_PATH
         elif type == "lyco":
             return LYCO_PATH
-        elif type == "hyper":
+        elif type == "hypernetwork":
             return HYP_PATH
-        elif type == "embed":
+        elif type == "embedding":
             return EMB_PATH
         else:
             return None
@@ -823,5 +907,5 @@ def api_tac(_: gr.Blocks, app: FastAPI):
     @app.get("/tacapi/v1/get-all-use-counts")
     async def get_all_tag_counts():
         return db_request(lambda: db.get_all_tags(), get=True)
-        
+
 script_callbacks.on_app_started(api_tac)

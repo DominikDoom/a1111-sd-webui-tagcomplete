@@ -86,6 +86,13 @@ const thirdParty = {
         "selectors": [
             "Found tags",
         ]
+    },
+    "TIPO": {
+        "base": "#tab_txt2img",
+        "hasIds": false,
+        "selectors": [
+            "Tag Prompt"
+        ]
     }
 }
 

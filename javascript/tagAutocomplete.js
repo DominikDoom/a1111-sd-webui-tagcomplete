@@ -31,7 +31,7 @@ const autocompleteCSS = `
         position: absolute;
         z-index: 999;
         max-width: calc(100% - 1.5rem);
-        margin: 5px 0 0 0;
+        flex-direction: column; /* Ensure children stack vertically */
     }
     .autocompleteResults {
         background-color: var(--results-bg) !important;
@@ -44,6 +44,7 @@ const autocompleteCSS = `
         overflow-y: var(--results-overflow-y);
         overflow-x: hidden;
         word-break: break-word;
+        margin-top: 10px; /* Margin to create space below the cursor */
     }
     .sideInfo {
         display: none;
@@ -88,6 +89,10 @@ const autocompleteCSS = `
     }
     .acMetaText.biased::before {
         content: "✨";
+        margin-right: 2px;
+    }
+    .acMetaText span.used::after {
+        content: "🔁";
         margin-right: 2px;
     }
     .acWikiLink {
@@ -234,6 +239,7 @@ async function syncOptions() {
         useStyleVars: opts["tac_useStyleVars"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
+        replaceUnderscoresExclusionList: opts["tac_undersocreReplacementExclusionList"],
         escapeParentheses: opts["tac_escapeParentheses"],
         appendComma: opts["tac_appendComma"],
         appendSpace: opts["tac_appendSpace"],
@@ -241,6 +247,7 @@ async function syncOptions() {
         wildcardCompletionMode: opts["tac_wildcardCompletionMode"],
         modelKeywordCompletion: opts["tac_modelKeywordCompletion"],
         modelKeywordLocation: opts["tac_modelKeywordLocation"],
+        wcWrap: opts["dp_parser_wildcard_wrap"] || "__", // to support custom wrapper chars set by dp_parser
         // Alias settings
         alias: {
             searchByAlias: opts["tac_alias.searchByAlias"],
@@ -356,10 +363,13 @@ function showResults(textArea) {
     parentDiv.style.display = "flex";
 
     if (TAC_CFG.slidingPopup) {
-        let caretPosition = getCaretCoordinates(textArea, textArea.selectionEnd).left;
-        let offset = Math.min(textArea.offsetLeft - textArea.scrollLeft + caretPosition, textArea.offsetWidth - parentDiv.offsetWidth);
+        let caretPosition = getCaretCoordinates(textArea, textArea.selectionEnd);
+        // Top cursor offset fix for SDNext modern UI, based on code by https://github.com/Nyx01
+        let offsetTop = textArea.offsetTop + caretPosition.top - textArea.scrollTop + 10; // Adjust this value for desired distance below cursor
+        let offsetLeft = Math.min(textArea.offsetLeft - textArea.scrollLeft + caretPosition.left, textArea.offsetWidth - parentDiv.offsetWidth);
 
-        parentDiv.style.left = `${offset}px`;
+        parentDiv.style.top = `${offsetTop}px`; // Position below the cursor
+        parentDiv.style.left = `${offsetLeft}px`;
     } else {
         if (parentDiv.style.left)
             parentDiv.style.removeProperty("left");
@@ -413,7 +423,7 @@ const COMPLETED_WILDCARD_REGEX = /__[^\s,_][^\t\n\r,_]*[^\s,_]__[^\s,_]*/g;
 const STYLE_VAR_REGEX = /\$\(?[^$|\[\],\s]*\)?/g;
 const NORMAL_TAG_REGEX = /[^\s,|<>\[\]:]+_\([^\s,|<>\[\]:]*\)?|[^\s,|<>():\[\]]+|</g;
 const RUBY_TAG_REGEX = /[\w\d<][\w\d' \-?!/$%]{2,}>?/g;
-const TAG_REGEX = new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source}|${STYLE_VAR_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g");
+const TAG_REGEX = () => { return new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source.replaceAll("__", escapeRegExp(TAC_CFG.wcWrap))}|${STYLE_VAR_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g"); }
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithoutChoice = false) {
@@ -429,8 +439,12 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     if (sanitizeResults && sanitizeResults.length > 0) {
         sanitizedText = sanitizeResults[0];
     } else {
-        sanitizedText = TAC_CFG.replaceUnderscores ? text.replaceAll("_", " ") : text;
-
+        const excluded_tags = TAC_CFG.replaceUnderscoresExclusionList?.split(',').map(s => s.trim()) || [];
+        if (TAC_CFG.replaceUnderscores && !excluded_tags.includes(sanitizedText)) {
+            sanitizedText = text.replaceAll("_", " ")
+        } else {
+            sanitizedText = text;
+        }
         if (TAC_CFG.escapeParentheses && tagType === ResultType.tag) {
             sanitizedText = sanitizedText
                 .replaceAll("(", "\\(")
@@ -469,7 +483,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             // Don't cut off the __ at the end if it is already the full path
             if (firstDifference > 0 && firstDifference < longestResult) {
                 // +2 because the sanitized text already has the __ at the start but the matched text doesn't
-                sanitizedText = sanitizedText.substring(0, firstDifference + 2);
+                sanitizedText = sanitizedText.substring(0, firstDifference + TAC_CFG.wcWrap.length);
             } else if (firstDifference === 0) {
                 sanitizedText = tagword;
             }
@@ -484,7 +498,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             case ResultType.wildcardFile:
             case ResultType.yamlWildcard:
                 // We only want to update the frequency for a full wildcard, not partial paths
-                if (sanitizedText.endsWith("__"))
+                if (sanitizedText.endsWith(TAC_CFG.wcWrap))
                     name = text
                 break;
             case ResultType.chant:
@@ -620,12 +634,30 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     updateInput(textArea);
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
-    let weightedTags = [...newPrompt.matchAll(WEIGHT_REGEX)]
-            .map(match => match[1]);
-    let tags = newPrompt.match(TAG_REGEX)
-    if (weightedTags !== null) {
-        tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted)))
-            .concat(weightedTags);
+    let weightedTags = [...prompt.matchAll(WEIGHT_REGEX)]
+        .map(match => match[1])
+        .sort((a, b) => a.length - b.length);
+    let tags = [...prompt.match(TAG_REGEX())].sort((a, b) => a.length - b.length);
+    
+    if (weightedTags !== null && tags !== null) {
+        // Create a working copy of the normal tags
+        let workingTags = [...tags];
+        
+        // For each weighted tag
+        for (const weightedTag of weightedTags) {
+            // Find first matching tag and remove it from working set
+            const matchIndex = workingTags.findIndex(tag => 
+                tag === weightedTag && !tag.startsWith("<[") && !tag.startsWith("$(")
+            );
+            
+            if (matchIndex !== -1) {
+                // Remove the matched tag from the working set
+                workingTags.splice(matchIndex, 1);
+            }
+        }
+        
+        // Combine filtered normal tags with weighted tags
+        tags = workingTags.concat(weightedTags);
     }
     previousTags = tags;
 
@@ -660,6 +692,30 @@ function addResultsToList(textArea, results, tagword, resetList) {
     let tagColors = TAC_CFG.colorMap;
     let mode = (document.querySelector(".dark") || gradioApp().querySelector(".dark")) ? 0 : 1;
     let nextLength = Math.min(results.length, resultCount + TAC_CFG.resultStepLength);
+    const IS_DAN_OR_E621_TAG_FILE =  (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"));
+
+    const tagCount = {};
+
+    // Indicate if tag was used before 
+    if (IS_DAN_OR_E621_TAG_FILE) {
+        const prompt = textArea.value.trim();
+        const tags = prompt.replaceAll('\n', ',').split(',').map(tag => tag.trim()).filter(tag => tag);
+
+        const unsanitizedTags = tags.map(tag => {
+            const weightedTags = [...tag.matchAll(WEIGHT_REGEX)].flat();
+            if (weightedTags.length === 2) {
+                return weightedTags[1];
+            } else {
+                // normal tags
+                return tag;
+            }
+        }).map(tag => tag.replaceAll(" ", "_").replaceAll("\\(", "(").replaceAll("\\)", ")"));
+    
+        // Split tags by `,`  and count tag 
+        for (const tag of unsanitizedTags) {
+            tagCount[tag] = tagCount[tag] ? tagCount[tag] + 1 : 1;
+        }
+    }
 
     for (let i = resultCount; i < nextLength; i++) {
         let result = results[i];
@@ -725,29 +781,38 @@ function addResultsToList(textArea, results, tagword, resetList) {
         }
 
         // Add wiki link if the setting is enabled and a supported tag set loaded
-        if (TAC_CFG.showWikiLinks
-            && (result.type === ResultType.tag)
-            && (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"))) {
+        if (
+            TAC_CFG.showWikiLinks &&
+            result.type === ResultType.tag &&
+            IS_DAN_OR_E621_TAG_FILE
+        ) {
             let wikiLink = document.createElement("a");
             wikiLink.classList.add("acWikiLink");
             wikiLink.innerText = "?";
-            wikiLink.title = "Open external wiki page for this tag"
+            wikiLink.title = "Open external wiki page for this tag";
 
             let linkPart = displayText;
             // Only use alias result if it is one
-            if (displayText.includes("➝"))
-                linkPart = displayText.split(" ➝ ")[1];
+            if (displayText.includes("➝")) linkPart = displayText.split(" ➝ ")[1];
 
             // Remove any trailing translations
             if (linkPart.includes("[")) {
-                linkPart = linkPart.split("[")[0]
+                linkPart = linkPart.split("[")[0];
             }
 
             linkPart = encodeURIComponent(linkPart);
 
             // Set link based on selected file
             let tagFileNameLower = tagFileName.toLowerCase();
-            if (tagFileNameLower.startsWith("danbooru")) {
+            if (tagFileNameLower.startsWith("danbooru_e621_merged")) {
+                // Use danbooru for categories 0-5, e621 for 6+
+                // Based on the merged categories from https://github.com/DraconicDragon/dbr-e621-lists-archive/tree/main/tag-lists/danbooru_e621_merged
+                // Danbooru is also the fallback if result.category is not set
+                wikiLink.href =
+                    result.category && result.category >= 6
+                        ? `https://e621.net/wiki_pages/${linkPart}`
+                        : `https://danbooru.donmai.us/wiki_pages/${linkPart}`;
+            } else if (tagFileNameLower.startsWith("danbooru")) {
                 wikiLink.href = `https://danbooru.donmai.us/wiki_pages/${linkPart}`;
             } else if (tagFileNameLower.startsWith("e621")) {
                 wikiLink.href = `https://e621.net/wiki_pages/${linkPart}`;
@@ -812,13 +877,25 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Add small ✨ marker to indicate usage sorting
         if (result.usageBias) {
             flexDiv.querySelector(".acMetaText").classList.add("biased");
-            flexDiv.title = "✨ Frequent tag. Ctrl/Cmd + click to reset usage count."
+            flexDiv.title = "✨ Frequent tag. Ctrl/Cmd + click to reset usage count.";
+        }
+
+        // Add 🔁 to indicate if tag was used before
+        if (IS_DAN_OR_E621_TAG_FILE && tagCount[result.text]) {
+            // Fix PR#313#issuecomment-2592551794
+            if (!(result.text === tagword && tagCount[result.text] === 1)) {
+                const textNode = flexDiv.querySelector(".acMetaText");
+                const span = document.createElement("span");
+                textNode.insertBefore(span, textNode.firstChild);
+                span.classList.add("used");
+                span.title = "🔁 The prompt already contains this tag";
+            }
         }
 
         // Check if it's a negative prompt
         let isNegative = textAreaId.includes("n");
 
-        // Add listener
+        // Add click listener
         li.addEventListener("click", (e) => {
             if (e.ctrlKey || e.metaKey) {
                 TacUtils.resetUseCount(result.text, result.type, !isNegative, isNegative);
@@ -827,6 +904,38 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 insertTextAtCursor(textArea, result, tagword);
             }
         });
+        // Add delayed hover listener for extra network previews
+        if (
+            TAC_CFG.showExtraNetworkPreviews &&
+            [
+                ResultType.embedding,
+                ResultType.hypernetwork,
+                ResultType.lora,
+                ResultType.lyco,
+            ].includes(result.type)
+        ) {
+            li.addEventListener("mouseover", async () => {
+                const me = this;
+                let hoverTimeout;
+
+                hoverTimeout = setTimeout(async () => {
+                    // If the tag we hover over is already selected, do nothing
+                    if (selectedTag && selectedTag === i) return;
+
+                    oldSelectedTag = selectedTag;
+                    selectedTag = i;
+
+                    // Update selection without scrolling to the item (since we would
+                    // immediately trigger the next scroll as the items move under the cursor)
+                    updateSelectionStyle(textArea, selectedTag, oldSelectedTag, false);
+                }, 400);
+                // Reset delay timer if we leave the item
+                me.addEventListener("mouseout", () => {
+                    clearTimeout(hoverTimeout);
+                });
+            });
+        }
+
         // Add element to list
         resultsList.appendChild(li);
     }
@@ -839,7 +948,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
     }
 }
 
-async function updateSelectionStyle(textArea, newIndex, oldIndex) {
+async function updateSelectionStyle(textArea, newIndex, oldIndex, scroll = true) {
     let textAreaId = getTextAreaIdentifier(textArea);
     let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     let resultsList = resultDiv.querySelector('ul');
@@ -854,40 +963,25 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex) {
         let selected = items[newIndex];
         selected.classList.add('selected');
 
-         // Set scrolltop to selected item
-        resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
+        // Set scrolltop to selected item
+        if (scroll) resultDiv.scrollTop = selected.offsetTop - resultDiv.offsetTop;
     }
 
     // Show preview if enabled and the selected type supports it
     if (newIndex !== null) {
-        let selected = items[newIndex];
-        let previewTypes = ["v1 Embedding", "v2 Embedding", "Hypernetwork", "Lora", "Lyco"];
-        let selectedType = selected.querySelector(".acMetaText").innerText;
-        let selectedFilename = selected.querySelector(".acListItem").innerText;
+        let selectedResult = results[newIndex];
+        let selectedType = selectedResult.type;
+        // These types support previews (others could technically too, but are not native to the webui gallery)
+        let previewTypes = [ResultType.embedding, ResultType.hypernetwork, ResultType.lora, ResultType.lyco];
 
         let previewDiv = gradioApp().querySelector(`.autocompleteParent${textAreaId} .sideInfo`);
 
         if (TAC_CFG.showExtraNetworkPreviews && previewTypes.includes(selectedType)) {
-            let shorthandType = "";
-            switch (selectedType) {
-                case "v1 Embedding":
-                case "v2 Embedding":
-                    shorthandType = "embed";
-                    break;
-                case "Hypernetwork":
-                    shorthandType = "hyper";
-                    break;
-                case "Lora":
-                    shorthandType = "lora";
-                    break;
-                case "Lyco":
-                    shorthandType = "lyco";
-                    break;
-            }
-
             let img = previewDiv.querySelector("img");
-
-            let url = await TacUtils.getExtraNetworkPreviewURL(selectedFilename, shorthandType);
+            // String representation of our type enum
+            const typeString = Object.keys(ResultType)[selectedType - 1].toLowerCase();
+            // Get image from API
+            let url = await TacUtils.getExtraNetworkPreviewURL(selectedResult.text, typeString);
             if (url) {
                 img.src = url;
                 previewDiv.style.display = "block";
@@ -1054,11 +1148,29 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Match tags with RegEx to get the last edited one
         // We also match for the weighting format (e.g. "tag:1.0") here, and combine the two to get the full tag word set
         let weightedTags = [...prompt.matchAll(WEIGHT_REGEX)]
-            .map(match => match[1]);
-        let tags = prompt.match(TAG_REGEX)
+            .map(match => match[1])
+            .sort((a, b) => a.length - b.length);
+        let tags = [...prompt.match(TAG_REGEX())].sort((a, b) => a.length - b.length);
+        
         if (weightedTags !== null && tags !== null) {
-            tags = tags.filter(tag => !weightedTags.some(weighted => tag.includes(weighted) && !tag.startsWith("<[") && !tag.startsWith("$(")))
-                .concat(weightedTags);
+            // Create a working copy of the normal tags
+            let workingTags = [...tags];
+            
+            // For each weighted tag
+            for (const weightedTag of weightedTags) {
+                // Find first matching tag and remove it from working set
+                const matchIndex = workingTags.findIndex(tag => 
+                    tag === weightedTag && !tag.startsWith("<[") && !tag.startsWith("$(")
+                );
+                
+                if (matchIndex !== -1) {
+                    // Remove the matched tag from the working set
+                    workingTags.splice(matchIndex, 1);
+                }
+            }
+            
+            // Combine filtered normal tags with weighted tags
+            tags = workingTags.concat(weightedTags);
         }
 
         // Guard for no tags
@@ -1201,7 +1313,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         // Request use counts from the DB
         const names = TAC_CFG.frequencyIncludeAlias ? tagNames.concat(aliasNames) : tagNames;
-        const counts = await TacUtils.getUseCounts(names, types, isNegative);
+        const counts = await TacUtils.getUseCounts(names, types, isNegative) || [];
 
         // Pre-calculate weights to prevent duplicate work
         const resultBiasMap = new Map();
@@ -1403,6 +1515,12 @@ function addAutocompleteToArea(area) {
             if (!e.inputType && !tacSelfTrigger) return;
             tacSelfTrigger = false;
 
+            // Block hide we are composing (IME), so enter doesn't close the results
+            if (e.isComposing) {
+                hideBlocked = true;
+                setTimeout(() => { hideBlocked = false; }, 100);
+            }
+
             TacUtils.debounce(autocomplete(area, area.value), TAC_CFG.delayTime);
             checkKeywordInsertionUndo(area, e);
         });
@@ -1465,9 +1583,16 @@ async function setup() {
     gradioApp().querySelector("#refresh_tac_refreshTempFiles")?.addEventListener("click", refreshTacTempFiles);
 
     // Also add listener for external network refresh button (plus triggering python code)
-    ["#img2img_extra_refresh", "#txt2img_extra_refresh"].forEach(e => {
-        gradioApp().querySelector(e)?.addEventListener("click", ()=>{
-            refreshTacTempFiles(true);
+    let alreadyAdded = new Set();
+    ["#img2img_extra_refresh", "#txt2img_extra_refresh", ".extra-network-control--refresh"].forEach(e => {
+        const elems = gradioApp().querySelectorAll(e);
+        elems.forEach(elem => {
+            if (!elem || alreadyAdded.has(elem)) return;
+
+            alreadyAdded.add(elem);
+            elem.addEventListener("click", ()=>{
+                refreshTacTempFiles(true);
+            });
         });
     })
 
@@ -1521,7 +1646,7 @@ async function setup() {
     } else {
         acStyle.appendChild(document.createTextNode(css));
     }
-    gradioApp().appendChild(acStyle);
+    document.head.appendChild(acStyle);
 
     // Callback
     await TacUtils.processQueue(QUEUE_AFTER_SETUP, null);

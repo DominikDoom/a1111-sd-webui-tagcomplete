@@ -320,7 +320,11 @@ class TacUtils {
      * @returns {Promise<Number>} The use count of the tag
      */
     static async getUseCount(tagName, type, negative = false) {
-        return (await this.fetchAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false))["result"];
+        const response = await this.fetchAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false);
+        // Guard for no db
+        if (response == null) return null;
+        // Result
+        return response["result"];
     }
     /**
      * Retrieves the use counts of multiple tags at once from the database for improved performance
@@ -333,16 +337,22 @@ class TacUtils {
     static async getUseCounts(tagNames, types, negative = false) {
         // While semantically weird, we have to use POST here for the body, as urls are limited in length
         const body = JSON.stringify({"tagNames": tagNames, "tagTypes": types, "neg": negative});
-        const rawArray = (await this.postAPI(`tacapi/v1/get-use-count-list`, body))["result"]
-        return this.mapUseCountArray(rawArray);
+        const response = await this.postAPI(`tacapi/v1/get-use-count-list`, body)
+        // Guard for no db
+        if (response == null) return null;
+        // Results
+        return this.mapUseCountArray(response["result"]);
     }
     /**
      * Gets all use counts existing in the database.
      * @returns {Array} The use count array mapped to named fields by {@link mapUseCountArray}
      */
     static async getAllUseCounts() {
-        const rawArray = (await this.fetchAPI(`tacapi/v1/get-all-use-counts`))["result"];
-        return this.mapUseCountArray(rawArray, true);
+        const response = await this.fetchAPI(`tacapi/v1/get-all-use-counts`);
+        // Guard for no db
+        if (response == null) return null;
+        // Results
+            return this.mapUseCountArray(response["result"], true);
     }
     /**
      * Resets the use count of the given tag back to zero.
@@ -352,7 +362,7 @@ class TacUtils {
      * @param {Boolean} resetNegCount - Whether to reset the negative count
      */
     static async resetUseCount(tagName, type, resetPosCount, resetNegCount) {
-        await TacUtils.putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
+        await this.putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
     }
 
     /**

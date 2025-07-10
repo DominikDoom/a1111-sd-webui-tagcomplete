@@ -20,18 +20,15 @@ Booru style tag autocompletion for the AUTOMATIC1111 Stable Diffusion WebUI
 </div>
 <br/>
 
-#### ⚠️ Notice:
-I am currently looking for feedback on a new feature I'm working on and want to release soon.<br/>
-Please check [the announcement post](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/discussions/270) for more info if you are interested to help.
-
 # 📄 Description
 
 Tag Autocomplete is an extension for the popular [AUTOMATIC1111 web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) for Stable Diffusion.
+You can install it using the inbuilt available extensions list, clone the files manually as described [below](#-installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
 
 It displays autocompletion hints for recognized tags from "image booru" boards such as Danbooru, which are primarily used for browsing Anime-style illustrations.
-Since some Stable Diffusion models were trained using this information, for example [Waifu Diffusion](https://github.com/harubaru/waifu-diffusion) and many of the NAI-descendant models or merges, using exact tags in prompts can often improve composition and consistency.
+Since most custom Stable Diffusion models were trained using this information or merged with ones that did, using exact tags in prompts can often improve composition and consistency, even if the model itself has a photorealistic style.
 
-You can install it using the inbuilt available extensions list, clone the files manually as described [below](#-installation), or use a pre-packaged version from [Releases](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/releases).
+Disclaimer: The default tag lists contain NSFW terms, please use them responsibly.
 
 <br/>
 

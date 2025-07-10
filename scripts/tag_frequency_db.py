@@ -78,6 +78,7 @@ class TagFrequencyDb:
         )
 
     def __get_version(self):
+        db_version = None
         with transaction() as cursor:
             cursor.execute(
                 """
