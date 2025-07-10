@@ -200,6 +200,7 @@ async function loadTranslations(c) {
 }
 
 async function syncOptions() {
+    /** @type {TAC.CFG} */
     let newCFG = {
         // Main tag file
         tagFile: opts["tac_tagFile"],
@@ -280,20 +281,20 @@ async function syncOptions() {
     }
 
     // Reload translations if the translation file changed
-    if (!TAC.Globals.CFG || newCFG.translation.translationFile !== TAC.Globals.CFG.translation.translationFile) {
+    if (!TAC.CFG || newCFG.translation.translationFile !== TAC.CFG.translation.translationFile) {
         TAC.Globals.translations.clear();
         await loadTranslations(newCFG);
         await loadExtraTags(newCFG);
     }
     // Reload tags if the tag file changed (after translations so extra tag translations get re-added)
-    if (!TAC.Globals.CFG || newCFG.tagFile !== TAC.Globals.CFG.tagFile || newCFG.extra.extraFile !== TAC.Globals.CFG.extra.extraFile) {
+    if (!TAC.CFG || newCFG.tagFile !== TAC.CFG.tagFile || newCFG.extra.extraFile !== TAC.CFG.extra.extraFile) {
         TAC.Globals.allTags = [];
         await loadTags(newCFG);
     }
 
     // Refresh temp files if model sort order changed
     // Contrary to the other loads, this one shouldn't happen on a first time load
-    if (TAC.Globals.CFG && newCFG.modelSortOrder !== TAC.Globals.CFG.modelSortOrder) {
+    if (TAC.CFG && newCFG.modelSortOrder !== TAC.CFG.modelSortOrder) {
         const dropdown = gradioApp().querySelector("#setting_tac_modelSortOrder");
         dropdown.style.opacity = 0.5;
         dropdown.style.pointerEvents = "none";
@@ -303,7 +304,7 @@ async function syncOptions() {
     }
 
     // Update CSS if maxResults changed
-    if (TAC.Globals.CFG && newCFG.maxResults !== TAC.Globals.CFG.maxResults) {
+    if (TAC.CFG && newCFG.maxResults !== TAC.CFG.maxResults) {
         gradioApp().querySelectorAll(".autocompleteResults").forEach(r => {
             r.style.maxHeight = `${newCFG.maxResults * 50}px`;
         });
@@ -317,7 +318,7 @@ async function syncOptions() {
     }
 
     // Apply changes
-    TAC.Globals.CFG = newCFG;
+    TAC.CFG = newCFG;
 
     // Callback
     await TacUtils.processQueue(TAC.Ext.QUEUE_AFTER_CONFIG_CHANGE, null);
@@ -336,7 +337,7 @@ function createResultsDiv(textArea) {
 
     parentDiv.setAttribute("class", `autocompleteParent${typeClass}`);
 
-    resultsDiv.style.maxHeight = `${TAC.Globals.CFG.maxResults * 50}px`;
+    resultsDiv.style.maxHeight = `${TAC.CFG.maxResults * 50}px`;
     resultsDiv.setAttribute("class", `autocompleteResults${typeClass} notranslate`);
     resultsDiv.setAttribute("translate", "no");
     resultsList.setAttribute("class", "autocompleteResultsList");
@@ -362,7 +363,7 @@ function showResults(textArea) {
     let parentDiv = gradioApp().querySelector('.autocompleteParent' + textAreaId);
     parentDiv.style.display = "flex";
 
-    if (TAC.Globals.CFG.slidingPopup) {
+    if (TAC.CFG.slidingPopup) {
         let caretPosition = CaretUtils.getCaretCoordinates(textArea, textArea.selectionEnd);
         // Top cursor offset fix for SDNext modern UI, based on code by https://github.com/Nyx01
         let offsetTop = textArea.offsetTop + caretPosition.top - textArea.scrollTop + 10; // Adjust this value for desired distance below cursor
@@ -393,18 +394,18 @@ function hideResults(textArea) {
 
 // Function to check activation criteria
 function isEnabled() {
-    if (TAC.Globals.CFG.activeIn.global) {
+    if (TAC.CFG.activeIn.global) {
         // Skip check if the current model was not correctly detected, since it could wrongly disable the script otherwise
         if (!TAC.Globals.currentModelName || !TAC.Globals.currentModelHash) return true;
 
-        let modelList = TAC.Globals.CFG.activeIn.modelList
+        let modelList = TAC.CFG.activeIn.modelList
             .split(",")
             .map(x => x.trim())
             .filter(x => x.length > 0);
 
         let shortHash = TAC.Globals.currentModelHash.substring(0, 10);
         let modelNameWithoutHash = TAC.Globals.currentModelName.replace(/\[.*\]$/g, "").trim();
-        if (TAC.Globals.CFG.activeIn.modelListMode.toLowerCase() === "blacklist") {
+        if (TAC.CFG.activeIn.modelListMode.toLowerCase() === "blacklist") {
             // If the current model is in the blacklist, disable
             return modelList.filter(x => x === TAC.Globals.currentModelName || x === modelNameWithoutHash || x === TAC.Globals.currentModelHash || x === shortHash).length === 0;
         } else {
@@ -423,7 +424,7 @@ const COMPLETED_WILDCARD_REGEX = /__[^\s,_][^\t\n\r,_]*[^\s,_]__[^\s,_]*/g;
 const STYLE_VAR_REGEX = /\$\(?[^$|\[\],\s]*\)?/g;
 const NORMAL_TAG_REGEX = /[^\s,|<>\[\]:]+_\([^\s,|<>\[\]:]*\)?|[^\s,|<>():\[\]]+|</g;
 const RUBY_TAG_REGEX = /[\w\d<][\w\d' \-?!/$%]{2,}>?/g;
-const TAG_REGEX = () => { return new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source.replaceAll("__", escapeRegExp(TAC.Globals.CFG.wcWrap))}|${STYLE_VAR_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g"); }
+const TAG_REGEX = () => { return new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source.replaceAll("__", escapeRegExp(TAC.CFG.wcWrap))}|${STYLE_VAR_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g"); }
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithoutChoice = false) {
@@ -439,13 +440,13 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     if (sanitizeResults && sanitizeResults.length > 0) {
         sanitizedText = sanitizeResults[0];
     } else {
-        const excluded_tags = TAC.Globals.CFG.replaceUnderscoresExclusionList?.split(',').map(s => s.trim()) || [];
-        if (TAC.Globals.CFG.replaceUnderscores && !excluded_tags.includes(sanitizedText)) {
+        const excluded_tags = TAC.CFG.replaceUnderscoresExclusionList?.split(',').map(s => s.trim()) || [];
+        if (TAC.CFG.replaceUnderscores && !excluded_tags.includes(sanitizedText)) {
             sanitizedText = text.replaceAll("_", " ")
         } else {
             sanitizedText = text;
         }
-        if (TAC.Globals.CFG.escapeParentheses && tagType === ResultType.tag) {
+        if (TAC.CFG.escapeParentheses && tagType === ResultType.tag) {
             sanitizedText = sanitizedText
                 .replaceAll("(", "\\(")
                 .replaceAll(")", "\\)")
@@ -456,9 +457,9 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     if ((tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
         && tabCompletedWithoutChoice
-        && TAC.Globals.CFG.wildcardCompletionMode !== "Always fully"
+        && TAC.CFG.wildcardCompletionMode !== "Always fully"
         && sanitizedText.includes("/")) {
-        if (TAC.Globals.CFG.wildcardCompletionMode === "To next folder level") {
+        if (TAC.CFG.wildcardCompletionMode === "To next folder level") {
             let regexMatch = sanitizedText.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}([^/]*\\/?)`, "i"));
             if (regexMatch) {
                 let pathPart = regexMatch[0];
@@ -468,7 +469,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
                 }
                 sanitizedText = pathPart;
             }
-        } else if (TAC.Globals.CFG.wildcardCompletionMode === "To first difference") {
+        } else if (TAC.CFG.wildcardCompletionMode === "To first difference") {
             let firstDifference = 0;
             let longestResult = TAC.Globals.results.map(x => x.text.length).reduce((a, b) => Math.max(a, b));
             // Compare the results to each other to find the first point where they differ
@@ -483,7 +484,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             // Don't cut off the __ at the end if it is already the full path
             if (firstDifference > 0 && firstDifference < longestResult) {
                 // +2 because the sanitized text already has the __ at the start but the matched text doesn't
-                sanitizedText = sanitizedText.substring(0, firstDifference + TAC.Globals.CFG.wcWrap.length);
+                sanitizedText = sanitizedText.substring(0, firstDifference + TAC.CFG.wcWrap.length);
             } else if (firstDifference === 0) {
                 sanitizedText = tagword;
             }
@@ -491,14 +492,14 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     }
 
     // Frequency db update
-    if (TAC.Globals.CFG.frequencySort) {
+    if (TAC.CFG.frequencySort) {
         let name = null;
 
         switch (tagType) {
             case ResultType.wildcardFile:
             case ResultType.yamlWildcard:
                 // We only want to update the frequency for a full wildcard, not partial paths
-                if (sanitizedText.endsWith(TAC.Globals.CFG.wcWrap))
+                if (sanitizedText.endsWith(TAC.CFG.wcWrap))
                     name = text
                 break;
             case ResultType.chant:
@@ -536,17 +537,17 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     if (!noCommaTypes.includes(tagType)) {
         // Append comma if enabled and not already present
         let beforeComma = surrounding.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}[,:]`, "i")) !== null;
-        if (TAC.Globals.CFG.appendComma)
+        if (TAC.CFG.appendComma)
             optionalSeparator = beforeComma ? "" : ",";
         // Add space if enabled
-        if (TAC.Globals.CFG.appendSpace && !beforeComma)
+        if (TAC.CFG.appendSpace && !beforeComma)
             optionalSeparator += " ";
         // If at end of prompt and enabled, override the normal setting if not already added
-        if (!TAC.Globals.CFG.appendSpace && TAC.Globals.CFG.alwaysSpaceAtEnd)
+        if (!TAC.CFG.appendSpace && TAC.CFG.alwaysSpaceAtEnd)
             optionalSeparator += surrounding.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}$`, "im")) !== null ? " " : "";
     } else if (extraNetworkTypes.includes(tagType)) {
         // Use the dedicated separator for extra networks if it's defined, otherwise fall back to space
-        optionalSeparator = TAC.Globals.CFG.extraNetworksSeparator || " ";
+        optionalSeparator = TAC.CFG.extraNetworksSeparator || " ";
     }
 
     // Escape $ signs since they are special chars for the replace function
@@ -562,7 +563,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     // Add lora/lyco keywords if enabled and found
     let keywordsLength = 0;
 
-    if (TAC.Globals.CFG.modelKeywordCompletion !== "Never" && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
+    if (TAC.CFG.modelKeywordCompletion !== "Never" && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
         let keywords = null;
         // Check built-in activation words first
         if (tagType === ResultType.lora || tagType === ResultType.lyco) {
@@ -601,9 +602,9 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         if (keywords && keywords.length > 0) {
             TAC.Globals.textBeforeKeywordInsertion = newPrompt;
 
-            if (TAC.Globals.CFG.modelKeywordLocation === "Start of prompt")
+            if (TAC.CFG.modelKeywordLocation === "Start of prompt")
                 newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
-            else if (TAC.Globals.CFG.modelKeywordLocation === "End of prompt")
+            else if (TAC.CFG.modelKeywordLocation === "End of prompt")
                 newPrompt = `${newPrompt}, ${keywords}`; // Insert keywords
             else {
                 let keywordStart = prompt[editStart - 1] === " " ? editStart - 1 : editStart;
@@ -688,10 +689,10 @@ function addResultsToList(textArea, results, tagword, resetList) {
     }
 
     // Find right colors from config
-    let tagFileName = TAC.Globals.CFG.tagFile.split(".")[0];
-    let tagColors = TAC.Globals.CFG.colorMap;
+    let tagFileName = TAC.CFG.tagFile.split(".")[0];
+    let tagColors = TAC.CFG.colorMap;
     let mode = (document.querySelector(".dark") || gradioApp().querySelector(".dark")) ? 0 : 1;
-    let nextLength = Math.min(results.length, TAC.Globals.resultCount + TAC.Globals.CFG.resultStepLength);
+    let nextLength = Math.min(results.length, TAC.Globals.resultCount + TAC.CFG.resultStepLength);
     const IS_DAN_OR_E621_TAG_FILE =  (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"));
 
     const tagCount = {};
@@ -758,7 +759,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             if (TAC.Globals.translations.has(bestAlias) && TAC.Globals.translations.get(bestAlias) !== bestAlias && bestAlias !== result.text)
                 displayText += `[${TAC.Globals.translations.get(bestAlias)}]`;
 
-            if (!TAC.Globals.CFG.alias.onlyShowAlias && result.text !== bestAlias)
+            if (!TAC.CFG.alias.onlyShowAlias && result.text !== bestAlias)
                 displayText += " ➝ " + result.text;
         } else { // No alias
             displayText = TacUtils.escapeHTML(result.text);
@@ -782,7 +783,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         // Add wiki link if the setting is enabled and a supported tag set loaded
         if (
-            TAC.Globals.CFG.showWikiLinks &&
+            TAC.CFG.showWikiLinks &&
             result.type === ResultType.tag &&
             IS_DAN_OR_E621_TAG_FILE
         ) {
@@ -906,7 +907,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         });
         // Add delayed hover listener for extra network previews
         if (
-            TAC.Globals.CFG.showExtraNetworkPreviews &&
+            TAC.CFG.showExtraNetworkPreviews &&
             [
                 ResultType.embedding,
                 ResultType.hypernetwork,
@@ -976,7 +977,7 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex, scroll = true)
 
         let previewDiv = gradioApp().querySelector(`.autocompleteParent${textAreaId} .sideInfo`);
 
-        if (TAC.Globals.CFG.showExtraNetworkPreviews && previewTypes.includes(selectedType)) {
+        if (TAC.CFG.showExtraNetworkPreviews && previewTypes.includes(selectedType)) {
             let img = previewDiv.querySelector("img");
             // String representation of our type enum
             const typeString = Object.keys(ResultType)[selectedType - 1].toLowerCase();
@@ -995,8 +996,8 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex, scroll = true)
 }
 
 function updateRuby(textArea, prompt) {
-    if (!TAC.Globals.CFG.translation.liveTranslation) return;
-    if (!TAC.Globals.CFG.translation.translationFile || TAC.Globals.CFG.translation.translationFile === "None") return;
+    if (!TAC.CFG.translation.liveTranslation) return;
+    if (!TAC.CFG.translation.translationFile || TAC.CFG.translation.translationFile === "None") return;
 
     let ruby = gradioApp().querySelector('.acRuby' + getTextAreaIdentifier(textArea));
     if (!ruby) {
@@ -1101,7 +1102,7 @@ function rubyTagClicked(node, textBefore, prompt, textArea) {
 
 // Check if the last edit was the keyword insertion, and catch undo/redo in that case
 function checkKeywordInsertionUndo(textArea, event) {
-    if (TAC.Globals.CFG.modelKeywordCompletion === "Never") return;
+    if (TAC.CFG.modelKeywordCompletion === "Never") return;
 
     switch (event.inputType) {
         case "historyUndo":
@@ -1221,7 +1222,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     }
     // Else search the normal tag list
     if (!resultCandidates || resultCandidates.length === 0
-        || (TAC.Globals.CFG.includeEmbeddingsInNormalResults && !(TAC.Globals.tagword.startsWith("<") || TAC.Globals.tagword.startsWith("*<")))
+        || (TAC.CFG.includeEmbeddingsInNormalResults && !(TAC.Globals.tagword.startsWith("<") || TAC.Globals.tagword.startsWith("*<")))
     ) {
         normalTags = true;
         TAC.Globals.resultCountBeforeNormalTags = TAC.Globals.results.length;
@@ -1242,11 +1243,11 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             || x[3] && x[3].split(",").some(y => TAC.Globals.translations.has(y) && TAC.Globals.translations.get(y).toLowerCase().search(searchRegex) > -1);
 
         let fil;
-        if (TAC.Globals.CFG.alias.searchByAlias && TAC.Globals.CFG.translation.searchByTranslation)
+        if (TAC.CFG.alias.searchByAlias && TAC.CFG.translation.searchByTranslation)
             fil = (x) => baseFilter(x) || aliasFilter(x) || translationFilter(x);
-        else if (TAC.Globals.CFG.alias.searchByAlias && !TAC.Globals.CFG.translation.searchByTranslation)
+        else if (TAC.CFG.alias.searchByAlias && !TAC.CFG.translation.searchByTranslation)
             fil = (x) => baseFilter(x) || aliasFilter(x);
-        else if (TAC.Globals.CFG.translation.searchByTranslation && !TAC.Globals.CFG.alias.searchByAlias)
+        else if (TAC.CFG.translation.searchByTranslation && !TAC.CFG.alias.searchByAlias)
             fil = (x) => baseFilter(x) || translationFilter(x);
         else
             fil = (x) => baseFilter(x);
@@ -1261,7 +1262,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         });
 
         // Add TAC.Globals.extras
-        if (TAC.Globals.CFG.extra.extraFile) {
+        if (TAC.CFG.extra.extraFile) {
             let extraResults = [];
 
             TAC.Globals.extras.filter(fil).forEach(e => {
@@ -1272,7 +1273,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
                 extraResults.push(result);
             });
 
-            if (TAC.Globals.CFG.extra.addMode === "Insert before") {
+            if (TAC.CFG.extra.addMode === "Insert before") {
                 TAC.Globals.results = extraResults.concat(TAC.Globals.results);
             } else {
                 TAC.Globals.results = TAC.Globals.results.concat(extraResults);
@@ -1288,7 +1289,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     }
 
     // Sort again with frequency / usage count if enabled
-    if (TAC.Globals.CFG.frequencySort) {
+    if (TAC.CFG.frequencySort) {
         // Split our results into a list of names and types
         let tagNames = [];
         let aliasNames = [];
@@ -1312,7 +1313,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let isNegative = textAreaId.includes("n");
 
         // Request use counts from the DB
-        const names = TAC.Globals.CFG.frequencyIncludeAlias ? tagNames.concat(aliasNames) : tagNames;
+        const names = TAC.CFG.frequencyIncludeAlias ? tagNames.concat(aliasNames) : tagNames;
         const counts = await TacUtils.getUseCounts(names, types, isNegative) || [];
 
         // Pre-calculate weights to prevent duplicate work
@@ -1334,8 +1335,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     }
 
     // Slice if the user has set a max result count and we are not in a extra networks / wildcard list
-    if (!TAC.Globals.CFG.showAllResults && normalTags) {
-        TAC.Globals.results = TAC.Globals.results.slice(0, TAC.Globals.CFG.maxResults + TAC.Globals.resultCountBeforeNormalTags);
+    if (!TAC.CFG.showAllResults && normalTags) {
+        TAC.Globals.results = TAC.Globals.results.slice(0, TAC.CFG.maxResults + TAC.Globals.resultCountBeforeNormalTags);
     }
 
     addResultsToList(textArea, TAC.Globals.results, TAC.Globals.tagword, true);
@@ -1346,7 +1347,7 @@ function navigateInList(textArea, event) {
     // Return if the function is deactivated in the UI or the current model is excluded due to white/blacklist settings
     if (!isEnabled()) return;
 
-    let keys = TAC.Globals.CFG.keymap;
+    let keys = TAC.CFG.keymap;
 
     // Close window if Home or End is pressed while not a keybinding, since it would break completion on leaving the original tag
     if ((event.key === "Home" || event.key === "End") && !Object.values(keys).includes(event.key)) {
@@ -1400,7 +1401,7 @@ function navigateInList(textArea, event) {
             }
             break;
         case keys["JumpToStart"]:
-            if (TAC.Globals.CFG.includeEmbeddingsInNormalResults &&
+            if (TAC.CFG.includeEmbeddingsInNormalResults &&
                 TAC.Globals.selectedTag > TAC.Globals.resultCountBeforeNormalTags &&
                 TAC.Globals.resultCountBeforeNormalTags > 0
             ) {
@@ -1411,7 +1412,7 @@ function navigateInList(textArea, event) {
             break;
         case keys["JumpToEnd"]:
             // Jump to the end of the list, or the end of embeddings if they are included in the normal results
-            if (TAC.Globals.CFG.includeEmbeddingsInNormalResults &&
+            if (TAC.CFG.includeEmbeddingsInNormalResults &&
                 TAC.Globals.selectedTag < TAC.Globals.resultCountBeforeNormalTags &&
                 TAC.Globals.resultCountBeforeNormalTags > 0
             ) {
@@ -1433,7 +1434,7 @@ function navigateInList(textArea, event) {
             if (TAC.Globals.selectedTag === null) {
                 TAC.Globals.selectedTag = 0;
                 withoutChoice = true;
-            } else if (TAC.Globals.CFG.wildcardCompletionMode === "To next folder level") {
+            } else if (TAC.CFG.wildcardCompletionMode === "To next folder level") {
                 withoutChoice = true;
             }
             insertTextAtCursor(textArea, TAC.Globals.results[TAC.Globals.selectedTag], TAC.Globals.tagword, withoutChoice);
@@ -1492,10 +1493,10 @@ async function refreshEmbeddings() {
 function addAutocompleteToArea(area) {
     // Return if autocomplete is disabled for the current area type in config
     let textAreaId = getTextAreaIdentifier(area);
-    if ((!TAC.Globals.CFG.activeIn.img2img && textAreaId.includes("img2img"))
-        || (!TAC.Globals.CFG.activeIn.txt2img && textAreaId.includes("txt2img"))
-        || (!TAC.Globals.CFG.activeIn.negativePrompts && textAreaId.includes("n"))
-        || (!TAC.Globals.CFG.activeIn.thirdParty && textAreaId.includes("thirdParty"))) {
+    if ((!TAC.CFG.activeIn.img2img && textAreaId.includes("img2img"))
+        || (!TAC.CFG.activeIn.txt2img && textAreaId.includes("txt2img"))
+        || (!TAC.CFG.activeIn.negativePrompts && textAreaId.includes("n"))
+        || (!TAC.CFG.activeIn.thirdParty && textAreaId.includes("thirdParty"))) {
         return;
     }
 
@@ -1521,7 +1522,7 @@ function addAutocompleteToArea(area) {
                 setTimeout(() => { TAC.Globals.hideBlocked = false; }, 100);
             }
 
-            TacUtils.debounce(autocomplete(area, area.value), TAC.Globals.CFG.delayTime);
+            TacUtils.debounce(autocomplete(area, area.value), TAC.CFG.delayTime);
             checkKeywordInsertionUndo(area, e);
         });
         // Add focusout event listener
@@ -1617,10 +1618,10 @@ async function setup() {
     if (textAreas.every(v => v === null || v === undefined)) return;
     // Already added or unnecessary to add
     if (gradioApp().querySelector('.autocompleteParent.p')) {
-        if (gradioApp().querySelector('.autocompleteParent.n') || !TAC.Globals.CFG.activeIn.negativePrompts) {
+        if (gradioApp().querySelector('.autocompleteParent.n') || !TAC.CFG.activeIn.negativePrompts) {
             return;
         }
-    } else if (!TAC.Globals.CFG.activeIn.txt2img && !TAC.Globals.CFG.activeIn.img2img) {
+    } else if (!TAC.CFG.activeIn.txt2img && !TAC.CFG.activeIn.img2img) {
         return;
     }
 
@@ -1655,7 +1656,7 @@ var tacLoading = false;
 onUiUpdate(async () => {
     if (tacLoading) return;
     if (Object.keys(opts).length === 0) return;
-    if (TAC.Globals.CFG) return;
+    if (TAC.CFG) return;
     tacLoading = true;
     // Get our tag base path from the temp file
     TAC.Globals.tagBasePath = await TacUtils.readFile(`tmp/tagAutocompletePath.txt`);

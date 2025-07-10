@@ -1,5 +1,5 @@
 const STYLE_REGEX = /(\$(\d*)\(?)[^$|\[\],\s]*\)?/;
-const STYLE_TRIGGER = () => TAC.Globals.CFG.useStyleVars && TAC.Globals.tagword.match(STYLE_REGEX);
+const STYLE_TRIGGER = () => TAC.CFG.useStyleVars && TAC.Globals.tagword.match(STYLE_REGEX);
 
 var lastStyleVarIndex = "";
 

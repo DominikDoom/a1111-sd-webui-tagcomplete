@@ -2,13 +2,13 @@
 const WC_REGEX = new RegExp(/__([^,]+)__([^, ]*)/g);
 
 // Trigger conditions
-const WC_TRIGGER = () => TAC.Globals.CFG.useWildcards && [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.Globals.CFG.wcWrap)), "g"))].length > 0;
-const WC_FILE_TRIGGER = () => TAC.Globals.CFG.useWildcards && (TAC.Globals.tagword.startsWith(TAC.Globals.CFG.wcWrap) && !TAC.Globals.tagword.endsWith(TAC.Globals.CFG.wcWrap) || TAC.Globals.tagword === TAC.Globals.CFG.wcWrap);
+const WC_TRIGGER = () => TAC.CFG.useWildcards && [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.CFG.wcWrap)), "g"))].length > 0;
+const WC_FILE_TRIGGER = () => TAC.CFG.useWildcards && (TAC.Globals.tagword.startsWith(TAC.CFG.wcWrap) && !TAC.Globals.tagword.endsWith(TAC.CFG.wcWrap) || TAC.Globals.tagword === TAC.CFG.wcWrap);
 
 class WildcardParser extends BaseTagParser {
     async parse() {
         // Show wildcards from a file with that name
-        let wcMatch = [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.Globals.CFG.wcWrap)), "g"))];
+        let wcMatch = [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.CFG.wcWrap)), "g"))];
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
 
@@ -45,7 +45,7 @@ class WildcardParser extends BaseTagParser {
             }
         }
 
-        if (TAC.Globals.CFG.sortWildcardResults)
+        if (TAC.CFG.sortWildcardResults)
             wildcards.sort((a, b) => a.localeCompare(b));
 
         let finalResults = [];
@@ -64,8 +64,8 @@ class WildcardFileParser extends BaseTagParser {
     parse() {
         // Show available wildcard files
         let tempResults = [];
-        if (TAC.Globals.tagword !== TAC.Globals.CFG.wcWrap) {
-            let lmb = (x) => x[1].toLowerCase().includes(TAC.Globals.tagword.replace(TAC.Globals.CFG.wcWrap, ""))
+        if (TAC.Globals.tagword !== TAC.CFG.wcWrap) {
+            let lmb = (x) => x[1].toLowerCase().includes(TAC.Globals.tagword.replace(TAC.CFG.wcWrap, ""))
             tempResults = TAC.Globals.wildcardFiles.filter(lmb).concat(TAC.Globals.wildcardExtFiles.filter(lmb)) // Filter by tagword
         } else {
             tempResults = TAC.Globals.wildcardFiles.concat(TAC.Globals.wildcardExtFiles);
@@ -151,7 +151,7 @@ async function load() {
 
 function sanitize(tagType, text) {
     if (tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard) {
-        return `${TAC.Globals.CFG.wcWrap}${text}${TAC.Globals.CFG.wcWrap}`;
+        return `${TAC.CFG.wcWrap}${text}${TAC.CFG.wcWrap}`;
     } else if (tagType === ResultType.wildcardTag) {
         return text;
     }

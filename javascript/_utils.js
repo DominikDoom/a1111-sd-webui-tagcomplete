@@ -259,13 +259,13 @@ class TacUtils {
      */
     static calculateUsageBias(result, count, uses) {
         // Check setting conditions
-        if (uses < TAC.Globals.CFG.frequencyMinCount) {
+        if (uses < TAC.CFG.frequencyMinCount) {
             uses = 0;
         } else if (uses != 0) {
             result.usageBias = true;
         }
 
-        switch (TAC.Globals.CFG.frequencyFunction) {
+        switch (TAC.CFG.frequencyFunction) {
             case "Logarithmic (weak)":
                 return Math.log(1 + count) + Math.log(1 + uses);
             case "Logarithmic (strong)":
@@ -492,7 +492,7 @@ class TacUtils {
      * @returns {((a: any, b: any) => number)}
      */
     static getSortFunction() {
-        let criterion = TAC.Globals.CFG.modelSortOrder || "Name";
+        let criterion = TAC.CFG.modelSortOrder || "Name";
 
         const textSort = (a, b, reverse = false) => {
             // Assign keys so next sort is faster

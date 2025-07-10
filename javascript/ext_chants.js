@@ -1,5 +1,5 @@
 const CHANT_REGEX = /<(?!e:|h:|l:)[^,> ]*>?/g;
-const CHANT_TRIGGER = () => TAC.Globals.CFG.chantFile && TAC.Globals.CFG.chantFile !== "None" && TAC.Globals.tagword.match(CHANT_REGEX);
+const CHANT_TRIGGER = () => TAC.CFG.chantFile && TAC.CFG.chantFile !== "None" && TAC.Globals.tagword.match(CHANT_REGEX);
 
 class ChantParser extends BaseTagParser {
     parse() {
@@ -31,9 +31,9 @@ class ChantParser extends BaseTagParser {
 }
 
 async function load() {
-    if (TAC.Globals.CFG.chantFile && TAC.Globals.CFG.chantFile !== "None") {
+    if (TAC.CFG.chantFile && TAC.CFG.chantFile !== "None") {
         try {
-            TAC.Globals.chants = await TacUtils.readFile(`${TAC.Globals.tagBasePath}/${TAC.Globals.CFG.chantFile}?`, true);
+            TAC.Globals.chants = await TacUtils.readFile(`${TAC.Globals.tagBasePath}/${TAC.CFG.chantFile}?`, true);
         } catch (e) {
             console.error("Error loading chants.json: " + e);
         }

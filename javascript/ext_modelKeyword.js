@@ -7,7 +7,7 @@ async function load() {
         try {
             let csv_lines = [];
             // Only add default keywords if wanted by the user
-            if (TAC.Globals.CFG.modelKeywordCompletion !== "Only user list")
+            if (TAC.CFG.modelKeywordCompletion !== "Only user list")
                 csv_lines = (await TacUtils.loadCSV(`${TAC.Globals.modelKeywordPath}/lora-keyword.txt`));
             // Add custom user keywords if the file exists
             if (customFileExists)
