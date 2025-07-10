@@ -48,7 +48,7 @@ class CaretUtils {
   ];
   
   static #isBrowser = (typeof window !== 'undefined');
-  static #isFirefox = (isBrowser && window.mozInnerScreenX != null);
+  static #isFirefox = (this.#isBrowser && window.mozInnerScreenX != null);
   
   static getCaretCoordinates(element, position, options) {
     if (!this.#isBrowser) {
