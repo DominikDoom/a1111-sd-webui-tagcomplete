@@ -1,7 +1,7 @@
 const UMI_PROMPT_REGEX = /<[^\s]*?\[[^,<>]*[\]|]?>?/gi;
 const UMI_TAG_REGEX = /(?:\[|\||--)([^<>\[\]\-|]+)/gi;
 
-const UMI_TRIGGER = () => TAC.Globals.CFG.useWildcards && [...tagword.matchAll(UMI_PROMPT_REGEX)].length > 0;
+const UMI_TRIGGER = () => TAC.Globals.CFG.useWildcards && [...TAC.Globals.tagword.matchAll(UMI_PROMPT_REGEX)].length > 0;
 
 class UmiParser extends BaseTagParser {
     parse(textArea, prompt) {
@@ -74,7 +74,7 @@ class UmiParser extends BaseTagParser {
         //console.log({ matches })
 
         const filteredWildcards = (tagword) => {
-            const wildcards = umiWildcards.filter(x => {
+            const wildcards = TAC.Globals.umiWildcards.filter(x => {
                 let tags = x[1];
                 const matchesNeg =
                     matches.negative.length === 0
@@ -116,16 +116,16 @@ class UmiParser extends BaseTagParser {
 
         if (umiTags.length > 0) {
             // Get difference for subprompt
-            let tagCountChange = umiTags.length - umiPreviousTags.length;
-            let diff = TacUtils.difference(umiTags, umiPreviousTags);
-            umiPreviousTags = umiTags;
+            let tagCountChange = umiTags.length - TAC.Globals.umiPreviousTags.length;
+            let diff = TacUtils.difference(umiTags, TAC.Globals.umiPreviousTags);
+            TAC.Globals.umiPreviousTags = umiTags;
 
             // Show all condition
-            let showAll = tagword.endsWith("[") || tagword.endsWith("[--") || tagword.endsWith("|");
+            let showAll = TAC.Globals.tagword.endsWith("[") || TAC.Globals.tagword.endsWith("[--") || TAC.Globals.tagword.endsWith("|");
 
             // Exit early if the user closed the bracket manually
             if ((!diff || diff.length === 0 || (diff.length === 1 && tagCountChange < 0)) && !showAll) {
-                if (!hideBlocked) hideResults(textArea);
+                if (!TAC.Globals.hideBlocked) hideResults(textArea);
                 return;
             }
 
@@ -133,8 +133,8 @@ class UmiParser extends BaseTagParser {
             let tempResults = [];
             if (umiTagword && umiTagword.length > 0) {
                 umiTagword = umiTagword.toLowerCase().replace(/[\n\r]/g, "");
-                originalTagword = tagword;
-                tagword = umiTagword;
+                TAC.Globals.originalTagword = TAC.Globals.tagword;
+                TAC.Globals.tagword = umiTagword;
                 let filteredWildcardsSorted = filteredWildcards(umiTagword);
                 let searchRegex = new RegExp(`(^|[^a-zA-Z])${TacUtils.escapeRegExp(umiTagword)}`, 'i')
                 let baseFilter = x => x[0].toLowerCase().search(searchRegex) > -1;
@@ -162,8 +162,8 @@ class UmiParser extends BaseTagParser {
                     finalResults.push(result);
                 });
 
-                originalTagword = tagword;
-                tagword = "";
+                TAC.Globals.originalTagword = TAC.Globals.tagword;
+                TAC.Globals.tagword = "";
 
                 finalResults = finalResults.sort((a, b) => b.count - a.count);
                 return finalResults;
@@ -179,8 +179,8 @@ class UmiParser extends BaseTagParser {
                 finalResults.push(result);
             });
 
-            originalTagword = tagword;
-            tagword = "";
+            TAC.Globals.originalTagword = TAC.Globals.tagword;
+            TAC.Globals.tagword = "";
 
             finalResults = finalResults.sort((a, b) => b.count - a.count);
             return finalResults;
@@ -189,8 +189,8 @@ class UmiParser extends BaseTagParser {
 }
 
 function updateUmiTags(tagType, sanitizedText, newPrompt, textArea) {
-    // If it was a umi wildcard, also update the umiPreviousTags
-    if (tagType === ResultType.umiWildcard && originalTagword.length > 0) {
+    // If it was a umi wildcard, also update the TAC.Globals.umiPreviousTags
+    if (tagType === ResultType.umiWildcard && TAC.Globals.originalTagword.length > 0) {
         let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
 
         let umiTags = [];
@@ -198,7 +198,7 @@ function updateUmiTags(tagType, sanitizedText, newPrompt, textArea) {
             umiTags = umiTags.concat([...umiSubPrompt[0].matchAll(UMI_TAG_REGEX)].map(x => x[1].toLowerCase()));
         });
 
-        umiPreviousTags = umiTags;
+        TAC.Globals.umiPreviousTags = umiTags;
 
         hideResults(textArea);
 
@@ -208,11 +208,11 @@ function updateUmiTags(tagType, sanitizedText, newPrompt, textArea) {
 }
 
 async function load() {
-    if (umiWildcards.length === 0) {
+    if (TAC.Globals.umiWildcards.length === 0) {
         try {
-            let umiTags = (await TacUtils.readFile(`${tagBasePath}/temp/umi_tags.txt`)).split("\n");
+            let umiTags = (await TacUtils.readFile(`${TAC.Globals.tagBasePath}/temp/umi_tags.txt`)).split("\n");
             // Split into tag, count pairs
-            umiWildcards = umiTags.map(x => x
+            TAC.Globals.umiWildcards = umiTags.map(x => x
                 .trim()
                 .split(","))
                 .map(([i, ...rest]) => [
@@ -230,16 +230,16 @@ async function load() {
 
 function sanitize(tagType, text) {
     // Replace underscores only if the umi tag is not using them
-    if (tagType === ResultType.umiWildcard && !umiWildcards.includes(text)) {
+    if (tagType === ResultType.umiWildcard && !TAC.Globals.umiWildcards.includes(text)) {
         return text.replaceAll("_", " "); 
     }
     return null;
 }
 
 // Add UMI parser
-PARSERS.push(new UmiParser(UMI_TRIGGER));
+TAC.Ext.PARSERS.push(new UmiParser(UMI_TRIGGER));
 
 // Add our utility functions to their respective queues
-QUEUE_FILE_LOAD.push(load);
-QUEUE_SANITIZE.push(sanitize);
-QUEUE_AFTER_INSERT.push(updateUmiTags);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_SANITIZE.push(sanitize);
+TAC.Ext.QUEUE_AFTER_INSERT.push(updateUmiTags);

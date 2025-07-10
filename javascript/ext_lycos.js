@@ -1,19 +1,19 @@
 const LYCO_REGEX = /<(?!e:|h:|c:)[^,> ]*>?/g;
-const LYCO_TRIGGER = () => TAC.Globals.CFG.useLycos && tagword.match(LYCO_REGEX);
+const LYCO_TRIGGER = () => TAC.Globals.CFG.useLycos && TAC.Globals.tagword.match(LYCO_REGEX);
 
 class LycoParser extends BaseTagParser {
     parse() {
         // Show lyco
         let tempResults = [];
-        if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lyco:" && tagword !== "<lora:") {
-            let searchTerm = tagword.replace("<lyco:", "").replace("<lora:", "").replace("<l:", "").replace("<", "");
+        if (TAC.Globals.tagword !== "<" && TAC.Globals.tagword !== "<l:" && TAC.Globals.tagword !== "<lyco:" && TAC.Globals.tagword !== "<lora:") {
+            let searchTerm = TAC.Globals.tagword.replace("<lyco:", "").replace("<lora:", "").replace("<l:", "").replace("<", "");
             let filterCondition = x => {
                 let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
             };
-            tempResults = lycos.filter(x => filterCondition(x[0])); // Filter by tagword
+            tempResults = TAC.Globals.lycos.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
-            tempResults = lycos;
+            tempResults = TAC.Globals.lycos;
         }
 
         // Add final results
@@ -36,9 +36,9 @@ class LycoParser extends BaseTagParser {
 }
 
 async function load() {
-    if (lycos.length === 0) {
+    if (TAC.Globals.lycos.length === 0) {
         try {
-            lycos = (await TacUtils.loadCSV(`${tagBasePath}/temp/lyco.txt`))
+            TAC.Globals.lycos = (await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/lyco.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
                 .map(x => [x[0]?.trim(), x[1], x[2]]); // Trim filenames and return the name, sortKey, hash pairs
         } catch (e) {
@@ -61,8 +61,8 @@ async function sanitize(tagType, text) {
     return null;
 }
 
-PARSERS.push(new LycoParser(LYCO_TRIGGER));
+TAC.Ext.PARSERS.push(new LycoParser(LYCO_TRIGGER));
 
 // Add our utility functions to their respective queues
-QUEUE_FILE_LOAD.push(load);
-QUEUE_SANITIZE.push(sanitize);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_SANITIZE.push(sanitize);

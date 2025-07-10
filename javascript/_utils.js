@@ -176,7 +176,7 @@ class TacUtils {
             // Not modified
         } else if (response.status === 200) {
             // Reload
-            QUEUE_FILE_LOAD.forEach(async fn => {
+            TAC.Ext.QUEUE_FILE_LOAD.forEach(async fn => {
                 if (fn.toString().includes("styleNames"))
                     await fn.call(null, true);
             })
@@ -445,16 +445,16 @@ class TacUtils {
         return div.innerHTML;
     }
 
-    /** Updates {@link currentModelName} to the current model */
+    /** Updates {@link TAC.Globals.currentModelName} to the current model */
     static updateModelName() {
         let sdm = gradioApp().querySelector("#setting_sd_model_checkpoint");
         let modelDropdown =  sdm?.querySelector("input") || sdm?.querySelector("select");
         if (modelDropdown) {
-            currentModelName = modelDropdown.value;
+            TAC.Globals.currentModelName = modelDropdown.value;
         } else {
             // Fallback for intermediate versions
             modelDropdown = sdm?.querySelector("span.single-select");
-            currentModelName = modelDropdown?.textContent || "";
+            TAC.Globals.currentModelName = modelDropdown?.textContent || "";
         }
     }
 
@@ -563,7 +563,7 @@ class TacUtils {
      */
     static async processParsers(textArea, prompt) {
         // Get all parsers that have a successful trigger condition
-        let matchingParsers = PARSERS.filter(parser => parser.triggerCondition());
+        let matchingParsers = TAC.Ext.PARSERS.filter(parser => parser.triggerCondition());
         // Guard condition
         if (matchingParsers.length === 0) {
             return null;

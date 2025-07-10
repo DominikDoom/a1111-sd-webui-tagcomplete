@@ -1,19 +1,19 @@
 const CHANT_REGEX = /<(?!e:|h:|l:)[^,> ]*>?/g;
-const CHANT_TRIGGER = () => TAC.Globals.CFG.chantFile && TAC.Globals.CFG.chantFile !== "None" && tagword.match(CHANT_REGEX);
+const CHANT_TRIGGER = () => TAC.Globals.CFG.chantFile && TAC.Globals.CFG.chantFile !== "None" && TAC.Globals.tagword.match(CHANT_REGEX);
 
 class ChantParser extends BaseTagParser {
     parse() {
         // Show Chant
         let tempResults = [];
-        if (tagword !== "<" && tagword !== "<c:") {
-            let searchTerm = tagword.replace("<chant:", "").replace("<c:", "").replace("<", "");
+        if (TAC.Globals.tagword !== "<" && TAC.Globals.tagword !== "<c:") {
+            let searchTerm = TAC.Globals.tagword.replace("<chant:", "").replace("<c:", "").replace("<", "");
             let filterCondition = x => {
                 let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.terms.toLowerCase()) || regex.test(x.name.toLowerCase());
             };
-            tempResults = chants.filter(x => filterCondition(x)); // Filter by tagword
+            tempResults = TAC.Globals.chants.filter(x => filterCondition(x)); // Filter by tagword
         } else {
-            tempResults = chants;
+            tempResults = TAC.Globals.chants;
         }
 
         // Add final results
@@ -33,12 +33,12 @@ class ChantParser extends BaseTagParser {
 async function load() {
     if (TAC.Globals.CFG.chantFile && TAC.Globals.CFG.chantFile !== "None") {
         try {
-            chants = await TacUtils.readFile(`${tagBasePath}/${TAC.Globals.CFG.chantFile}?`, true);
+            TAC.Globals.chants = await TacUtils.readFile(`${TAC.Globals.tagBasePath}/${TAC.Globals.CFG.chantFile}?`, true);
         } catch (e) {
             console.error("Error loading chants.json: " + e);
         }
     } else {
-        chants = [];
+        TAC.Globals.chants = [];
     }
 }
 
@@ -49,9 +49,9 @@ function sanitize(tagType, text) {
     return null;
 }
 
-PARSERS.push(new ChantParser(CHANT_TRIGGER));
+TAC.Ext.PARSERS.push(new ChantParser(CHANT_TRIGGER));
 
 // Add our utility functions to their respective queues
-QUEUE_FILE_LOAD.push(load);
-QUEUE_SANITIZE.push(sanitize);
-QUEUE_AFTER_CONFIG_CHANGE.push(load);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_SANITIZE.push(sanitize);
+TAC.Ext.QUEUE_AFTER_CONFIG_CHANGE.push(load);

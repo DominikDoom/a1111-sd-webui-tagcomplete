@@ -1,7 +1,7 @@
 // Create our TAC namespace
 var TAC = TAC || {};
 
-TAC.Globals = new function() {
+TAC.Globals = new (function () {
     // Core components
     this.CFG = {
         // Main tag file
@@ -14,7 +14,7 @@ TAC.Globals = new function() {
             negativePrompts,
             thirdParty,
             modelList,
-            modelListMode
+            modelListMode,
         },
         // Results related settings
         slidingPopup,
@@ -54,7 +54,7 @@ TAC.Globals = new function() {
         // Alias settings
         alias: {
             searchByAlias,
-            onlyShowAlias
+            onlyShowAlias,
         },
         // Translation settings
         translation: {
@@ -66,7 +66,7 @@ TAC.Globals = new function() {
         // Extra file settings
         extra: {
             extraFile,
-            addMode
+            addMode,
         },
         // Chant file settings
         chantFile,
@@ -75,23 +75,23 @@ TAC.Globals = new function() {
         extraNetworksSeparator,
         // Custom mapping settings
         keymap: {
-            "MoveUp": "ArrowUp",
-            "MoveDown": "ArrowDown",
-            "JumpUp": "PageUp",
-            "JumpDown": "PageDown",
-            "JumpToStart": "Home",
-            "JumpToEnd": "End",
-            "ChooseSelected": "Enter",
-            "ChooseFirstOrSelected": "Tab",
-            "Close": "Escape"
+            MoveUp: "ArrowUp",
+            MoveDown: "ArrowDown",
+            JumpUp: "PageUp",
+            JumpDown: "PageDown",
+            JumpToStart: "Home",
+            JumpToEnd: "End",
+            ChooseSelected: "Enter",
+            ChooseFirstOrSelected: "Tab",
+            Close: "Escape",
         },
         colorMap: {
-            "filename": { "category": ["light","dark"] }
-        }
-    }
+            filename: { category: ["light", "dark"] },
+        },
+    };
     this.tagBasePath = "";
     this.modelKeywordPath = "";
-    this.tacSelfTrigger = false;
+    this.selfTrigger = false;
 
     // Tag completion data loaded from files
     this.allTags = [];
@@ -137,13 +137,13 @@ TAC.Globals = new function() {
 
     // UMI
     this.umiPreviousTags = [];
-};
+})();
 
 /// Extendability system:
 /// Provides "queues" for other files of the script (or really any js)
 /// to add functions to be called at certain points in the script.
 /// Similar to a callback system, but primitive.
-TAC.Parsers = new function() {
+TAC.Ext = new (function () {
     // Queues
     this.QUEUE_AFTER_INSERT = [];
     this.QUEUE_AFTER_SETUP = [];
@@ -153,4 +153,4 @@ TAC.Parsers = new function() {
 
     // List of parsers to try
     this.PARSERS = [];
-}
+})();

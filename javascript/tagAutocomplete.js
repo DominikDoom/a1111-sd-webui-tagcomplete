@@ -154,9 +154,9 @@ const autocompleteCSS = `
 
 async function loadTags(c) {
     // Load main tags and aliases
-    if (allTags.length === 0 && c.tagFile && c.tagFile !== "None") {
+    if (TAC.Globals.allTags.length === 0 && c.tagFile && c.tagFile !== "None") {
         try {
-            allTags = await TacUtils.loadCSV(`${tagBasePath}/${c.tagFile}`);
+            TAC.Globals.allTags = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/${c.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
@@ -168,10 +168,10 @@ async function loadTags(c) {
 async function loadExtraTags(c) {
     if (c.extra.extraFile && c.extra.extraFile !== "None") {
         try {
-            extras = await TacUtils.loadCSV(`${tagBasePath}/${c.extra.extraFile}`);
-            // Add translations to the main translation map for extra tags that have them
-            extras.forEach(e => {
-                if (e[4]) translations.set(e[0], e[4]);
+            TAC.Globals.extras = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/${c.extra.extraFile}`);
+            // Add TAC.Globals.translations to the main translation map for extra tags that have them
+            TAC.Globals.extras.forEach(e => {
+                if (e[4]) TAC.Globals.translations.set(e[0], e[4]);
             });
         } catch (e) {
             console.error("Error loading extra file: " + e);
@@ -183,14 +183,14 @@ async function loadExtraTags(c) {
 async function loadTranslations(c) {
     if (c.translation.translationFile && c.translation.translationFile !== "None") {
         try {
-            let tArray = await TacUtils.loadCSV(`${tagBasePath}/${c.translation.translationFile}`);
+            let tArray = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/${c.translation.translationFile}`);
             tArray.forEach(t => {
                 if (c.translation.oldFormat && t[2]) // if 2 doesn't exist, it's probably a new format file and the setting is on by mistake
-                    translations.set(t[0], t[2]);
+                    TAC.Globals.translations.set(t[0], t[2]);
                 else if (t[1])
-                    translations.set(t[0], t[1]);
+                    TAC.Globals.translations.set(t[0], t[1]);
                 else
-                    translations.set(t[0], "Not found");
+                    TAC.Globals.translations.set(t[0], "Not found");
             });
         } catch (e) {
             console.error("Error loading translations file: " + e);
@@ -281,13 +281,13 @@ async function syncOptions() {
 
     // Reload translations if the translation file changed
     if (!TAC.Globals.CFG || newCFG.translation.translationFile !== TAC.Globals.CFG.translation.translationFile) {
-        translations.clear();
+        TAC.Globals.translations.clear();
         await loadTranslations(newCFG);
         await loadExtraTags(newCFG);
     }
     // Reload tags if the tag file changed (after translations so extra tag translations get re-added)
     if (!TAC.Globals.CFG || newCFG.tagFile !== TAC.Globals.CFG.tagFile || newCFG.extra.extraFile !== TAC.Globals.CFG.extra.extraFile) {
-        allTags = [];
+        TAC.Globals.allTags = [];
         await loadTags(newCFG);
     }
 
@@ -320,7 +320,7 @@ async function syncOptions() {
     TAC.Globals.CFG = newCFG;
 
     // Callback
-    await TacUtils.processQueue(QUEUE_AFTER_CONFIG_CHANGE, null);
+    await TacUtils.processQueue(TAC.Ext.QUEUE_AFTER_CONFIG_CHANGE, null);
 }
 
 // Create the result list div and necessary styling
@@ -388,29 +388,29 @@ function hideResults(textArea) {
     if (!resultsDiv) return;
 
     resultsDiv.style.display = "none";
-    selectedTag = null;
+    TAC.Globals.selectedTag = null;
 }
 
 // Function to check activation criteria
 function isEnabled() {
     if (TAC.Globals.CFG.activeIn.global) {
         // Skip check if the current model was not correctly detected, since it could wrongly disable the script otherwise
-        if (!currentModelName || !currentModelHash) return true;
+        if (!TAC.Globals.currentModelName || !TAC.Globals.currentModelHash) return true;
 
         let modelList = TAC.Globals.CFG.activeIn.modelList
             .split(",")
             .map(x => x.trim())
             .filter(x => x.length > 0);
 
-        let shortHash = currentModelHash.substring(0, 10);
-        let modelNameWithoutHash = currentModelName.replace(/\[.*\]$/g, "").trim();
+        let shortHash = TAC.Globals.currentModelHash.substring(0, 10);
+        let modelNameWithoutHash = TAC.Globals.currentModelName.replace(/\[.*\]$/g, "").trim();
         if (TAC.Globals.CFG.activeIn.modelListMode.toLowerCase() === "blacklist") {
             // If the current model is in the blacklist, disable
-            return modelList.filter(x => x === currentModelName || x === modelNameWithoutHash || x === currentModelHash || x === shortHash).length === 0;
+            return modelList.filter(x => x === TAC.Globals.currentModelName || x === modelNameWithoutHash || x === TAC.Globals.currentModelHash || x === shortHash).length === 0;
         } else {
             // If the current model is in the whitelist, enable.
             // An empty whitelist is ignored.
-            return modelList.length === 0 || modelList.filter(x => x === currentModelName || x === modelNameWithoutHash || x === currentModelHash || x === shortHash).length > 0;
+            return modelList.length === 0 || modelList.filter(x => x === TAC.Globals.currentModelName || x === modelNameWithoutHash || x === TAC.Globals.currentModelHash || x === shortHash).length > 0;
         }
     } else {
         return false;
@@ -434,7 +434,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     var sanitizedText = text
 
     // Run sanitize queue and use first result as sanitized text
-    sanitizeResults = await TacUtils.processQueueReturn(QUEUE_SANITIZE, null, tagType, text);
+    sanitizeResults = await TacUtils.processQueueReturn(TAC.Ext.QUEUE_SANITIZE, null, tagType, text);
 
     if (sanitizeResults && sanitizeResults.length > 0) {
         sanitizedText = sanitizeResults[0];
@@ -470,11 +470,11 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             }
         } else if (TAC.Globals.CFG.wildcardCompletionMode === "To first difference") {
             let firstDifference = 0;
-            let longestResult = results.map(x => x.text.length).reduce((a, b) => Math.max(a, b));
+            let longestResult = TAC.Globals.results.map(x => x.text.length).reduce((a, b) => Math.max(a, b));
             // Compare the results to each other to find the first point where they differ
             for (let i = 0; i < longestResult; i++) {
-                let char = results[0].text[i];
-                if (results.every(x => x.text[i] === char)) {
+                let char = TAC.Globals.results[0].text[i];
+                if (TAC.Globals.results.every(x => x.text[i] === char)) {
                     firstDifference++;
                 } else {
                     break;
@@ -572,15 +572,15 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             }
         }
 
-        if (!keywords && modelKeywordPath.length > 0 && result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
-            let nameDict = modelKeywordDict.get(result.hash);
+        if (!keywords && TAC.Globals.modelKeywordPath.length > 0 && result.hash && result.hash !== "NOFILE" && result.hash.length > 0) {
+            let nameDict = TAC.Globals.modelKeywordDict.get(result.hash);
             let names = [result.text + ".safetensors", result.text + ".pt", result.text + ".ckpt"];
 
             // No match, try to find a sha256 match from the cache file
             if (!nameDict) {
                 const sha256 = await TacUtils.fetchAPI(`/tacapi/v1/lora-cached-hash/${result.text}`)
                 if (sha256) {
-                    nameDict = modelKeywordDict.get(sha256);
+                    nameDict = TAC.Globals.modelKeywordDict.get(sha256);
                 }
             }
 
@@ -599,7 +599,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         }
 
         if (keywords && keywords.length > 0) {
-            textBeforeKeywordInsertion = newPrompt;
+            TAC.Globals.textBeforeKeywordInsertion = newPrompt;
 
             if (TAC.Globals.CFG.modelKeywordLocation === "Start of prompt")
                 newPrompt = `${keywords}, ${newPrompt}`; // Insert keywords
@@ -611,9 +611,9 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             }
 
 
-            textAfterKeywordInsertion = newPrompt;
-            keywordInsertionUndone = false;
-            setTimeout(() => lastEditWasKeywordInsertion = true, 200)
+            TAC.Globals.textAfterKeywordInsertion = newPrompt;
+            TAC.Globals.keywordInsertionUndone = false;
+            setTimeout(() => TAC.Globals.lastEditWasKeywordInsertion = true, 200)
 
             keywordsLength = keywords.length + 2; // +2 for the comma and space
         }
@@ -626,11 +626,11 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
     // Set self trigger flag to show wildcard contents after the filename was inserted
     if ([ResultType.wildcardFile, ResultType.yamlWildcard, ResultType.umiWildcard].includes(result.type))
-        tacSelfTrigger = true;
+        TAC.Globals.selfTrigger = true;
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
     // Uses a built-in method from the webui's ui.js which also already accounts for event target
     if (tagType === ResultType.wildcardTag || tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
-        tacSelfTrigger = true;
+        TAC.Globals.selfTrigger = true;
     updateInput(textArea);
 
     // Update previous tags with the edited prompt to prevent re-searching the same term
@@ -659,16 +659,16 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         // Combine filtered normal tags with weighted tags
         tags = workingTags.concat(weightedTags);
     }
-    previousTags = tags;
+    TAC.Globals.previousTags = tags;
 
     // Callback
-    let returns = await TacUtils.processQueueReturn(QUEUE_AFTER_INSERT, null, tagType, sanitizedText, newPrompt, textArea);
+    let returns = await TacUtils.processQueueReturn(TAC.Ext.QUEUE_AFTER_INSERT, null, tagType, sanitizedText, newPrompt, textArea);
     // Return if any queue function returned true (has handled hide/show already)
     if (returns.some(x => x === true))
         return;
 
     // Hide results after inserting, if it hasn't been hidden already by a queue function
-    if (!hideBlocked && isVisible(textArea)) {
+    if (!TAC.Globals.hideBlocked && isVisible(textArea)) {
         hideResults(textArea);
     }
 }
@@ -681,17 +681,17 @@ function addResultsToList(textArea, results, tagword, resetList) {
     // Reset list, selection and scrollTop since the list changed
     if (resetList) {
         resultsList.innerHTML = "";
-        selectedTag = null;
-        oldSelectedTag = null;
+        TAC.Globals.selectedTag = null;
+        TAC.Globals.oldSelectedTag = null;
         resultDiv.scrollTop = 0;
-        resultCount = 0;
+        TAC.Globals.resultCount = 0;
     }
 
     // Find right colors from config
     let tagFileName = TAC.Globals.CFG.tagFile.split(".")[0];
     let tagColors = TAC.Globals.CFG.colorMap;
     let mode = (document.querySelector(".dark") || gradioApp().querySelector(".dark")) ? 0 : 1;
-    let nextLength = Math.min(results.length, resultCount + TAC.Globals.CFG.resultStepLength);
+    let nextLength = Math.min(results.length, TAC.Globals.resultCount + TAC.Globals.CFG.resultStepLength);
     const IS_DAN_OR_E621_TAG_FILE =  (tagFileName.toLowerCase().startsWith("danbooru") || tagFileName.toLowerCase().startsWith("e621"));
 
     const tagCount = {};
@@ -717,7 +717,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         }
     }
 
-    for (let i = resultCount; i < nextLength; i++) {
+    for (let i = TAC.Globals.resultCount; i < nextLength; i++) {
         let result = results[i];
 
         // Skip if the result is null or undefined
@@ -744,9 +744,9 @@ function addResultsToList(textArea, results, tagword, resetList) {
             // search in translations if no alias matches
             if (!bestAlias) {
                 let tagOrAlias = pair => pair[0] === result.text || splitAliases.includes(pair[0]);
-                var tArray = [...translations];
+                var tArray = [...TAC.Globals.translations];
                 if (tArray) {
-                    var translationKey = [...translations].find(pair => tagOrAlias(pair) && pair[1].includes(tagword));
+                    var translationKey = [...TAC.Globals.translations].find(pair => tagOrAlias(pair) && pair[1].includes(tagword));
                     if (translationKey)
                         bestAlias = translationKey[0];
                 }
@@ -755,8 +755,8 @@ function addResultsToList(textArea, results, tagword, resetList) {
             displayText = TacUtils.escapeHTML(bestAlias);
 
             // Append translation for alias if it exists and is not what the user typed
-            if (translations.has(bestAlias) && translations.get(bestAlias) !== bestAlias && bestAlias !== result.text)
-                displayText += `[${translations.get(bestAlias)}]`;
+            if (TAC.Globals.translations.has(bestAlias) && TAC.Globals.translations.get(bestAlias) !== bestAlias && bestAlias !== result.text)
+                displayText += `[${TAC.Globals.translations.get(bestAlias)}]`;
 
             if (!TAC.Globals.CFG.alias.onlyShowAlias && result.text !== bestAlias)
                 displayText += " ➝ " + result.text;
@@ -765,8 +765,8 @@ function addResultsToList(textArea, results, tagword, resetList) {
         }
 
         // Append translation for result if it exists
-        if (translations.has(result.text))
-            displayText += `[${translations.get(result.text)}]`;
+        if (TAC.Globals.translations.has(result.text))
+            displayText += `[${TAC.Globals.translations.get(result.text)}]`;
 
         // Print search term bolded in result
         itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
@@ -920,14 +920,14 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
                 hoverTimeout = setTimeout(async () => {
                     // If the tag we hover over is already selected, do nothing
-                    if (selectedTag && selectedTag === i) return;
+                    if (TAC.Globals.selectedTag && TAC.Globals.selectedTag === i) return;
 
-                    oldSelectedTag = selectedTag;
-                    selectedTag = i;
+                    TAC.Globals.oldSelectedTag = TAC.Globals.selectedTag;
+                    TAC.Globals.selectedTag = i;
 
                     // Update selection without scrolling to the item (since we would
                     // immediately trigger the next scroll as the items move under the cursor)
-                    updateSelectionStyle(textArea, selectedTag, oldSelectedTag, false);
+                    updateSelectionStyle(textArea, TAC.Globals.selectedTag, TAC.Globals.oldSelectedTag, false);
                 }, 400);
                 // Reset delay timer if we leave the item
                 me.addEventListener("mouseout", () => {
@@ -939,11 +939,11 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Add element to list
         resultsList.appendChild(li);
     }
-    resultCount = nextLength;
+    TAC.Globals.resultCount = nextLength;
 
     if (resetList) {
-        selectedTag = null;
-        oldSelectedTag = null;
+        TAC.Globals.selectedTag = null;
+        TAC.Globals.oldSelectedTag = null;
         resultDiv.scrollTop = 0;
     }
 }
@@ -969,7 +969,7 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex, scroll = true)
 
     // Show preview if enabled and the selected type supports it
     if (newIndex !== null) {
-        let selectedResult = results[newIndex];
+        let selectedResult = TAC.Globals.results[newIndex];
         let selectedType = selectedResult.type;
         // These types support previews (others could technically too, but are not native to the webui gallery)
         let previewTypes = [ResultType.embedding, ResultType.hypernetwork, ResultType.lora, ResultType.lyco];
@@ -1025,7 +1025,7 @@ function updateRuby(textArea, prompt) {
             .replaceAll("\\(", "(")
             .replaceAll("\\)", ")");
 
-        const translation = translations?.get(tag) || translations?.get(unsanitizedTag); 
+        const translation = TAC.Globals.translations?.get(tag) || TAC.Globals.translations?.get(unsanitizedTag); 
 
         let escapedTag = TacUtils.escapeRegExp(tag);
         return { tag, escapedTag, translation };
@@ -1105,18 +1105,18 @@ function checkKeywordInsertionUndo(textArea, event) {
 
     switch (event.inputType) {
         case "historyUndo":
-            if (lastEditWasKeywordInsertion && !keywordInsertionUndone) {
-                keywordInsertionUndone = true;
-                textArea.value = textBeforeKeywordInsertion;
-                tacSelfTrigger = true;
+            if (TAC.Globals.lastEditWasKeywordInsertion && !TAC.Globals.keywordInsertionUndone) {
+                TAC.Globals.keywordInsertionUndone = true;
+                textArea.value = TAC.Globals.textBeforeKeywordInsertion;
+                TAC.Globals.selfTrigger = true;
                 updateInput(textArea);
             }
             break;
         case "historyRedo":
-            if (lastEditWasKeywordInsertion && keywordInsertionUndone) {
-                keywordInsertionUndone = false;
-                textArea.value = textAfterKeywordInsertion;
-                tacSelfTrigger = true;
+            if (TAC.Globals.lastEditWasKeywordInsertion && TAC.Globals.keywordInsertionUndone) {
+                TAC.Globals.keywordInsertionUndone = false;
+                textArea.value = TAC.Globals.textAfterKeywordInsertion;
+                TAC.Globals.selfTrigger = true;
                 updateInput(textArea);
             }
         case undefined:
@@ -1124,10 +1124,10 @@ function checkKeywordInsertionUndo(textArea, event) {
             break;
         default:
             // Everything else deactivates the keyword undo and returns to normal undo behavior
-            lastEditWasKeywordInsertion = false;
-            keywordInsertionUndone = false;
-            textBeforeKeywordInsertion = "";
-            textAfterKeywordInsertion = "";
+            TAC.Globals.lastEditWasKeywordInsertion = false;
+            TAC.Globals.keywordInsertionUndone = false;
+            TAC.Globals.textBeforeKeywordInsertion = "";
+            TAC.Globals.textAfterKeywordInsertion = "";
             break;
     }
 }
@@ -1139,8 +1139,8 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     // Guard for empty prompt
     if (prompt.length === 0) {
         hideResults(textArea);
-        previousTags = [];
-        tagword = "";
+        TAC.Globals.previousTags = [];
+        TAC.Globals.tagword = "";
         return;
     }
 
@@ -1175,36 +1175,36 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         // Guard for no tags
         if (!tags || tags.length === 0) {
-            previousTags = [];
-            tagword = "";
+            TAC.Globals.previousTags = [];
+            TAC.Globals.tagword = "";
             hideResults(textArea);
             return;
         }
 
-        let tagCountChange = tags.length - previousTags.length;
-        let diff = TacUtils.difference(tags, previousTags);
-        previousTags = tags;
+        let tagCountChange = tags.length - TAC.Globals.previousTags.length;
+        let diff = TacUtils.difference(tags, TAC.Globals.previousTags);
+        TAC.Globals.previousTags = tags;
 
         // Guard for no difference / only whitespace remaining / last edited tag was fully removed
         if (diff === null || diff.length === 0 || (diff.length === 1 && tagCountChange < 0)) {
-            if (!hideBlocked) hideResults(textArea);
+            if (!TAC.Globals.hideBlocked) hideResults(textArea);
             return;
         }
 
-        tagword = diff[0]
+        TAC.Globals.tagword = diff[0]
 
         // Guard for empty tagword
-        if (tagword === null || tagword.length === 0) {
+        if (TAC.Globals.tagword === null || TAC.Globals.tagword.length === 0) {
             hideResults(textArea);
             return;
         }
     } else {
-        tagword = fixedTag;
+        TAC.Globals.tagword = fixedTag;
     }
 
-    results = [];
-    resultCountBeforeNormalTags = 0;
-    tagword = tagword.toLowerCase().replace(/[\n\r]/g, "");
+    TAC.Globals.results = [];
+    TAC.Globals.resultCountBeforeNormalTags = 0;
+    TAC.Globals.tagword = TAC.Globals.tagword.toLowerCase().replace(/[\n\r]/g, "");
 
     // Needed for slicing check later
     let normalTags = false;
@@ -1214,32 +1214,32 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     // If one ore more result candidates match, use their results
     if (resultCandidates && resultCandidates.length > 0) {
         // Flatten our candidate(s)
-        results = resultCandidates.flat();
+        TAC.Globals.results = resultCandidates.flat();
         // Sort results, but not if it's umi tags since they are sorted by count
-        if (!(resultCandidates.length === 1 && results[0].type === ResultType.umiWildcard))
-            results = results.sort(TacUtils.getSortFunction());
+        if (!(resultCandidates.length === 1 && TAC.Globals.results[0].type === ResultType.umiWildcard))
+            TAC.Globals.results = TAC.Globals.results.sort(TacUtils.getSortFunction());
     }
     // Else search the normal tag list
     if (!resultCandidates || resultCandidates.length === 0
-        || (TAC.Globals.CFG.includeEmbeddingsInNormalResults && !(tagword.startsWith("<") || tagword.startsWith("*<")))
+        || (TAC.Globals.CFG.includeEmbeddingsInNormalResults && !(TAC.Globals.tagword.startsWith("<") || TAC.Globals.tagword.startsWith("*<")))
     ) {
         normalTags = true;
-        resultCountBeforeNormalTags = results.length;
+        TAC.Globals.resultCountBeforeNormalTags = TAC.Globals.results.length;
 
         // Create escaped search regex with support for * as a start placeholder
         let searchRegex;
-        if (tagword.startsWith("*")) {
-            tagword = tagword.slice(1);
-            searchRegex = new RegExp(`${TacUtils.escapeRegExp(tagword)}`, 'i');
+        if (TAC.Globals.tagword.startsWith("*")) {
+            TAC.Globals.tagword = TAC.Globals.tagword.slice(1);
+            searchRegex = new RegExp(`${TacUtils.escapeRegExp(TAC.Globals.tagword)}`, 'i');
         } else {
-            searchRegex = new RegExp(`(^|[^a-zA-Z])${TacUtils.escapeRegExp(tagword)}`, 'i');
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${TacUtils.escapeRegExp(TAC.Globals.tagword)}`, 'i');
         }
 
-        // Both normal tags and aliases/translations are included depending on the config
+        // Both normal tags and aliases/TAC.Globals.translations are included depending on the config
         let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) > -1;
         let aliasFilter = (x) => x[3] && x[3].toLowerCase().search(searchRegex) > -1;
-        let translationFilter = (x) => (translations.has(x[0]) && translations.get(x[0]).toLowerCase().search(searchRegex) > -1)
-            || x[3] && x[3].split(",").some(y => translations.has(y) && translations.get(y).toLowerCase().search(searchRegex) > -1);
+        let translationFilter = (x) => (TAC.Globals.translations.has(x[0]) && TAC.Globals.translations.get(x[0]).toLowerCase().search(searchRegex) > -1)
+            || x[3] && x[3].split(",").some(y => TAC.Globals.translations.has(y) && TAC.Globals.translations.get(y).toLowerCase().search(searchRegex) > -1);
 
         let fil;
         if (TAC.Globals.CFG.alias.searchByAlias && TAC.Globals.CFG.translation.searchByTranslation)
@@ -1252,19 +1252,19 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             fil = (x) => baseFilter(x);
 
         // Add final results
-        allTags.filter(fil).forEach(t => {
+        TAC.Globals.allTags.filter(fil).forEach(t => {
             let result = new AutocompleteResult(t[0].trim(), ResultType.tag)
             result.category = t[1];
             result.count = t[2];
             result.aliases = t[3];
-            results.push(result);
+            TAC.Globals.results.push(result);
         });
 
-        // Add extras
+        // Add TAC.Globals.extras
         if (TAC.Globals.CFG.extra.extraFile) {
             let extraResults = [];
 
-            extras.filter(fil).forEach(e => {
+            TAC.Globals.extras.filter(fil).forEach(e => {
                 let result = new AutocompleteResult(e[0].trim(), ResultType.extra)
                 result.category = e[1] || 0; // If no category is given, use 0 as the default
                 result.meta = e[2] || "Custom tag";
@@ -1273,15 +1273,15 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             });
 
             if (TAC.Globals.CFG.extra.addMode === "Insert before") {
-                results = extraResults.concat(results);
+                TAC.Globals.results = extraResults.concat(TAC.Globals.results);
             } else {
-                results = results.concat(extraResults);
+                TAC.Globals.results = TAC.Globals.results.concat(extraResults);
             }
         }
     }
 
     // Guard for empty results
-    if (!results || results.length === 0) {
+    if (!TAC.Globals.results || TAC.Globals.results.length === 0) {
         //console.log('No results found for "' + tagword + '"');
         hideResults(textArea);
         return;
@@ -1295,11 +1295,11 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let types = [];
         // Limit to 2k for performance reasons
         const aliasTypes = [ResultType.tag, ResultType.extra];
-        results.slice(0,2000).forEach(r => {
+        TAC.Globals.results.slice(0,2000).forEach(r => {
             const name = r.type === ResultType.chant ? r.aliases : r.text;
             // Add to alias list or tag list depending on if the name includes the tagword
             // (the same criteria is used in the filter in calculateUsageBias)
-            if (aliasTypes.includes(r.type) && !name.includes(tagword)) {
+            if (aliasTypes.includes(r.type) && !name.includes(TAC.Globals.tagword)) {
                 aliasNames.push(name);
             } else {
                 tagNames.push(name);
@@ -1317,7 +1317,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         // Pre-calculate weights to prevent duplicate work
         const resultBiasMap = new Map();
-        results.forEach(result => {
+        TAC.Globals.results.forEach(result => {
             const name = result.type === ResultType.chant ? result.aliases : result.text;
             const type = result.type;
             // Find matching pair from DB results
@@ -1328,17 +1328,17 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             resultBiasMap.set(result, weight);
         });
         // Actual sorting with the pre-calculated weights
-        results = results.sort((a, b) => {
+        TAC.Globals.results = TAC.Globals.results.sort((a, b) => {
             return resultBiasMap.get(b) - resultBiasMap.get(a);
         });
     }
 
     // Slice if the user has set a max result count and we are not in a extra networks / wildcard list
     if (!TAC.Globals.CFG.showAllResults && normalTags) {
-        results = results.slice(0, TAC.Globals.CFG.maxResults + resultCountBeforeNormalTags);
+        TAC.Globals.results = TAC.Globals.results.slice(0, TAC.Globals.CFG.maxResults + TAC.Globals.resultCountBeforeNormalTags);
     }
 
-    addResultsToList(textArea, results, tagword, true);
+    addResultsToList(textArea, TAC.Globals.results, TAC.Globals.tagword, true);
     showResults(textArea);
 }
 
@@ -1368,61 +1368,61 @@ function navigateInList(textArea, event) {
     if (event.metaKey) modKey += "Meta+";
         modKey += event.key;
 
-    oldSelectedTag = selectedTag;
+    TAC.Globals.oldSelectedTag = TAC.Globals.selectedTag;
 
     switch (modKey) {
         case keys["MoveUp"]:
-            if (selectedTag === null) {
-                selectedTag = resultCount - 1;
+            if (TAC.Globals.selectedTag === null) {
+                TAC.Globals.selectedTag = TAC.Globals.resultCount - 1;
             } else {
-                selectedTag = (selectedTag - 1 + resultCount) % resultCount;
+                TAC.Globals.selectedTag = (TAC.Globals.selectedTag - 1 + TAC.Globals.resultCount) % TAC.Globals.resultCount;
             }
             break;
         case keys["MoveDown"]:
-            if (selectedTag === null) {
-                selectedTag = 0;
+            if (TAC.Globals.selectedTag === null) {
+                TAC.Globals.selectedTag = 0;
             } else {
-                selectedTag = (selectedTag + 1) % resultCount;
+                TAC.Globals.selectedTag = (TAC.Globals.selectedTag + 1) % TAC.Globals.resultCount;
             }
             break;
         case keys["JumpUp"]:
-            if (selectedTag === null || selectedTag === 0) {
-                selectedTag = resultCount - 1;
+            if (TAC.Globals.selectedTag === null || TAC.Globals.selectedTag === 0) {
+                TAC.Globals.selectedTag = TAC.Globals.resultCount - 1;
             } else {
-                selectedTag = (Math.max(selectedTag - 5, 0) + resultCount) % resultCount;
+                TAC.Globals.selectedTag = (Math.max(TAC.Globals.selectedTag - 5, 0) + TAC.Globals.resultCount) % TAC.Globals.resultCount;
             }
             break;
         case keys["JumpDown"]:
-            if (selectedTag === null || selectedTag === resultCount - 1) {
-                selectedTag = 0;
+            if (TAC.Globals.selectedTag === null || TAC.Globals.selectedTag === TAC.Globals.resultCount - 1) {
+                TAC.Globals.selectedTag = 0;
             } else {
-                selectedTag = Math.min(selectedTag + 5, resultCount - 1) % resultCount;
+                TAC.Globals.selectedTag = Math.min(TAC.Globals.selectedTag + 5, TAC.Globals.resultCount - 1) % TAC.Globals.resultCount;
             }
             break;
         case keys["JumpToStart"]:
             if (TAC.Globals.CFG.includeEmbeddingsInNormalResults &&
-                selectedTag > resultCountBeforeNormalTags &&
-                resultCountBeforeNormalTags > 0
+                TAC.Globals.selectedTag > TAC.Globals.resultCountBeforeNormalTags &&
+                TAC.Globals.resultCountBeforeNormalTags > 0
             ) {
-                selectedTag = resultCountBeforeNormalTags;
+                TAC.Globals.selectedTag = TAC.Globals.resultCountBeforeNormalTags;
             } else {
-                selectedTag = 0;
+                TAC.Globals.selectedTag = 0;
             }
             break;
         case keys["JumpToEnd"]:
             // Jump to the end of the list, or the end of embeddings if they are included in the normal results
             if (TAC.Globals.CFG.includeEmbeddingsInNormalResults &&
-                selectedTag < resultCountBeforeNormalTags &&
-                resultCountBeforeNormalTags > 0
+                TAC.Globals.selectedTag < TAC.Globals.resultCountBeforeNormalTags &&
+                TAC.Globals.resultCountBeforeNormalTags > 0
             ) {
-                selectedTag = Math.min(resultCountBeforeNormalTags, resultCount - 1);
+                TAC.Globals.selectedTag = Math.min(TAC.Globals.resultCountBeforeNormalTags, TAC.Globals.resultCount - 1);
             } else {
-                selectedTag = resultCount - 1;
+                TAC.Globals.selectedTag = TAC.Globals.resultCount - 1;
             }
             break;
         case keys["ChooseSelected"]:
-            if (selectedTag !== null) {
-                insertTextAtCursor(textArea, results[selectedTag], tagword);
+            if (TAC.Globals.selectedTag !== null) {
+                insertTextAtCursor(textArea, TAC.Globals.results[TAC.Globals.selectedTag], TAC.Globals.tagword);
             } else {
                 hideResults(textArea);
                 return;
@@ -1430,13 +1430,13 @@ function navigateInList(textArea, event) {
             break;
         case keys["ChooseFirstOrSelected"]:
             let withoutChoice = false;
-            if (selectedTag === null) {
-                selectedTag = 0;
+            if (TAC.Globals.selectedTag === null) {
+                TAC.Globals.selectedTag = 0;
                 withoutChoice = true;
             } else if (TAC.Globals.CFG.wildcardCompletionMode === "To next folder level") {
                 withoutChoice = true;
             }
-            insertTextAtCursor(textArea, results[selectedTag], tagword, withoutChoice);
+            insertTextAtCursor(textArea, TAC.Globals.results[TAC.Globals.selectedTag], TAC.Globals.tagword, withoutChoice);
             break;
         case keys["Close"]:
             hideResults(textArea);
@@ -1445,12 +1445,12 @@ function navigateInList(textArea, event) {
             if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) return;
     }
     let moveKeys = [keys["MoveUp"], keys["MoveDown"], keys["JumpUp"], keys["JumpDown"], keys["JumpToStart"], keys["JumpToEnd"]];
-    if (selectedTag === resultCount - 1 && moveKeys.includes(event.key)) {
-        addResultsToList(textArea, results, tagword, false);
+    if (TAC.Globals.selectedTag === TAC.Globals.resultCount - 1 && moveKeys.includes(event.key)) {
+        addResultsToList(textArea, TAC.Globals.results, TAC.Globals.tagword, false);
     }
     // Update highlighting
-    if (selectedTag !== null)
-        updateSelectionStyle(textArea, selectedTag, oldSelectedTag);
+    if (TAC.Globals.selectedTag !== null)
+        updateSelectionStyle(textArea, TAC.Globals.selectedTag, TAC.Globals.oldSelectedTag);
 
     // Prevent default behavior
     event.preventDefault();
@@ -1459,15 +1459,15 @@ function navigateInList(textArea, event) {
 
 async function refreshTacTempFiles(api = false) {
     const reload = async () => {
-        wildcardFiles = [];
-        wildcardExtFiles = [];
-        umiWildcards = [];
-        embeddings = [];
-        hypernetworks = [];
-        loras = [];
-        lycos = [];
-        modelKeywordDict.clear();
-        await TacUtils.processQueue(QUEUE_FILE_LOAD, null);
+        TAC.Globals.wildcardFiles = [];
+        TAC.Globals.wildcardExtFiles = [];
+        TAC.Globals.umiWildcards = [];
+        TAC.Globals.embeddings = [];
+        TAC.Globals.hypernetworks = [];
+        TAC.Globals.loras = [];
+        TAC.Globals.lycos = [];
+        TAC.Globals.modelKeywordDict.clear();
+        await TacUtils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
 
         console.log("TAC: Refreshed temp files");
     }
@@ -1484,8 +1484,8 @@ async function refreshTacTempFiles(api = false) {
 
 async function refreshEmbeddings() {
     await TacUtils.postAPI("tacapi/v1/refresh-embeddings", null);
-    embeddings = [];
-    await TacUtils.processQueue(QUEUE_FILE_LOAD, null);
+    TAC.Globals.embeddings = [];
+    await TacUtils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
     console.log("TAC: Refreshed embeddings");
 }
 
@@ -1512,13 +1512,13 @@ function addAutocompleteToArea(area) {
             updateRuby(area, area.value);
 
             // Cancel autocomplete itself if the event has no inputType (e.g. because it was triggered by the updateInput() function)
-            if (!e.inputType && !tacSelfTrigger) return;
-            tacSelfTrigger = false;
+            if (!e.inputType && !TAC.Globals.selfTrigger) return;
+            TAC.Globals.selfTrigger = false;
 
             // Block hide we are composing (IME), so enter doesn't close the results
             if (e.isComposing) {
-                hideBlocked = true;
-                setTimeout(() => { hideBlocked = false; }, 100);
+                TAC.Globals.hideBlocked = true;
+                setTimeout(() => { TAC.Globals.hideBlocked = false; }, 100);
             }
 
             TacUtils.debounce(autocomplete(area, area.value), TAC.Globals.CFG.delayTime);
@@ -1526,7 +1526,7 @@ function addAutocompleteToArea(area) {
         });
         // Add focusout event listener
         area.addEventListener('focusout', TacUtils.debounce(() => {
-            if (!hideBlocked)
+            if (!TAC.Globals.hideBlocked)
                 hideResults(area);
         }, 400));
         // Add up and down arrow event listener
@@ -1534,8 +1534,8 @@ function addAutocompleteToArea(area) {
         // CompositionEnd fires after the user has finished IME composing
         // We need to block hide here to prevent the enter key from insta-closing the results
         area.addEventListener('compositionend', () => {
-            hideBlocked = true;
-            setTimeout(() => { hideBlocked = false; }, 100);
+            TAC.Globals.hideBlocked = true;
+            setTimeout(() => { TAC.Globals.hideBlocked = false; }, 100);
         });
 
         // Add class so we know we've already added the listeners
@@ -1546,7 +1546,7 @@ function addAutocompleteToArea(area) {
 // One-time setup, triggered from onUiUpdate
 async function setup() {
     // Load external files needed by completion extensions
-    await TacUtils.processQueue(QUEUE_FILE_LOAD, null);
+    await TacUtils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
 
     // Find all textareas
     let textAreas = getTextAreas();
@@ -1600,11 +1600,11 @@ async function setup() {
     let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");
     TacUtils.updateModelName();
     if (modelHashText) {
-        currentModelHash = modelHashText.title
+        TAC.Globals.currentModelHash = modelHashText.title
         let modelHashObserver = new MutationObserver((mutationList, observer) => {
             for (const mutation of mutationList) {
                 if (mutation.type === "attributes" && mutation.attributeName === "title") {
-                    currentModelHash = mutation.target.title;
+                    TAC.Globals.currentModelHash = mutation.target.title;
                     TacUtils.updateModelName();
                     refreshEmbeddings();
                 }
@@ -1649,7 +1649,7 @@ async function setup() {
     document.head.appendChild(acStyle);
 
     // Callback
-    await TacUtils.processQueue(QUEUE_AFTER_SETUP, null);
+    await TacUtils.processQueue(TAC.Ext.QUEUE_AFTER_SETUP, null);
 }
 var tacLoading = false;
 onUiUpdate(async () => {
@@ -1658,7 +1658,7 @@ onUiUpdate(async () => {
     if (TAC.Globals.CFG) return;
     tacLoading = true;
     // Get our tag base path from the temp file
-    tagBasePath = await TacUtils.readFile(`tmp/tagAutocompletePath.txt`);
+    TAC.Globals.tagBasePath = await TacUtils.readFile(`tmp/tagAutocompletePath.txt`);
     // Load config from webui opts
     await syncOptions();
     // Rest of setup

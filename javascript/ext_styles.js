@@ -1,5 +1,5 @@
 const STYLE_REGEX = /(\$(\d*)\(?)[^$|\[\],\s]*\)?/;
-const STYLE_TRIGGER = () => TAC.Globals.CFG.useStyleVars && tagword.match(STYLE_REGEX);
+const STYLE_TRIGGER = () => TAC.Globals.CFG.useStyleVars && TAC.Globals.tagword.match(STYLE_REGEX);
 
 var lastStyleVarIndex = "";
 
@@ -10,21 +10,21 @@ class StyleParser extends BaseTagParser {
 
         // Show styles
         let tempResults = [];
-        let matchGroups = tagword.match(STYLE_REGEX);
+        let matchGroups = TAC.Globals.tagword.match(STYLE_REGEX);
         
         // Save index to insert again later or clear last one
         lastStyleVarIndex = matchGroups[2] ? matchGroups[2] : "";
 
-        if (tagword !== matchGroups[1]) {
-            let searchTerm = tagword.replace(matchGroups[1], "");
+        if (TAC.Globals.tagword !== matchGroups[1]) {
+            let searchTerm = TAC.Globals.tagword.replace(matchGroups[1], "");
             
             let filterCondition = x => {
                 let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x[0].toLowerCase()) || regex.test(x[0].toLowerCase().replaceAll(" ", "_"));
             };
-            tempResults = styleNames.filter(x => filterCondition(x)); // Filter by tagword
+            tempResults = TAC.Globals.styleNames.filter(x => filterCondition(x)); // Filter by tagword
         } else {
-            tempResults = styleNames;
+            tempResults = TAC.Globals.styleNames;
         }
 
         // Add final results
@@ -40,9 +40,9 @@ class StyleParser extends BaseTagParser {
 }
 
 async function load(force = false) {
-    if (styleNames.length === 0 || force) {
+    if (TAC.Globals.styleNames.length === 0 || force) {
         try {
-            styleNames = (await TacUtils.loadCSV(`${tagBasePath}/temp/styles.txt`))
+            TAC.Globals.styleNames = (await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/styles.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
                 .filter(x => x[0] !== "None") // Remove "None" style
                 .map(x => [x[0].trim()]); // Trim name
@@ -63,8 +63,8 @@ function sanitize(tagType, text) {
     return null;
 }
 
-PARSERS.push(new StyleParser(STYLE_TRIGGER));
+TAC.Ext.PARSERS.push(new StyleParser(STYLE_TRIGGER));
 
 // Add our utility functions to their respective queues
-QUEUE_FILE_LOAD.push(load);
-QUEUE_SANITIZE.push(sanitize);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_SANITIZE.push(sanitize);

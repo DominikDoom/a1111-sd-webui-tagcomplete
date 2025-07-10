@@ -1,12 +1,12 @@
 const EMB_REGEX = /<(?!l:|h:|c:)[^,> ]*>?/g;
-const EMB_TRIGGER = () => TAC.Globals.CFG.useEmbeddings && (tagword.match(EMB_REGEX) || TAC.Globals.CFG.includeEmbeddingsInNormalResults);
+const EMB_TRIGGER = () => TAC.Globals.CFG.useEmbeddings && (TAC.Globals.tagword.match(EMB_REGEX) || TAC.Globals.CFG.includeEmbeddingsInNormalResults);
 
 class EmbeddingParser extends BaseTagParser {
     parse() {
         // Show embeddings
         let tempResults = [];
-        if (tagword !== "<" && tagword !== "<e:") {
-            let searchTerm = tagword.replace("<e:", "").replace("<", "");
+        if (TAC.Globals.tagword !== "<" && TAC.Globals.tagword !== "<e:") {
+            let searchTerm = TAC.Globals.tagword.replace("<e:", "").replace("<", "");
             let versionString;
             if (searchTerm.startsWith("v1") || searchTerm.startsWith("v2")) {
                 versionString = searchTerm.slice(0, 2);
@@ -22,11 +22,11 @@ class EmbeddingParser extends BaseTagParser {
             };
 
             if (versionString)
-                tempResults = embeddings.filter(x => filterCondition(x) && x[2] && x[2].toLowerCase() === versionString.toLowerCase()); // Filter by tagword
+                tempResults = TAC.Globals.embeddings.filter(x => filterCondition(x) && x[2] && x[2].toLowerCase() === versionString.toLowerCase()); // Filter by tagword
             else
-                tempResults = embeddings.filter(x => filterCondition(x)); // Filter by tagword
+                tempResults = TAC.Globals.embeddings.filter(x => filterCondition(x)); // Filter by tagword
         } else {
-            tempResults = embeddings;
+            tempResults = TAC.Globals.embeddings;
         }
 
         // Add final results
@@ -47,9 +47,9 @@ class EmbeddingParser extends BaseTagParser {
 }
 
 async function load() {
-    if (embeddings.length === 0) {
+    if (TAC.Globals.embeddings.length === 0) {
         try {
-            embeddings = (await TacUtils.loadCSV(`${tagBasePath}/temp/emb.txt`))
+            TAC.Globals.embeddings = (await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/emb.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
                 .map(x => [x[0].trim(), x[1], x[2]]); // Return name, sortKey, hash tuples
         } catch (e) {
@@ -65,8 +65,8 @@ function sanitize(tagType, text) {
     return null;
 }
 
-PARSERS.push(new EmbeddingParser(EMB_TRIGGER));
+TAC.Ext.PARSERS.push(new EmbeddingParser(EMB_TRIGGER));
 
 // Add our utility functions to their respective queues
-QUEUE_FILE_LOAD.push(load);
-QUEUE_SANITIZE.push(sanitize);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_SANITIZE.push(sanitize);

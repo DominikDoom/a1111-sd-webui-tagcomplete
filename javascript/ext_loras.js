@@ -1,19 +1,19 @@
 const LORA_REGEX = /<(?!e:|h:|c:)[^,> ]*>?/g;
-const LORA_TRIGGER = () => TAC.Globals.CFG.useLoras && tagword.match(LORA_REGEX);
+const LORA_TRIGGER = () => TAC.Globals.CFG.useLoras && TAC.Globals.tagword.match(LORA_REGEX);
 
 class LoraParser extends BaseTagParser {
     parse() {
         // Show lora
         let tempResults = [];
-        if (tagword !== "<" && tagword !== "<l:" && tagword !== "<lora:") {
-            let searchTerm = tagword.replace("<lora:", "").replace("<l:", "").replace("<", "");
+        if (TAC.Globals.tagword !== "<" && TAC.Globals.tagword !== "<l:" && TAC.Globals.tagword !== "<lora:") {
+            let searchTerm = TAC.Globals.tagword.replace("<lora:", "").replace("<l:", "").replace("<", "");
             let filterCondition = x => {
                 let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
             };
-            tempResults = loras.filter(x => filterCondition(x[0])); // Filter by tagword
+            tempResults = TAC.Globals.loras.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
-            tempResults = loras;
+            tempResults = TAC.Globals.loras;
         }
 
         // Add final results
@@ -36,9 +36,9 @@ class LoraParser extends BaseTagParser {
 }
 
 async function load() {
-    if (loras.length === 0) {
+    if (TAC.Globals.loras.length === 0) {
         try {
-            loras = (await TacUtils.loadCSV(`${tagBasePath}/temp/lora.txt`))
+            TAC.Globals.loras = (await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/lora.txt`))
                 .filter(x => x[0]?.trim().length > 0) // Remove empty lines
                 .map(x => [x[0]?.trim(), x[1], x[2]]); // Trim filenames and return the name, sortKey, hash pairs
         } catch (e) {
@@ -60,8 +60,8 @@ async function sanitize(tagType, text) {
     return null;
 }
 
-PARSERS.push(new LoraParser(LORA_TRIGGER));
+TAC.Ext.PARSERS.push(new LoraParser(LORA_TRIGGER));
 
 // Add our utility functions to their respective queues
-QUEUE_FILE_LOAD.push(load);
-QUEUE_SANITIZE.push(sanitize);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_SANITIZE.push(sanitize);

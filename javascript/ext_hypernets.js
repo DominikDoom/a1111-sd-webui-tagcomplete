@@ -1,19 +1,19 @@
 const HYP_REGEX = /<(?!e:|l:|c:)[^,> ]*>?/g;
-const HYP_TRIGGER = () => TAC.Globals.CFG.useHypernetworks && tagword.match(HYP_REGEX);
+const HYP_TRIGGER = () => TAC.Globals.CFG.useHypernetworks && TAC.Globals.tagword.match(HYP_REGEX);
 
 class HypernetParser extends BaseTagParser {
     parse() {
         // Show hypernetworks
         let tempResults = [];
-        if (tagword !== "<" && tagword !== "<h:" && tagword !== "<hypernet:") {
-            let searchTerm = tagword.replace("<hypernet:", "").replace("<h:", "").replace("<", "");
+        if (TAC.Globals.tagword !== "<" && TAC.Globals.tagword !== "<h:" && TAC.Globals.tagword !== "<hypernet:") {
+            let searchTerm = TAC.Globals.tagword.replace("<hypernet:", "").replace("<h:", "").replace("<", "");
             let filterCondition = x => {
                 let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
                 return regex.test(x.toLowerCase()) || regex.test(x.toLowerCase().replaceAll(" ", "_"));
             };
-            tempResults = hypernetworks.filter(x => filterCondition(x[0])); // Filter by tagword
+            tempResults = TAC.Globals.hypernetworks.filter(x => filterCondition(x[0])); // Filter by tagword
         } else {
-            tempResults = hypernetworks;
+            tempResults = TAC.Globals.hypernetworks;
         }
 
         // Add final results
@@ -30,9 +30,9 @@ class HypernetParser extends BaseTagParser {
 }
 
 async function load() {
-    if (hypernetworks.length === 0) {
+    if (TAC.Globals.hypernetworks.length === 0) {
         try {
-            hypernetworks = (await TacUtils.loadCSV(`${tagBasePath}/temp/hyp.txt`))
+            TAC.Globals.hypernetworks = (await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/hyp.txt`))
                 .filter(x => x[0]?.trim().length > 0) //Remove empty lines
                 .map(x => [x[0]?.trim(), x[1]]); // Remove carriage returns and padding if it exists
         } catch (e) {
@@ -48,8 +48,8 @@ function sanitize(tagType, text) {
     return null;
 }
 
-PARSERS.push(new HypernetParser(HYP_TRIGGER));
+TAC.Ext.PARSERS.push(new HypernetParser(HYP_TRIGGER));
 
 // Add our utility functions to their respective queues
-QUEUE_FILE_LOAD.push(load);
-QUEUE_SANITIZE.push(sanitize);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_SANITIZE.push(sanitize);

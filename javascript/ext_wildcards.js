@@ -2,21 +2,21 @@
 const WC_REGEX = new RegExp(/__([^,]+)__([^, ]*)/g);
 
 // Trigger conditions
-const WC_TRIGGER = () => TAC.Globals.CFG.useWildcards && [...tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.Globals.CFG.wcWrap)), "g"))].length > 0;
-const WC_FILE_TRIGGER = () => TAC.Globals.CFG.useWildcards && (tagword.startsWith(TAC.Globals.CFG.wcWrap) && !tagword.endsWith(TAC.Globals.CFG.wcWrap) || tagword === TAC.Globals.CFG.wcWrap);
+const WC_TRIGGER = () => TAC.Globals.CFG.useWildcards && [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.Globals.CFG.wcWrap)), "g"))].length > 0;
+const WC_FILE_TRIGGER = () => TAC.Globals.CFG.useWildcards && (TAC.Globals.tagword.startsWith(TAC.Globals.CFG.wcWrap) && !TAC.Globals.tagword.endsWith(TAC.Globals.CFG.wcWrap) || TAC.Globals.tagword === TAC.Globals.CFG.wcWrap);
 
 class WildcardParser extends BaseTagParser {
     async parse() {
         // Show wildcards from a file with that name
-        let wcMatch = [...tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.Globals.CFG.wcWrap)), "g"))];
+        let wcMatch = [...TAC.Globals.tagword.matchAll(new RegExp(WC_REGEX.source.replaceAll("__", escapeRegExp(TAC.Globals.CFG.wcWrap)), "g"))];
         let wcFile = wcMatch[0][1];
         let wcWord = wcMatch[0][2];
 
         // Look in normal wildcard files
-        let wcFound = wildcardFiles.filter(x => x[1].toLowerCase() === wcFile);
+        let wcFound = TAC.Globals.wildcardFiles.filter(x => x[1].toLowerCase() === wcFile);
         if (wcFound.length === 0) wcFound = null;
         // Use found wildcard file or look in external wildcard files
-        let wcPairs = wcFound || wildcardExtFiles.filter(x => x[1].toLowerCase() === wcFile);
+        let wcPairs = wcFound || TAC.Globals.wildcardExtFiles.filter(x => x[1].toLowerCase() === wcFile);
 
         if (!wcPairs) return [];
 
@@ -36,7 +36,7 @@ class WildcardParser extends BaseTagParser {
                     }
                     return obj;
                 }
-                wildcards = wildcards.concat(getDescendantProp(yamlWildcards[basePath], fileName));
+                wildcards = wildcards.concat(getDescendantProp(TAC.Globals.yamlWildcards[basePath], fileName));
             } else {
                 const fileContent = (await TacUtils.fetchAPI(`tacapi/v1/wildcard-contents?basepath=${basePath}&filename=${fileName}.txt`, false))
                     .split("\n")
@@ -64,11 +64,11 @@ class WildcardFileParser extends BaseTagParser {
     parse() {
         // Show available wildcard files
         let tempResults = [];
-        if (tagword !== TAC.Globals.CFG.wcWrap) {
-            let lmb = (x) => x[1].toLowerCase().includes(tagword.replace(TAC.Globals.CFG.wcWrap, ""))
-            tempResults = wildcardFiles.filter(lmb).concat(wildcardExtFiles.filter(lmb)) // Filter by tagword
+        if (TAC.Globals.tagword !== TAC.Globals.CFG.wcWrap) {
+            let lmb = (x) => x[1].toLowerCase().includes(TAC.Globals.tagword.replace(TAC.Globals.CFG.wcWrap, ""))
+            tempResults = TAC.Globals.wildcardFiles.filter(lmb).concat(TAC.Globals.wildcardExtFiles.filter(lmb)) // Filter by tagword
         } else {
-            tempResults = wildcardFiles.concat(wildcardExtFiles);
+            tempResults = TAC.Globals.wildcardFiles.concat(TAC.Globals.wildcardExtFiles);
         }
 
         let finalResults = [];
@@ -99,18 +99,18 @@ class WildcardFileParser extends BaseTagParser {
 }
 
 async function load() {
-    if (wildcardFiles.length === 0 && wildcardExtFiles.length === 0) {
+    if (TAC.Globals.wildcardFiles.length === 0 && TAC.Globals.wildcardExtFiles.length === 0) {
         try {
-            let wcFileArr = await TacUtils.loadCSV(`${tagBasePath}/temp/wc.txt`);
+            let wcFileArr = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/wc.txt`);
             if (wcFileArr && wcFileArr.length > 0) {
                 let wcBasePath = wcFileArr[0][0].trim(); // First line should be the base path
-                wildcardFiles = wcFileArr.slice(1)
+                TAC.Globals.wildcardFiles = wcFileArr.slice(1)
                     .filter(x => x[0]?.trim().length > 0) //Remove empty lines
                     .map(x => [wcBasePath, x[0]?.trim().replace(".txt", ""), x[1]]); // Remove file extension & newlines
             }
 
             // To support multiple sources, we need to separate them using the provided "-----" strings
-            let wcExtFileArr = await TacUtils.loadCSV(`${tagBasePath}/temp/wce.txt`);
+            let wcExtFileArr = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/wce.txt`);
             let splitIndices = [];
             for (let index = 0; index < wcExtFileArr.length; index++) {
                 if (wcExtFileArr[index][0].trim() === "-----") {
@@ -129,18 +129,18 @@ async function load() {
                     wcExtFile = wcExtFile.slice(1)
                         .filter(x => x[0]?.trim().length > 0) //Remove empty lines
                         .map(x => [base, x[0]?.trim().replace(base, "").replace(".txt", ""), x[1]]);
-                    wildcardExtFiles.push(...wcExtFile);
+                    TAC.Globals.wildcardExtFiles.push(...wcExtFile);
                 }
             }
 
             // Load the yaml wildcard json file and append it as a wildcard file, appending each key as a path component until we reach the end
-            yamlWildcards = await TacUtils.readFile(`${tagBasePath}/temp/wc_yaml.json`, true);
+            TAC.Globals.yamlWildcards = await TacUtils.readFile(`${TAC.Globals.tagBasePath}/temp/wc_yaml.json`, true);
 
             // Append each key as a path component until we reach a leaf
-            Object.keys(yamlWildcards).forEach(file => {
-                const flattened = TacUtils.flatten(yamlWildcards[file], [], "/");
+            Object.keys(TAC.Globals.yamlWildcards).forEach(file => {
+                const flattened = TacUtils.flatten(TAC.Globals.yamlWildcards[file], [], "/");
                 Object.keys(flattened).forEach(key => {
-                    wildcardExtFiles.push([file, key]);
+                    TAC.Globals.wildcardExtFiles.push([file, key]);
                 });
             });
         } catch (e) {
@@ -161,18 +161,18 @@ function sanitize(tagType, text) {
 function keepOpenIfWildcard(tagType, sanitizedText, newPrompt, textArea) {
     // If it's a wildcard, we want to keep the results open so the user can select another wildcard
     if (tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard) {
-        hideBlocked = true;
-        setTimeout(() => { hideBlocked = false; }, 450);
+        TAC.Globals.hideBlocked = true;
+        setTimeout(() => { TAC.Globals.hideBlocked = false; }, 450);
         return true;
     }
     return false;
 }
 
 // Register the parsers
-PARSERS.push(new WildcardParser(WC_TRIGGER));
-PARSERS.push(new WildcardFileParser(WC_FILE_TRIGGER));
+TAC.Ext.PARSERS.push(new WildcardParser(WC_TRIGGER));
+TAC.Ext.PARSERS.push(new WildcardFileParser(WC_FILE_TRIGGER));
 
 // Add our utility functions to their respective queues
-QUEUE_FILE_LOAD.push(load);
-QUEUE_SANITIZE.push(sanitize);
-QUEUE_AFTER_INSERT.push(keepOpenIfWildcard);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_SANITIZE.push(sanitize);
+TAC.Ext.QUEUE_AFTER_INSERT.push(keepOpenIfWildcard);

@@ -1,17 +1,17 @@
 async function load() {
     let modelKeywordParts = (await TacUtils.readFile(`tmp/modelKeywordPath.txt`)).split(",")
-    modelKeywordPath = modelKeywordParts[0];
+    TAC.Globals.modelKeywordPath = modelKeywordParts[0];
     let customFileExists = modelKeywordParts[1] === "True";
 
-    if (modelKeywordPath.length > 0 && modelKeywordDict.size === 0) {
+    if (TAC.Globals.modelKeywordPath.length > 0 && TAC.Globals.modelKeywordDict.size === 0) {
         try {
             let csv_lines = [];
             // Only add default keywords if wanted by the user
             if (TAC.Globals.CFG.modelKeywordCompletion !== "Only user list")
-                csv_lines = (await TacUtils.loadCSV(`${modelKeywordPath}/lora-keyword.txt`));
+                csv_lines = (await TacUtils.loadCSV(`${TAC.Globals.modelKeywordPath}/lora-keyword.txt`));
             // Add custom user keywords if the file exists
             if (customFileExists)
-                csv_lines = csv_lines.concat((await TacUtils.loadCSV(`${modelKeywordPath}/lora-keyword-user.txt`)));
+                csv_lines = csv_lines.concat((await TacUtils.loadCSV(`${TAC.Globals.modelKeywordPath}/lora-keyword-user.txt`)));
 
             if (csv_lines.length === 0) return;
 
@@ -24,13 +24,13 @@ async function load() {
                 const lastSepIndex = parts[2]?.lastIndexOf("/") + 1 || parts[2]?.lastIndexOf("\\") + 1 || 0;
                 const name = parts[2]?.substring(lastSepIndex).trim() || "none"
 
-                if (modelKeywordDict.has(hash) && name !== "none") {
+                if (TAC.Globals.modelKeywordDict.has(hash) && name !== "none") {
                     // Add a new name key if the hash already exists
-                    modelKeywordDict.get(hash).set(name, keywords);
+                    TAC.Globals.modelKeywordDict.get(hash).set(name, keywords);
                 } else {
                     // Create new hash entry
                     let map = new Map().set(name, keywords);
-                    modelKeywordDict.set(hash, map);
+                    TAC.Globals.modelKeywordDict.set(hash, map);
                 }
             });
         } catch (e) {
@@ -39,4 +39,4 @@ async function load() {
     }
 }
 
-QUEUE_FILE_LOAD.push(load);
+TAC.Ext.QUEUE_FILE_LOAD.push(load);
