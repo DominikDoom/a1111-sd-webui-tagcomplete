@@ -107,7 +107,7 @@ class CaretUtils {
       }
     });
     
-    if (this._isFirefox) {
+    if (this.#isFirefox) {
       // Firefox lies about the overflow property for textareas: https://bugzilla.mozilla.org/show_bug.cgi?id=984275
       if (element.scrollHeight > parseInt(computed.height))
         style.overflowY = 'scroll';
