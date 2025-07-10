@@ -1,5 +1,5 @@
 const LORA_REGEX = /<(?!e:|h:|c:)[^,> ]*>?/g;
-const LORA_TRIGGER = () => TAC_CFG.useLoras && tagword.match(LORA_REGEX);
+const LORA_TRIGGER = () => TAC.Globals.CFG.useLoras && tagword.match(LORA_REGEX);
 
 class LoraParser extends BaseTagParser {
     parse() {
@@ -49,7 +49,7 @@ async function load() {
 
 async function sanitize(tagType, text) {
     if (tagType === ResultType.lora) {
-        let multiplier = TAC_CFG.extraNetworksDefaultMultiplier;
+        let multiplier = TAC.Globals.CFG.extraNetworksDefaultMultiplier;
         let info = await TacUtils.fetchAPI(`tacapi/v1/lora-info/${text}`)
         if (info && info["preferred weight"]) {
             multiplier = info["preferred weight"];

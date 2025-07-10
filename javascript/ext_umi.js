@@ -1,7 +1,7 @@
 const UMI_PROMPT_REGEX = /<[^\s]*?\[[^,<>]*[\]|]?>?/gi;
 const UMI_TAG_REGEX = /(?:\[|\||--)([^<>\[\]\-|]+)/gi;
 
-const UMI_TRIGGER = () => TAC_CFG.useWildcards && [...tagword.matchAll(UMI_PROMPT_REGEX)].length > 0;
+const UMI_TRIGGER = () => TAC.Globals.CFG.useWildcards && [...tagword.matchAll(UMI_PROMPT_REGEX)].length > 0;
 
 class UmiParser extends BaseTagParser {
     parse(textArea, prompt) {

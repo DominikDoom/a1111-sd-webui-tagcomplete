@@ -1,5 +1,5 @@
 const HYP_REGEX = /<(?!e:|l:|c:)[^,> ]*>?/g;
-const HYP_TRIGGER = () => TAC_CFG.useHypernetworks && tagword.match(HYP_REGEX);
+const HYP_TRIGGER = () => TAC.Globals.CFG.useHypernetworks && tagword.match(HYP_REGEX);
 
 class HypernetParser extends BaseTagParser {
     parse() {
@@ -43,7 +43,7 @@ async function load() {
 
 function sanitize(tagType, text) {
     if (tagType === ResultType.hypernetwork) {
-        return `<hypernet:${text}:${TAC_CFG.extraNetworksDefaultMultiplier}>`;
+        return `<hypernet:${text}:${TAC.Globals.CFG.extraNetworksDefaultMultiplier}>`;
     }
     return null;
 }

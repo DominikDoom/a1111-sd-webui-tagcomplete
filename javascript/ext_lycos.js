@@ -1,5 +1,5 @@
 const LYCO_REGEX = /<(?!e:|h:|c:)[^,> ]*>?/g;
-const LYCO_TRIGGER = () => TAC_CFG.useLycos && tagword.match(LYCO_REGEX);
+const LYCO_TRIGGER = () => TAC.Globals.CFG.useLycos && tagword.match(LYCO_REGEX);
 
 class LycoParser extends BaseTagParser {
     parse() {
@@ -49,13 +49,13 @@ async function load() {
 
 async function sanitize(tagType, text) {
     if (tagType === ResultType.lyco) {
-        let multiplier = TAC_CFG.extraNetworksDefaultMultiplier;
+        let multiplier = TAC.Globals.CFG.extraNetworksDefaultMultiplier;
         let info = await TacUtils.fetchAPI(`tacapi/v1/lyco-info/${text}`)
         if (info && info["preferred weight"]) {
             multiplier = info["preferred weight"];
         }
 
-        let prefix = TAC_CFG.useLoraPrefixForLycos ? "lora" : "lyco";
+        let prefix = TAC.Globals.CFG.useLoraPrefixForLycos ? "lora" : "lyco";
         return `<${prefix}:${text}:${multiplier}>`;
     }
     return null;
