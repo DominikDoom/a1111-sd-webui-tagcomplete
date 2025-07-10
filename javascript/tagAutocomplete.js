@@ -363,7 +363,7 @@ function showResults(textArea) {
     parentDiv.style.display = "flex";
 
     if (TAC_CFG.slidingPopup) {
-        let caretPosition = getCaretCoordinates(textArea, textArea.selectionEnd);
+        let caretPosition = CaretUtils.getCaretCoordinates(textArea, textArea.selectionEnd);
         // Top cursor offset fix for SDNext modern UI, based on code by https://github.com/Nyx01
         let offsetTop = textArea.offsetTop + caretPosition.top - textArea.scrollTop + 10; // Adjust this value for desired distance below cursor
         let offsetLeft = Math.min(textArea.offsetLeft - textArea.scrollLeft + caretPosition.left, textArea.offsetWidth - parentDiv.offsetWidth);
