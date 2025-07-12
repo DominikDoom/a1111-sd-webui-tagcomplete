@@ -446,7 +446,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         } else {
             sanitizedText = text;
         }
-        if (TAC.CFG.escapeParentheses && tagType === ResultType.tag) {
+        if (TAC.CFG.escapeParentheses && tagType === TAC.ResultType.tag) {
             sanitizedText = sanitizedText
                 .replaceAll("(", "\\(")
                 .replaceAll(")", "\\)")
@@ -455,7 +455,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         }
     }
 
-    if ((tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
+    if ((tagType === TAC.ResultType.wildcardFile || tagType === TAC.ResultType.yamlWildcard)
         && tabCompletedWithoutChoice
         && TAC.CFG.wildcardCompletionMode !== "Always fully"
         && sanitizedText.includes("/")) {
@@ -496,13 +496,13 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         let name = null;
 
         switch (tagType) {
-            case ResultType.wildcardFile:
-            case ResultType.yamlWildcard:
+            case TAC.ResultType.wildcardFile:
+            case TAC.ResultType.yamlWildcard:
                 // We only want to update the frequency for a full wildcard, not partial paths
                 if (sanitizedText.endsWith(TAC.CFG.wcWrap))
                     name = text
                 break;
-            case ResultType.chant:
+            case TAC.ResultType.chant:
                 // Chants use a slightly different format
                 name = result.aliases;
                 break;
@@ -532,8 +532,8 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
     var optionalSeparator = "";
-    let extraNetworkTypes = [ResultType.hypernetwork, ResultType.lora];
-    let noCommaTypes = [ResultType.wildcardFile, ResultType.yamlWildcard, ResultType.umiWildcard].concat(extraNetworkTypes);
+    let extraNetworkTypes = [TAC.ResultType.hypernetwork, TAC.ResultType.lora];
+    let noCommaTypes = [TAC.ResultType.wildcardFile, TAC.ResultType.yamlWildcard, TAC.ResultType.umiWildcard].concat(extraNetworkTypes);
     if (!noCommaTypes.includes(tagType)) {
         // Append comma if enabled and not already present
         let beforeComma = surrounding.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}[,:]`, "i")) !== null;
@@ -563,10 +563,10 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     // Add lora/lyco keywords if enabled and found
     let keywordsLength = 0;
 
-    if (TAC.CFG.modelKeywordCompletion !== "Never" && (tagType === ResultType.lora || tagType === ResultType.lyco)) {
+    if (TAC.CFG.modelKeywordCompletion !== "Never" && (tagType === TAC.ResultType.lora || tagType === TAC.ResultType.lyco)) {
         let keywords = null;
         // Check built-in activation words first
-        if (tagType === ResultType.lora || tagType === ResultType.lyco) {
+        if (tagType === TAC.ResultType.lora || tagType === TAC.ResultType.lyco) {
             let info = await TacUtils.fetchAPI(`tacapi/v1/lora-info/${result.text}`)
             if (info && info["activation text"]) {
                 keywords = info["activation text"];
@@ -626,11 +626,11 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     textArea.selectionEnd = textArea.selectionStart
 
     // Set self trigger flag to show wildcard contents after the filename was inserted
-    if ([ResultType.wildcardFile, ResultType.yamlWildcard, ResultType.umiWildcard].includes(result.type))
+    if ([TAC.ResultType.wildcardFile, TAC.ResultType.yamlWildcard, TAC.ResultType.umiWildcard].includes(result.type))
         TAC.Globals.selfTrigger = true;
     // Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure it's propagated back to python.
     // Uses a built-in method from the webui's ui.js which also already accounts for event target
-    if (tagType === ResultType.wildcardTag || tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
+    if (tagType === TAC.ResultType.wildcardTag || tagType === TAC.ResultType.wildcardFile || tagType === TAC.ResultType.yamlWildcard)
         TAC.Globals.selfTrigger = true;
     updateInput(textArea);
 
@@ -736,7 +736,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
 
         let displayText = "";
         // If the tag matches the tagword, we don't need to display the alias
-        if(result.type === ResultType.chant) {
+        if(result.type === TAC.ResultType.chant) {
             displayText = TacUtils.escapeHTML(result.aliases);
         } else if (result.aliases && !result.text.includes(tagword)) { // Alias
             let splitAliases = result.aliases.split(",");
@@ -772,7 +772,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Print search term bolded in result
         itemText.innerHTML = displayText.replace(tagword, `<b>${tagword}</b>`);
 
-        const splitTypes = [ResultType.wildcardFile, ResultType.yamlWildcard]
+        const splitTypes = [TAC.ResultType.wildcardFile, TAC.ResultType.yamlWildcard]
         if (splitTypes.includes(result.type) && itemText.innerHTML.includes("/")) {
             let parts = itemText.innerHTML.split("/");
             let lastPart = parts[parts.length - 1];
@@ -784,7 +784,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Add wiki link if the setting is enabled and a supported tag set loaded
         if (
             TAC.CFG.showWikiLinks &&
-            result.type === ResultType.tag &&
+            result.type === TAC.ResultType.tag &&
             IS_DAN_OR_E621_TAG_FILE
         ) {
             let wikiLink = document.createElement("a");
@@ -865,7 +865,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             metaDiv.classList.add("acMetaText");
 
             // Add version info classes if it is an embedding
-            if (result.type === ResultType.embedding) {
+            if (result.type === TAC.ResultType.embedding) {
                 if (result.meta.startsWith("v1"))
                     itemText.classList.add("acEmbeddingV1");
                 else if (result.meta.startsWith("v2"))
@@ -909,10 +909,10 @@ function addResultsToList(textArea, results, tagword, resetList) {
         if (
             TAC.CFG.showExtraNetworkPreviews &&
             [
-                ResultType.embedding,
-                ResultType.hypernetwork,
-                ResultType.lora,
-                ResultType.lyco,
+                TAC.ResultType.embedding,
+                TAC.ResultType.hypernetwork,
+                TAC.ResultType.lora,
+                TAC.ResultType.lyco,
             ].includes(result.type)
         ) {
             li.addEventListener("mouseover", async () => {
@@ -973,14 +973,14 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex, scroll = true)
         let selectedResult = TAC.Globals.results[newIndex];
         let selectedType = selectedResult.type;
         // These types support previews (others could technically too, but are not native to the webui gallery)
-        let previewTypes = [ResultType.embedding, ResultType.hypernetwork, ResultType.lora, ResultType.lyco];
+        let previewTypes = [TAC.ResultType.embedding, TAC.ResultType.hypernetwork, TAC.ResultType.lora, TAC.ResultType.lyco];
 
         let previewDiv = gradioApp().querySelector(`.autocompleteParent${textAreaId} .sideInfo`);
 
         if (TAC.CFG.showExtraNetworkPreviews && previewTypes.includes(selectedType)) {
             let img = previewDiv.querySelector("img");
             // String representation of our type enum
-            const typeString = Object.keys(ResultType)[selectedType - 1].toLowerCase();
+            const typeString = Object.keys(TAC.ResultType)[selectedType - 1].toLowerCase();
             // Get image from API
             let url = await TacUtils.getExtraNetworkPreviewURL(selectedResult.text, typeString);
             if (url) {
@@ -1217,7 +1217,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Flatten our candidate(s)
         TAC.Globals.results = resultCandidates.flat();
         // Sort results, but not if it's umi tags since they are sorted by count
-        if (!(resultCandidates.length === 1 && TAC.Globals.results[0].type === ResultType.umiWildcard))
+        if (!(resultCandidates.length === 1 && TAC.Globals.results[0].type === TAC.ResultType.umiWildcard))
             TAC.Globals.results = TAC.Globals.results.sort(TacUtils.getSortFunction());
     }
     // Else search the normal tag list
@@ -1254,7 +1254,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         // Add final results
         TAC.Globals.allTags.filter(fil).forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.tag)
+            let result = new TAC.AutocompleteResult(t[0].trim(), TAC.ResultType.tag)
             result.category = t[1];
             result.count = t[2];
             result.aliases = t[3];
@@ -1266,7 +1266,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             let extraResults = [];
 
             TAC.Globals.extras.filter(fil).forEach(e => {
-                let result = new AutocompleteResult(e[0].trim(), ResultType.extra)
+                let result = new TAC.AutocompleteResult(e[0].trim(), TAC.ResultType.extra)
                 result.category = e[1] || 0; // If no category is given, use 0 as the default
                 result.meta = e[2] || "Custom tag";
                 result.aliases = e[3] || "";
@@ -1295,9 +1295,9 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let aliasNames = [];
         let types = [];
         // Limit to 2k for performance reasons
-        const aliasTypes = [ResultType.tag, ResultType.extra];
+        const aliasTypes = [TAC.ResultType.tag, TAC.ResultType.extra];
         TAC.Globals.results.slice(0,2000).forEach(r => {
-            const name = r.type === ResultType.chant ? r.aliases : r.text;
+            const name = r.type === TAC.ResultType.chant ? r.aliases : r.text;
             // Add to alias list or tag list depending on if the name includes the tagword
             // (the same criteria is used in the filter in calculateUsageBias)
             if (aliasTypes.includes(r.type) && !name.includes(TAC.Globals.tagword)) {
@@ -1319,7 +1319,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Pre-calculate weights to prevent duplicate work
         const resultBiasMap = new Map();
         TAC.Globals.results.forEach(result => {
-            const name = result.type === ResultType.chant ? result.aliases : result.text;
+            const name = result.type === TAC.ResultType.chant ? result.aliases : result.text;
             const type = result.type;
             // Find matching pair from DB results
             const useStats = counts.find(c => c.name === name && c.type === type);

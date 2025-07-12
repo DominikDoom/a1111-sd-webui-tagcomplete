@@ -252,7 +252,7 @@ class TacUtils {
 
     /**
      * Calculate biased tag score based on post count and frequent usage
-     * @param {AutocompleteResult} result - The unbiased result
+     * @param {TAC.AutocompleteResult} result - The unbiased result
      * @param {Number} count - The post count (or similar base metric)
      * @param {Number} uses - The usage count
      * @returns {Number} The biased score for sorting
@@ -305,7 +305,7 @@ class TacUtils {
      * Calls API endpoint to increase the count of a tag in the database.
      * Not awaited as it is non-critical and can be executed as fire-and-forget.
      * @param {String} tagName - The name of the tag 
-     * @param {ResultType} type - The type of the tag as mapped in {@link ResultType}
+     * @param {TAC.ResultType} type - The type of the tag as mapped in {@link TAC.ResultType}
      * @param {Boolean} negative - Whether the tag was typed in a negative prompt field
      */
     static increaseUseCount(tagName, type, negative = false) {
@@ -315,7 +315,7 @@ class TacUtils {
     /**
      * Get the use count of a tag from the database
      * @param {String} tagName - The name of the tag
-     * @param {ResultType} type - The type of the tag as mapped in {@link ResultType}
+     * @param {TAC.ResultType} type - The type of the tag as mapped in {@link TAC.ResultType}
      * @param {Boolean} negative - Whether we are currently in a negative prompt field
      * @returns {Promise<Number>} The use count of the tag
      */
@@ -330,7 +330,7 @@ class TacUtils {
      * Retrieves the use counts of multiple tags at once from the database for improved performance
      * during typing.
      * @param {String[]} tagNames - An array of tag names
-     * @param {ResultType[]} types - An array of tag types as mapped in {@link ResultType}
+     * @param {TAC.ResultType[]} types - An array of tag types as mapped in {@link TAC.ResultType}
      * @param {Boolean} negative - Whether we are currently in a negative prompt field
      * @returns {Promise<Array>} The use count array mapped to named fields by {@link mapUseCountArray}
      */
@@ -357,7 +357,7 @@ class TacUtils {
     /**
      * Resets the use count of the given tag back to zero.
      * @param {String} tagName - The name of the tag
-     * @param {ResultType} type - The type of the tag as mapped in {@link ResultType}
+     * @param {TAC.ResultType} type - The type of the tag as mapped in {@link TAC.ResultType}
      * @param {Boolean} resetPosCount - Whether to reset the positive count
      * @param {Boolean} resetNegCount - Whether to reset the negative count
      */
@@ -497,12 +497,12 @@ class TacUtils {
         const textSort = (a, b, reverse = false) => {
             // Assign keys so next sort is faster
             if (!a.sortKey) {
-                a.sortKey = a.type === ResultType.chant
+                a.sortKey = a.type === TAC.ResultType.chant
                     ? a.aliases
                     : a.text;
             }
             if (!b.sortKey) {
-                b.sortKey = b.type === ResultType.chant
+                b.sortKey = b.type === TAC.ResultType.chant
                     ? b.aliases
                     : b.text;
             }

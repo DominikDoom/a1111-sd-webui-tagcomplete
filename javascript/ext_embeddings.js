@@ -36,7 +36,7 @@ class EmbeddingParser extends BaseTagParser {
             let lastSlash = t[0].lastIndexOf("/") > -1 ? t[0].lastIndexOf("/") : -1;
             let name = t[0].trim().substring(lastSlash + 1, lastDot);
 
-            let result = new AutocompleteResult(name, ResultType.embedding)
+            let result = new TAC.AutocompleteResult(name, TAC.ResultType.embedding)
             result.sortKey = t[1];
             result.meta = t[2] + " Embedding";
             finalResults.push(result);
@@ -59,7 +59,7 @@ async function load() {
 }
 
 function sanitize(tagType, text) {
-    if (tagType === ResultType.embedding) {
+    if (tagType === TAC.ResultType.embedding) {
         return text;
     }
     return null;

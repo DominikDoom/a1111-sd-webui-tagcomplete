@@ -19,7 +19,7 @@ class HypernetParser extends BaseTagParser {
         // Add final results
         let finalResults = [];
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.hypernetwork)
+            let result = new TAC.AutocompleteResult(t[0].trim(), TAC.ResultType.hypernetwork)
             result.meta = "Hypernetwork";
             result.sortKey = t[1];
             finalResults.push(result);
@@ -42,7 +42,7 @@ async function load() {
 }
 
 function sanitize(tagType, text) {
-    if (tagType === ResultType.hypernetwork) {
+    if (tagType === TAC.ResultType.hypernetwork) {
         return `<hypernet:${text}:${TAC.CFG.extraNetworksDefaultMultiplier}>`;
     }
     return null;

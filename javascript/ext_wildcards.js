@@ -51,7 +51,7 @@ class WildcardParser extends BaseTagParser {
         let finalResults = [];
         let tempResults = wildcards.filter(x => (wcWord !== null && wcWord.length > 0) ? x.toLowerCase().includes(wcWord) : x) // Filter by tagword
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t.trim(), ResultType.wildcardTag);
+            let result = new TAC.AutocompleteResult(t.trim(), TAC.ResultType.wildcardTag);
             result.meta = wcFile;
             finalResults.push(result);
         });
@@ -80,10 +80,10 @@ class WildcardFileParser extends BaseTagParser {
 
             let result = null;
             if (wcFile[0].endsWith(".yaml")) {
-                result = new AutocompleteResult(wcFile[1].trim(), ResultType.yamlWildcard);
+                result = new TAC.AutocompleteResult(wcFile[1].trim(), TAC.ResultType.yamlWildcard);
                 result.meta = "YAML wildcard collection";
             } else {
-                result = new AutocompleteResult(wcFile[1].trim(), ResultType.wildcardFile);
+                result = new TAC.AutocompleteResult(wcFile[1].trim(), TAC.ResultType.wildcardFile);
                 result.meta = "Wildcard file";
                 result.sortKey = wcFile[2].trim();
             }
@@ -150,9 +150,9 @@ async function load() {
 }
 
 function sanitize(tagType, text) {
-    if (tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard) {
+    if (tagType === TAC.ResultType.wildcardFile || tagType === TAC.ResultType.yamlWildcard) {
         return `${TAC.CFG.wcWrap}${text}${TAC.CFG.wcWrap}`;
-    } else if (tagType === ResultType.wildcardTag) {
+    } else if (tagType === TAC.ResultType.wildcardTag) {
         return text;
     }
     return null;
@@ -160,7 +160,7 @@ function sanitize(tagType, text) {
 
 function keepOpenIfWildcard(tagType, sanitizedText, newPrompt, textArea) {
     // If it's a wildcard, we want to keep the results open so the user can select another wildcard
-    if (tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard) {
+    if (tagType === TAC.ResultType.wildcardFile || tagType === TAC.ResultType.yamlWildcard) {
         TAC.Globals.hideBlocked = true;
         setTimeout(() => { TAC.Globals.hideBlocked = false; }, 450);
         return true;

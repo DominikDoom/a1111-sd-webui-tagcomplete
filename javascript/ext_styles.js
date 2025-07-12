@@ -30,7 +30,7 @@ class StyleParser extends BaseTagParser {
         // Add final results
         let finalResults = [];
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t[0].trim(), ResultType.styleName)
+            let result = new TAC.AutocompleteResult(t[0].trim(), TAC.ResultType.styleName)
             result.meta = "Style";
             finalResults.push(result);
         });
@@ -53,7 +53,7 @@ async function load(force = false) {
 }
 
 function sanitize(tagType, text) {
-    if (tagType === ResultType.styleName) {
+    if (tagType === TAC.ResultType.styleName) {
         if (text.includes(" ")) {
             return `$${lastStyleVarIndex}(${text})`;
         } else {

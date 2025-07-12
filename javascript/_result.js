@@ -1,7 +1,7 @@
 // Result data type for cleaner use of optional completion result properties
 
 // Type enum
-const ResultType = Object.freeze({
+TAC.ResultType = Object.freeze({
     "tag": 1,
     "extra": 2,
     "embedding": 3,
@@ -17,10 +17,10 @@ const ResultType = Object.freeze({
 });
 
 // Class to hold result data and annotations to make it clearer to use
-class AutocompleteResult {
+TAC.AutocompleteResult = class AutocompleteResult {
     // Main properties
     text = "";
-    type = ResultType.tag;
+    type = TAC.ResultType.tag;
 
     // Additional info, only used in some cases
     category = null;

@@ -144,7 +144,7 @@ class UmiParser extends BaseTagParser {
                 // Add final results
                 let finalResults = [];
                 tempResults.forEach(t => {
-                    let result = new AutocompleteResult(t[0].trim(), ResultType.umiWildcard)
+                    let result = new TAC.AutocompleteResult(t[0].trim(), TAC.ResultType.umiWildcard)
                     result.count = t[1];
                     finalResults.push(result);
                 });
@@ -157,7 +157,7 @@ class UmiParser extends BaseTagParser {
                 // Add final results
                 let finalResults = [];
                 filteredWildcardsSorted.forEach(t => {
-                    let result = new AutocompleteResult(t[0].trim(), ResultType.umiWildcard)
+                    let result = new TAC.AutocompleteResult(t[0].trim(), TAC.ResultType.umiWildcard)
                     result.count = t[1];
                     finalResults.push(result);
                 });
@@ -174,7 +174,7 @@ class UmiParser extends BaseTagParser {
             // Add final results
             let finalResults = [];
             filteredWildcardsSorted.forEach(t => {
-                let result = new AutocompleteResult(t[0].trim(), ResultType.umiWildcard)
+                let result = new TAC.AutocompleteResult(t[0].trim(), TAC.ResultType.umiWildcard)
                 result.count = t[1];
                 finalResults.push(result);
             });
@@ -190,7 +190,7 @@ class UmiParser extends BaseTagParser {
 
 function updateUmiTags(tagType, sanitizedText, newPrompt, textArea) {
     // If it was a umi wildcard, also update the TAC.Globals.umiPreviousTags
-    if (tagType === ResultType.umiWildcard && TAC.Globals.originalTagword.length > 0) {
+    if (tagType === TAC.ResultType.umiWildcard && TAC.Globals.originalTagword.length > 0) {
         let umiSubPrompts = [...newPrompt.matchAll(UMI_PROMPT_REGEX)];
 
         let umiTags = [];
@@ -230,7 +230,7 @@ async function load() {
 
 function sanitize(tagType, text) {
     // Replace underscores only if the umi tag is not using them
-    if (tagType === ResultType.umiWildcard && !TAC.Globals.umiWildcards.includes(text)) {
+    if (tagType === TAC.ResultType.umiWildcard && !TAC.Globals.umiWildcards.includes(text)) {
         return text.replaceAll("_", " "); 
     }
     return null;

@@ -24,7 +24,7 @@ class LoraParser extends BaseTagParser {
             let lastSlash = text.lastIndexOf("/") > -1 ? text.lastIndexOf("/") : -1;
             let name = text.substring(lastSlash + 1, lastDot);
 
-            let result = new AutocompleteResult(name, ResultType.lora)
+            let result = new TAC.AutocompleteResult(name, TAC.ResultType.lora)
             result.meta = "Lora";
             result.sortKey = t[1];
             result.hash = t[2];
@@ -48,7 +48,7 @@ async function load() {
 }
 
 async function sanitize(tagType, text) {
-    if (tagType === ResultType.lora) {
+    if (tagType === TAC.ResultType.lora) {
         let multiplier = TAC.CFG.extraNetworksDefaultMultiplier;
         let info = await TacUtils.fetchAPI(`tacapi/v1/lora-info/${text}`)
         if (info && info["preferred weight"]) {

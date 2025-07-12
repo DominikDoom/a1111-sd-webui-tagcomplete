@@ -19,7 +19,7 @@ class ChantParser extends BaseTagParser {
         // Add final results
         let finalResults = [];
         tempResults.forEach(t => {
-            let result = new AutocompleteResult(t.content.trim(), ResultType.chant)
+            let result = new TAC.TAC.AutocompleteResult(t.content.trim(), TAC.ResultType.chant)
             result.meta = "Chant";
             result.aliases = t.name;
             result.category = t.color;
@@ -43,7 +43,7 @@ async function load() {
 }
 
 function sanitize(tagType, text) {
-    if (tagType === ResultType.chant) {
+    if (tagType === TAC.ResultType.chant) {
         return text;
     }
     return null;
