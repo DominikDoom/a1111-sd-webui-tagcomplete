@@ -1,70 +1,77 @@
-const STYLE_REGEX = /(\$(\d*)\(?)[^$|\[\],\s]*\)?/;
-const STYLE_TRIGGER = () => TAC.CFG.useStyleVars && TAC.Globals.tagword.match(STYLE_REGEX);
+(function StyleExtension() {
+    const STYLE_REGEX = /(\$(\d*)\(?)[^$|\[\],\s]*\)?/;
+    const STYLE_TRIGGER = () => TAC.CFG.useStyleVars && TAC.Globals.tagword.match(STYLE_REGEX);
 
-var lastStyleVarIndex = "";
+    var lastStyleVarIndex = "";
 
-class StyleParser extends BaseTagParser {
-   async parse() {
-        // Refresh if needed
-        await TacUtils.refreshStyleNamesIfChanged();
+    class StyleParser extends TAC.BaseTagParser {
+        async parse() {
+            // Refresh if needed
+            await TacUtils.refreshStyleNamesIfChanged();
 
-        // Show styles
-        let tempResults = [];
-        let matchGroups = TAC.Globals.tagword.match(STYLE_REGEX);
-        
-        // Save index to insert again later or clear last one
-        lastStyleVarIndex = matchGroups[2] ? matchGroups[2] : "";
+            // Show styles
+            let tempResults = [];
+            let matchGroups = TAC.Globals.tagword.match(STYLE_REGEX);
 
-        if (TAC.Globals.tagword !== matchGroups[1]) {
-            let searchTerm = TAC.Globals.tagword.replace(matchGroups[1], "");
-            
-            let filterCondition = x => {
-                let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), 'i');
-                return regex.test(x[0].toLowerCase()) || regex.test(x[0].toLowerCase().replaceAll(" ", "_"));
-            };
-            tempResults = TAC.Globals.styleNames.filter(x => filterCondition(x)); // Filter by tagword
-        } else {
-            tempResults = TAC.Globals.styleNames;
-        }
+            // Save index to insert again later or clear last one
+            lastStyleVarIndex = matchGroups[2] ? matchGroups[2] : "";
 
-        // Add final results
-        let finalResults = [];
-        tempResults.forEach(t => {
-            let result = new TAC.AutocompleteResult(t[0].trim(), TAC.ResultType.styleName)
-            result.meta = "Style";
-            finalResults.push(result);
-        });
+            if (TAC.Globals.tagword !== matchGroups[1]) {
+                let searchTerm = TAC.Globals.tagword.replace(matchGroups[1], "");
 
-        return finalResults;
-    }
-}
+                let filterCondition = (x) => {
+                    let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), "i");
+                    return (
+                        regex.test(x[0].toLowerCase()) ||
+                        regex.test(x[0].toLowerCase().replaceAll(" ", "_"))
+                    );
+                };
+                tempResults = TAC.Globals.styleNames.filter((x) => filterCondition(x)); // Filter by tagword
+            } else {
+                tempResults = TAC.Globals.styleNames;
+            }
 
-async function load(force = false) {
-    if (TAC.Globals.styleNames.length === 0 || force) {
-        try {
-            TAC.Globals.styleNames = (await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/styles.txt`))
-                .filter(x => x[0]?.trim().length > 0) // Remove empty lines
-                .filter(x => x[0] !== "None") // Remove "None" style
-                .map(x => [x[0].trim()]); // Trim name
-        } catch (e) {
-            console.error("Error loading styles.txt: " + e);
+            // Add final results
+            let finalResults = [];
+            tempResults.forEach((t) => {
+                let result = new TAC.AutocompleteResult(t[0].trim(), TAC.ResultType.styleName);
+                result.meta = "Style";
+                finalResults.push(result);
+            });
+
+            return finalResults;
         }
     }
-}
 
-function sanitize(tagType, text) {
-    if (tagType === TAC.ResultType.styleName) {
-        if (text.includes(" ")) {
-            return `$${lastStyleVarIndex}(${text})`;
-        } else {
-            return`$${lastStyleVarIndex}${text}`
+    async function load(force = false) {
+        if (TAC.Globals.styleNames.length === 0 || force) {
+            try {
+                TAC.Globals.styleNames = (
+                    await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/styles.txt`)
+                )
+                    .filter((x) => x[0]?.trim().length > 0) // Remove empty lines
+                    .filter((x) => x[0] !== "None") // Remove "None" style
+                    .map((x) => [x[0].trim()]); // Trim name
+            } catch (e) {
+                console.error("Error loading styles.txt: " + e);
+            }
         }
     }
-    return null;
-}
 
-TAC.Ext.PARSERS.push(new StyleParser(STYLE_TRIGGER));
+    function sanitize(tagType, text) {
+        if (tagType === TAC.ResultType.styleName) {
+            if (text.includes(" ")) {
+                return `$${lastStyleVarIndex}(${text})`;
+            } else {
+                return `$${lastStyleVarIndex}${text}`;
+            }
+        }
+        return null;
+    }
 
-// Add our utility functions to their respective queues
-TAC.Ext.QUEUE_FILE_LOAD.push(load);
-TAC.Ext.QUEUE_SANITIZE.push(sanitize);
+    TAC.Ext.PARSERS.push(new StyleParser(STYLE_TRIGGER));
+
+    // Add our utility functions to their respective queues
+    TAC.Ext.QUEUE_FILE_LOAD.push(load);
+    TAC.Ext.QUEUE_SANITIZE.push(sanitize);
+})();
