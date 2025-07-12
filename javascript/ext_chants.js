@@ -24,7 +24,7 @@
             // Add final results
             let finalResults = [];
             tempResults.forEach((t) => {
-                let result = new TAC.TAC.AutocompleteResult(t.content.trim(), TAC.ResultType.chant);
+                let result = new TAC.AutocompleteResult(t.content.trim(), TAC.ResultType.chant);
                 result.meta = "Chant";
                 result.aliases = t.name;
                 result.category = t.color;
