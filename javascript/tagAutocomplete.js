@@ -332,7 +332,7 @@ function createResultsDiv(textArea) {
     let sideDiv = document.createElement("div");
     let sideDivImg = document.createElement("img");
 
-    let textAreaId = getTextAreaIdentifier(textArea);
+    let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
     let typeClass = textAreaId.replaceAll(".", " ");
 
     parentDiv.setAttribute("class", `autocompleteParent${typeClass}`);
@@ -354,12 +354,12 @@ function createResultsDiv(textArea) {
 
 // Show or hide the results div
 function isVisible(textArea) {
-    let textAreaId = getTextAreaIdentifier(textArea);
+    let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
     let parentDiv = gradioApp().querySelector('.autocompleteParent' + textAreaId);
     return parentDiv.style.display === "flex";
 }
 function showResults(textArea) {
-    let textAreaId = getTextAreaIdentifier(textArea);
+    let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
     let parentDiv = gradioApp().querySelector('.autocompleteParent' + textAreaId);
     parentDiv.style.display = "flex";
 
@@ -383,7 +383,7 @@ function showResults(textArea) {
     previewDiv.style.display = "none";
 }
 function hideResults(textArea) {
-    let textAreaId = getTextAreaIdentifier(textArea);
+    let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
     let resultsDiv = gradioApp().querySelector('.autocompleteParent' + textAreaId);
 
     if (!resultsDiv) return;
@@ -513,7 +513,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
         if (name && name.length > 0) {
             // Check if it's a negative prompt
-            let textAreaId = getTextAreaIdentifier(textArea);
+            let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
             let isNegative = textAreaId.includes("n");
             // Sanitize name for API call
             name = encodeURIComponent(name)
@@ -675,7 +675,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 }
 
 function addResultsToList(textArea, results, tagword, resetList) {
-    let textAreaId = getTextAreaIdentifier(textArea);
+    let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
     let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     let resultsList = resultDiv.querySelector('ul');
 
@@ -950,7 +950,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
 }
 
 async function updateSelectionStyle(textArea, newIndex, oldIndex, scroll = true) {
-    let textAreaId = getTextAreaIdentifier(textArea);
+    let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
     let resultDiv = gradioApp().querySelector('.autocompleteResults' + textAreaId);
     let resultsList = resultDiv.querySelector('ul');
     let items = resultsList.getElementsByTagName('li');
@@ -999,9 +999,9 @@ function updateRuby(textArea, prompt) {
     if (!TAC.CFG.translation.liveTranslation) return;
     if (!TAC.CFG.translation.translationFile || TAC.CFG.translation.translationFile === "None") return;
 
-    let ruby = gradioApp().querySelector('.acRuby' + getTextAreaIdentifier(textArea));
+    let ruby = gradioApp().querySelector('.acRuby' + TAC.TextAreas.getTextAreaIdentifier(textArea));
     if (!ruby) {
-        let textAreaId = getTextAreaIdentifier(textArea);
+        let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
         let typeClass = textAreaId.replaceAll(".", " ");
         ruby = document.createElement("div");
         ruby.setAttribute("class", `acRuby${typeClass} notranslate`);
@@ -1309,7 +1309,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         });
 
         // Check if it's a negative prompt
-        let textAreaId = getTextAreaIdentifier(textArea);
+        let textAreaId = TAC.TextAreas.getTextAreaIdentifier(textArea);
         let isNegative = textAreaId.includes("n");
 
         // Request use counts from the DB
@@ -1492,7 +1492,7 @@ async function refreshEmbeddings() {
 
 function addAutocompleteToArea(area) {
     // Return if autocomplete is disabled for the current area type in config
-    let textAreaId = getTextAreaIdentifier(area);
+    let textAreaId = TAC.TextAreas.getTextAreaIdentifier(area);
     if ((!TAC.CFG.activeIn.img2img && textAreaId.includes("img2img"))
         || (!TAC.CFG.activeIn.txt2img && textAreaId.includes("txt2img"))
         || (!TAC.CFG.activeIn.negativePrompts && textAreaId.includes("n"))
@@ -1550,10 +1550,10 @@ async function setup() {
     await TacUtils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
 
     // Find all textareas
-    let textAreas = getTextAreas();
+    let textAreas = TAC.TextAreas.getTextAreas();
 
     // Add mutation observer to accordions inside a base that has onDemand set to true
-    addOnDemandObservers(addAutocompleteToArea);
+    TAC.TextAreas.addOnDemandObservers(addAutocompleteToArea);
 
     // Add event listener to apply settings button so we can mirror the changes to our internal config
     let applySettingsButton = gradioApp().querySelector("#tab_settings #settings_submit") || gradioApp().querySelector("#tab_settings > div > .gr-button-primary");
