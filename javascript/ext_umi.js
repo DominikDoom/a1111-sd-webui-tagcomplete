@@ -126,7 +126,7 @@
             if (umiTags.length > 0) {
                 // Get difference for subprompt
                 let tagCountChange = umiTags.length - TAC.Globals.umiPreviousTags.length;
-                let diff = TacUtils.difference(umiTags, TAC.Globals.umiPreviousTags);
+                let diff = TAC.Utils.difference(umiTags, TAC.Globals.umiPreviousTags);
                 TAC.Globals.umiPreviousTags = umiTags;
 
                 // Show all condition
@@ -152,7 +152,7 @@
                     TAC.Globals.tagword = umiTagword;
                     let filteredWildcardsSorted = filteredWildcards(umiTagword);
                     let searchRegex = new RegExp(
-                        `(^|[^a-zA-Z])${TacUtils.escapeRegExp(umiTagword)}`,
+                        `(^|[^a-zA-Z])${TAC.Utils.escapeRegExp(umiTagword)}`,
                         "i"
                     );
                     let baseFilter = (x) => x[0].toLowerCase().search(searchRegex) > -1;
@@ -243,7 +243,7 @@
         if (TAC.Globals.umiWildcards.length === 0) {
             try {
                 let umiTags = (
-                    await TacUtils.readFile(`${TAC.Globals.tagBasePath}/temp/umi_tags.txt`)
+                    await TAC.Utils.readFile(`${TAC.Globals.tagBasePath}/temp/umi_tags.txt`)
                 ).split("\n");
                 // Split into tag, count pairs
                 TAC.Globals.umiWildcards = umiTags

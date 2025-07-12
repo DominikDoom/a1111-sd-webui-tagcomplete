@@ -7,7 +7,7 @@
     class StyleParser extends TAC.BaseTagParser {
         async parse() {
             // Refresh if needed
-            await TacUtils.refreshStyleNamesIfChanged();
+            await TAC.Utils.refreshStyleNamesIfChanged();
 
             // Show styles
             let tempResults = [];
@@ -20,7 +20,7 @@
                 let searchTerm = TAC.Globals.tagword.replace(matchGroups[1], "");
 
                 let filterCondition = (x) => {
-                    let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), "i");
+                    let regex = new RegExp(TAC.Utils.escapeRegExp(searchTerm, true), "i");
                     return (
                         regex.test(x[0].toLowerCase()) ||
                         regex.test(x[0].toLowerCase().replaceAll(" ", "_"))
@@ -47,7 +47,7 @@
         if (TAC.Globals.styleNames.length === 0 || force) {
             try {
                 TAC.Globals.styleNames = (
-                    await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/styles.txt`)
+                    await TAC.Utils.loadCSV(`${TAC.Globals.tagBasePath}/temp/styles.txt`)
                 )
                     .filter((x) => x[0]?.trim().length > 0) // Remove empty lines
                     .filter((x) => x[0] !== "None") // Remove "None" style

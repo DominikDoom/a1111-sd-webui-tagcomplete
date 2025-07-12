@@ -20,7 +20,7 @@
                 }
 
                 let filterCondition = (x) => {
-                    let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), "i");
+                    let regex = new RegExp(TAC.Utils.escapeRegExp(searchTerm, true), "i");
                     return (
                         regex.test(x[0].toLowerCase()) ||
                         regex.test(x[0].toLowerCase().replaceAll(" ", "_"))
@@ -60,7 +60,7 @@
         if (TAC.Globals.embeddings.length === 0) {
             try {
                 TAC.Globals.embeddings = (
-                    await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/emb.txt`)
+                    await TAC.Utils.loadCSV(`${TAC.Globals.tagBasePath}/temp/emb.txt`)
                 )
                     .filter((x) => x[0]?.trim().length > 0) // Remove empty lines
                     .map((x) => [x[0].trim(), x[1], x[2]]); // Return name, sortKey, hash tuples

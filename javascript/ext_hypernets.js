@@ -16,7 +16,7 @@
                     .replace("<h:", "")
                     .replace("<", "");
                 let filterCondition = (x) => {
-                    let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), "i");
+                    let regex = new RegExp(TAC.Utils.escapeRegExp(searchTerm, true), "i");
                     return (
                         regex.test(x.toLowerCase()) ||
                         regex.test(x.toLowerCase().replaceAll(" ", "_"))
@@ -44,7 +44,7 @@
         if (TAC.Globals.hypernetworks.length === 0) {
             try {
                 TAC.Globals.hypernetworks = (
-                    await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/hyp.txt`)
+                    await TAC.Utils.loadCSV(`${TAC.Globals.tagBasePath}/temp/hyp.txt`)
                 )
                     .filter((x) => x[0]?.trim().length > 0) //Remove empty lines
                     .map((x) => [x[0]?.trim(), x[1]]); // Remove carriage returns and padding if it exists

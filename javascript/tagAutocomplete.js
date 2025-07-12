@@ -156,7 +156,7 @@ async function loadTags(c) {
     // Load main tags and aliases
     if (TAC.Globals.allTags.length === 0 && c.tagFile && c.tagFile !== "None") {
         try {
-            TAC.Globals.allTags = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/${c.tagFile}`);
+            TAC.Globals.allTags = await TAC.Utils.loadCSV(`${TAC.Globals.tagBasePath}/${c.tagFile}`);
         } catch (e) {
             console.error("Error loading tags file: " + e);
             return;
@@ -168,7 +168,7 @@ async function loadTags(c) {
 async function loadExtraTags(c) {
     if (c.extra.extraFile && c.extra.extraFile !== "None") {
         try {
-            TAC.Globals.extras = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/${c.extra.extraFile}`);
+            TAC.Globals.extras = await TAC.Utils.loadCSV(`${TAC.Globals.tagBasePath}/${c.extra.extraFile}`);
             // Add TAC.Globals.translations to the main translation map for extra tags that have them
             TAC.Globals.extras.forEach(e => {
                 if (e[4]) TAC.Globals.translations.set(e[0], e[4]);
@@ -183,7 +183,7 @@ async function loadExtraTags(c) {
 async function loadTranslations(c) {
     if (c.translation.translationFile && c.translation.translationFile !== "None") {
         try {
-            let tArray = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/${c.translation.translationFile}`);
+            let tArray = await TAC.Utils.loadCSV(`${TAC.Globals.tagBasePath}/${c.translation.translationFile}`);
             tArray.forEach(t => {
                 if (c.translation.oldFormat && t[2]) // if 2 doesn't exist, it's probably a new format file and the setting is on by mistake
                     TAC.Globals.translations.set(t[0], t[2]);
@@ -321,7 +321,7 @@ async function syncOptions() {
     TAC.CFG = newCFG;
 
     // Callback
-    await TacUtils.processQueue(TAC.Ext.QUEUE_AFTER_CONFIG_CHANGE, null);
+    await TAC.Utils.processQueue(TAC.Ext.QUEUE_AFTER_CONFIG_CHANGE, null);
 }
 
 // Create the result list div and necessary styling
@@ -424,7 +424,7 @@ const COMPLETED_WILDCARD_REGEX = /__[^\s,_][^\t\n\r,_]*[^\s,_]__[^\s,_]*/g;
 const STYLE_VAR_REGEX = /\$\(?[^$|\[\],\s]*\)?/g;
 const NORMAL_TAG_REGEX = /[^\s,|<>\[\]:]+_\([^\s,|<>\[\]:]*\)?|[^\s,|<>():\[\]]+|</g;
 const RUBY_TAG_REGEX = /[\w\d<][\w\d' \-?!/$%]{2,}>?/g;
-const TAG_REGEX = () => { return new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source.replaceAll("__", TacUtils.escapeRegExp(TAC.CFG.wcWrap))}|${STYLE_VAR_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g"); }
+const TAG_REGEX = () => { return new RegExp(`${POINTY_REGEX.source}|${COMPLETED_WILDCARD_REGEX.source.replaceAll("__", TAC.Utils.escapeRegExp(TAC.CFG.wcWrap))}|${STYLE_VAR_REGEX.source}|${NORMAL_TAG_REGEX.source}`, "g"); }
 
 // On click, insert the tag into the prompt textbox with respect to the cursor position
 async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithoutChoice = false) {
@@ -435,7 +435,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     var sanitizedText = text
 
     // Run sanitize queue and use first result as sanitized text
-    sanitizeResults = await TacUtils.processQueueReturn(TAC.Ext.QUEUE_SANITIZE, null, tagType, text);
+    sanitizeResults = await TAC.Utils.processQueueReturn(TAC.Ext.QUEUE_SANITIZE, null, tagType, text);
 
     if (sanitizeResults && sanitizeResults.length > 0) {
         sanitizedText = sanitizeResults[0];
@@ -460,12 +460,12 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         && TAC.CFG.wildcardCompletionMode !== "Always fully"
         && sanitizedText.includes("/")) {
         if (TAC.CFG.wildcardCompletionMode === "To next folder level") {
-            let regexMatch = sanitizedText.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}([^/]*\\/?)`, "i"));
+            let regexMatch = sanitizedText.match(new RegExp(`${TAC.Utils.escapeRegExp(tagword)}([^/]*\\/?)`, "i"));
             if (regexMatch) {
                 let pathPart = regexMatch[0];
                 // In case the completion would have just added a slash, try again one level deeper
                 if (pathPart === `${tagword}/`) {
-                    pathPart = sanitizedText.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}\\/([^/]*\\/?)`, "i"))[0];
+                    pathPart = sanitizedText.match(new RegExp(`${TAC.Utils.escapeRegExp(tagword)}\\/([^/]*\\/?)`, "i"))[0];
                 }
                 sanitizedText = pathPart;
             }
@@ -518,7 +518,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             // Sanitize name for API call
             name = encodeURIComponent(name)
             // Call API & update db
-            TacUtils.increaseUseCount(name, tagType, isNegative)
+            TAC.Utils.increaseUseCount(name, tagType, isNegative)
         }
     }
 
@@ -528,7 +528,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     let editStart = Math.max(cursorPos - tagword.length, 0);
     let editEnd = Math.min(cursorPos + tagword.length, prompt.length);
     let surrounding = prompt.substring(editStart, editEnd);
-    let match = surrounding.match(new RegExp(TacUtils.escapeRegExp(`${tagword}`), "i"));
+    let match = surrounding.match(new RegExp(TAC.Utils.escapeRegExp(`${tagword}`), "i"));
     let afterInsertCursorPos = editStart + match.index + sanitizedText.length;
 
     var optionalSeparator = "";
@@ -536,7 +536,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     let noCommaTypes = [TAC.ResultType.wildcardFile, TAC.ResultType.yamlWildcard, TAC.ResultType.umiWildcard].concat(extraNetworkTypes);
     if (!noCommaTypes.includes(tagType)) {
         // Append comma if enabled and not already present
-        let beforeComma = surrounding.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}[,:]`, "i")) !== null;
+        let beforeComma = surrounding.match(new RegExp(`${TAC.Utils.escapeRegExp(tagword)}[,:]`, "i")) !== null;
         if (TAC.CFG.appendComma)
             optionalSeparator = beforeComma ? "" : ",";
         // Add space if enabled
@@ -544,7 +544,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
             optionalSeparator += " ";
         // If at end of prompt and enabled, override the normal setting if not already added
         if (!TAC.CFG.appendSpace && TAC.CFG.alwaysSpaceAtEnd)
-            optionalSeparator += surrounding.match(new RegExp(`${TacUtils.escapeRegExp(tagword)}$`, "im")) !== null ? " " : "";
+            optionalSeparator += surrounding.match(new RegExp(`${TAC.Utils.escapeRegExp(tagword)}$`, "im")) !== null ? " " : "";
     } else if (extraNetworkTypes.includes(tagType)) {
         // Use the dedicated separator for extra networks if it's defined, otherwise fall back to space
         optionalSeparator = TAC.CFG.extraNetworksSeparator || " ";
@@ -567,7 +567,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
         let keywords = null;
         // Check built-in activation words first
         if (tagType === TAC.ResultType.lora || tagType === TAC.ResultType.lyco) {
-            let info = await TacUtils.fetchAPI(`tacapi/v1/lora-info/${result.text}`)
+            let info = await TAC.Utils.fetchAPI(`tacapi/v1/lora-info/${result.text}`)
             if (info && info["activation text"]) {
                 keywords = info["activation text"];
             }
@@ -579,7 +579,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
 
             // No match, try to find a sha256 match from the cache file
             if (!nameDict) {
-                const sha256 = await TacUtils.fetchAPI(`/tacapi/v1/lora-cached-hash/${result.text}`)
+                const sha256 = await TAC.Utils.fetchAPI(`/tacapi/v1/lora-cached-hash/${result.text}`)
                 if (sha256) {
                     nameDict = TAC.Globals.modelKeywordDict.get(sha256);
                 }
@@ -663,7 +663,7 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
     TAC.Globals.previousTags = tags;
 
     // Callback
-    let returns = await TacUtils.processQueueReturn(TAC.Ext.QUEUE_AFTER_INSERT, null, tagType, sanitizedText, newPrompt, textArea);
+    let returns = await TAC.Utils.processQueueReturn(TAC.Ext.QUEUE_AFTER_INSERT, null, tagType, sanitizedText, newPrompt, textArea);
     // Return if any queue function returned true (has handled hide/show already)
     if (returns.some(x => x === true))
         return;
@@ -737,7 +737,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         let displayText = "";
         // If the tag matches the tagword, we don't need to display the alias
         if(result.type === TAC.ResultType.chant) {
-            displayText = TacUtils.escapeHTML(result.aliases);
+            displayText = TAC.Utils.escapeHTML(result.aliases);
         } else if (result.aliases && !result.text.includes(tagword)) { // Alias
             let splitAliases = result.aliases.split(",");
             let bestAlias = splitAliases.find(a => a.toLowerCase().includes(tagword));
@@ -753,7 +753,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
                 }
             }
 
-            displayText = TacUtils.escapeHTML(bestAlias);
+            displayText = TAC.Utils.escapeHTML(bestAlias);
 
             // Append translation for alias if it exists and is not what the user typed
             if (TAC.Globals.translations.has(bestAlias) && TAC.Globals.translations.get(bestAlias) !== bestAlias && bestAlias !== result.text)
@@ -762,7 +762,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
             if (!TAC.CFG.alias.onlyShowAlias && result.text !== bestAlias)
                 displayText += " ➝ " + result.text;
         } else { // No alias
-            displayText = TacUtils.escapeHTML(result.text);
+            displayText = TAC.Utils.escapeHTML(result.text);
         }
 
         // Append translation for result if it exists
@@ -899,7 +899,7 @@ function addResultsToList(textArea, results, tagword, resetList) {
         // Add click listener
         li.addEventListener("click", (e) => {
             if (e.ctrlKey || e.metaKey) {
-                TacUtils.resetUseCount(result.text, result.type, !isNegative, isNegative);
+                TAC.Utils.resetUseCount(result.text, result.type, !isNegative, isNegative);
                 flexDiv.querySelector(".acMetaText").classList.remove("biased");
             } else {
                 insertTextAtCursor(textArea, result, tagword);
@@ -982,7 +982,7 @@ async function updateSelectionStyle(textArea, newIndex, oldIndex, scroll = true)
             // String representation of our type enum
             const typeString = Object.keys(TAC.ResultType)[selectedType - 1].toLowerCase();
             // Get image from API
-            let url = await TacUtils.getExtraNetworkPreviewURL(selectedResult.text, typeString);
+            let url = await TAC.Utils.getExtraNetworkPreviewURL(selectedResult.text, typeString);
             if (url) {
                 img.src = url;
                 previewDiv.style.display = "block";
@@ -1028,17 +1028,17 @@ function updateRuby(textArea, prompt) {
 
         const translation = TAC.Globals.translations?.get(tag) || TAC.Globals.translations?.get(unsanitizedTag); 
 
-        let escapedTag = TacUtils.escapeRegExp(tag);
+        let escapedTag = TAC.Utils.escapeRegExp(tag);
         return { tag, escapedTag, translation };
     }
 
     const replaceOccurences = (text, tuple) => {
         let { tag, escapedTag, translation } = tuple;
         let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,|: \\t\\n\\r]))(?!<rt>)`, "g");
-        return text.replaceAll(searchRegex, `<ruby>${TacUtils.escapeHTML(tag)}<rt>${translation}</rt></ruby>`);
+        return text.replaceAll(searchRegex, `<ruby>${TAC.Utils.escapeHTML(tag)}<rt>${translation}</rt></ruby>`);
     }
 
-    let html = TacUtils.escapeHTML(prompt);
+    let html = TAC.Utils.escapeHTML(prompt);
 
     // First try to find direct matches
     [...rubyTags].forEach(tag => {
@@ -1067,11 +1067,11 @@ function updateRuby(textArea, prompt) {
             }
 
             // Perform n-gram sliding window search
-            translateNgram(TacUtils.toNgrams(subTags, 3));
-            translateNgram(TacUtils.toNgrams(subTags, 1));
-            translateNgram(TacUtils.toNgrams(subTags, 2));
+            translateNgram(TAC.Utils.toNgrams(subTags, 3));
+            translateNgram(TAC.Utils.toNgrams(subTags, 1));
+            translateNgram(TAC.Utils.toNgrams(subTags, 2));
 
-            let escapedTag = TacUtils.escapeRegExp(tuple.tag);
+            let escapedTag = TAC.Utils.escapeRegExp(tuple.tag);
 
             let searchRegex = new RegExp(`(?<!<ruby>)(?:\\b)${escapedTag}(?:\\b|$|(?=[,|: \\t\\n\\r]))(?!<rt>)`, "g");
             html = html.replaceAll(searchRegex, subHtml);
@@ -1183,7 +1183,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         }
 
         let tagCountChange = tags.length - TAC.Globals.previousTags.length;
-        let diff = TacUtils.difference(tags, TAC.Globals.previousTags);
+        let diff = TAC.Utils.difference(tags, TAC.Globals.previousTags);
         TAC.Globals.previousTags = tags;
 
         // Guard for no difference / only whitespace remaining / last edited tag was fully removed
@@ -1211,14 +1211,14 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
     let normalTags = false;
 
     // Process all parsers
-    let resultCandidates = (await TacUtils.processParsers(textArea, prompt))?.filter(x => x.length > 0);
+    let resultCandidates = (await TAC.Utils.processParsers(textArea, prompt))?.filter(x => x.length > 0);
     // If one ore more result candidates match, use their results
     if (resultCandidates && resultCandidates.length > 0) {
         // Flatten our candidate(s)
         TAC.Globals.results = resultCandidates.flat();
         // Sort results, but not if it's umi tags since they are sorted by count
         if (!(resultCandidates.length === 1 && TAC.Globals.results[0].type === TAC.ResultType.umiWildcard))
-            TAC.Globals.results = TAC.Globals.results.sort(TacUtils.getSortFunction());
+            TAC.Globals.results = TAC.Globals.results.sort(TAC.Utils.getSortFunction());
     }
     // Else search the normal tag list
     if (!resultCandidates || resultCandidates.length === 0
@@ -1231,9 +1231,9 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         let searchRegex;
         if (TAC.Globals.tagword.startsWith("*")) {
             TAC.Globals.tagword = TAC.Globals.tagword.slice(1);
-            searchRegex = new RegExp(`${TacUtils.escapeRegExp(TAC.Globals.tagword)}`, 'i');
+            searchRegex = new RegExp(`${TAC.Utils.escapeRegExp(TAC.Globals.tagword)}`, 'i');
         } else {
-            searchRegex = new RegExp(`(^|[^a-zA-Z])${TacUtils.escapeRegExp(TAC.Globals.tagword)}`, 'i');
+            searchRegex = new RegExp(`(^|[^a-zA-Z])${TAC.Utils.escapeRegExp(TAC.Globals.tagword)}`, 'i');
         }
 
         // Both normal tags and aliases/TAC.Globals.translations are included depending on the config
@@ -1264,7 +1264,6 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
         // Add TAC.Globals.extras
         if (TAC.CFG.extra.extraFile) {
             let extraResults = [];
-
             TAC.Globals.extras.filter(fil).forEach(e => {
                 let result = new TAC.AutocompleteResult(e[0].trim(), TAC.ResultType.extra)
                 result.category = e[1] || 0; // If no category is given, use 0 as the default
@@ -1314,7 +1313,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
 
         // Request use counts from the DB
         const names = TAC.CFG.frequencyIncludeAlias ? tagNames.concat(aliasNames) : tagNames;
-        const counts = await TacUtils.getUseCounts(names, types, isNegative) || [];
+        const counts = await TAC.Utils.getUseCounts(names, types, isNegative) || [];
 
         // Pre-calculate weights to prevent duplicate work
         const resultBiasMap = new Map();
@@ -1325,7 +1324,7 @@ async function autocomplete(textArea, prompt, fixedTag = null) {
             const useStats = counts.find(c => c.name === name && c.type === type);
             const uses = useStats?.count || 0;
             // Calculate & set weight
-            const weight = TacUtils.calculateUsageBias(result, result.count, uses)
+            const weight = TAC.Utils.calculateUsageBias(result, result.count, uses)
             resultBiasMap.set(result, weight);
         });
         // Actual sorting with the pre-calculated weights
@@ -1468,13 +1467,13 @@ async function refreshTacTempFiles(api = false) {
         TAC.Globals.loras = [];
         TAC.Globals.lycos = [];
         TAC.Globals.modelKeywordDict.clear();
-        await TacUtils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
+        await TAC.Utils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
 
         console.log("TAC: Refreshed temp files");
     }
     
     if (api) {
-        await TacUtils.postAPI("tacapi/v1/refresh-temp-files");
+        await TAC.Utils.postAPI("tacapi/v1/refresh-temp-files");
         await reload();
     } else {
         setTimeout(async () => {
@@ -1484,9 +1483,9 @@ async function refreshTacTempFiles(api = false) {
 }
 
 async function refreshEmbeddings() {
-    await TacUtils.postAPI("tacapi/v1/refresh-embeddings", null);
+    await TAC.Utils.postAPI("tacapi/v1/refresh-embeddings", null);
     TAC.Globals.embeddings = [];
-    await TacUtils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
+    await TAC.Utils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
     console.log("TAC: Refreshed embeddings");
 }
 
@@ -1522,11 +1521,11 @@ function addAutocompleteToArea(area) {
                 setTimeout(() => { TAC.Globals.hideBlocked = false; }, 100);
             }
 
-            TacUtils.debounce(autocomplete(area, area.value), TAC.CFG.delayTime);
+            TAC.Utils.debounce(autocomplete(area, area.value), TAC.CFG.delayTime);
             checkKeywordInsertionUndo(area, e);
         });
         // Add focusout event listener
-        area.addEventListener('focusout', TacUtils.debounce(() => {
+        area.addEventListener('focusout', TAC.Utils.debounce(() => {
             if (!TAC.Globals.hideBlocked)
                 hideResults(area);
         }, 400));
@@ -1547,7 +1546,7 @@ function addAutocompleteToArea(area) {
 // One-time setup, triggered from onUiUpdate
 async function setup() {
     // Load external files needed by completion extensions
-    await TacUtils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
+    await TAC.Utils.processQueue(TAC.Ext.QUEUE_FILE_LOAD, null);
 
     // Find all textareas
     let textAreas = TAC.TextAreas.getTextAreas();
@@ -1574,7 +1573,7 @@ async function setup() {
         });
     });
     quicksettings?.querySelectorAll(`[id^=setting_tac].gradio-dropdown input`).forEach(e => {
-        TacUtils.observeElement(e, "value", () => {
+        TAC.Utils.observeElement(e, "value", () => {
             setTimeout(async () => { 
                 await syncOptions();
             }, 500);
@@ -1599,14 +1598,14 @@ async function setup() {
 
     // Add mutation observer for the model hash text to also allow hash-based blacklist again
     let modelHashText = gradioApp().querySelector("#sd_checkpoint_hash");
-    TacUtils.updateModelName();
+    TAC.Utils.updateModelName();
     if (modelHashText) {
         TAC.Globals.currentModelHash = modelHashText.title
         let modelHashObserver = new MutationObserver((mutationList, observer) => {
             for (const mutation of mutationList) {
                 if (mutation.type === "attributes" && mutation.attributeName === "title") {
                     TAC.Globals.currentModelHash = mutation.target.title;
-                    TacUtils.updateModelName();
+                    TAC.Utils.updateModelName();
                     refreshEmbeddings();
                 }
             }
@@ -1650,7 +1649,7 @@ async function setup() {
     document.head.appendChild(acStyle);
 
     // Callback
-    await TacUtils.processQueue(TAC.Ext.QUEUE_AFTER_SETUP, null);
+    await TAC.Utils.processQueue(TAC.Ext.QUEUE_AFTER_SETUP, null);
 }
 var tacLoading = false;
 var tacSetupDone = false;
@@ -1660,7 +1659,7 @@ onUiUpdate(async () => {
     if (tacSetupDone) return;
     tacLoading = true;
     // Get our tag base path from the temp file
-    TAC.Globals.tagBasePath = await TacUtils.readFile(`tmp/tagAutocompletePath.txt`);
+    TAC.Globals.tagBasePath = await TAC.Utils.readFile(`tmp/tagAutocompletePath.txt`);
     // Load config from webui opts
     await syncOptions();
     // Rest of setup

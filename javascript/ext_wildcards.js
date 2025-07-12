@@ -8,7 +8,7 @@
         [
             ...TAC.Globals.tagword.matchAll(
                 new RegExp(
-                    WC_REGEX.source.replaceAll("__", TacUtils.escapeRegExp(TAC.CFG.wcWrap)),
+                    WC_REGEX.source.replaceAll("__", TAC.Utils.escapeRegExp(TAC.CFG.wcWrap)),
                     "g"
                 )
             ),
@@ -25,7 +25,7 @@
             let wcMatch = [
                 ...TAC.Globals.tagword.matchAll(
                     new RegExp(
-                        WC_REGEX.source.replaceAll("__", TacUtils.escapeRegExp(TAC.CFG.wcWrap)),
+                        WC_REGEX.source.replaceAll("__", TAC.Utils.escapeRegExp(TAC.CFG.wcWrap)),
                         "g"
                     )
                 ),
@@ -64,7 +64,7 @@
                     );
                 } else {
                     const fileContent = (
-                        await TacUtils.fetchAPI(
+                        await TAC.Utils.fetchAPI(
                             `tacapi/v1/wildcard-contents?basepath=${basePath}&filename=${fileName}.txt`,
                             false
                         )
@@ -132,7 +132,7 @@
                 alreadyAdded.set(wcFile[1], true);
             });
 
-            finalResults.sort(TacUtils.getSortFunction());
+            finalResults.sort(TAC.Utils.getSortFunction());
 
             return finalResults;
         }
@@ -141,7 +141,7 @@
     async function load() {
         if (TAC.Globals.wildcardFiles.length === 0 && TAC.Globals.wildcardExtFiles.length === 0) {
             try {
-                let wcFileArr = await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/wc.txt`);
+                let wcFileArr = await TAC.Utils.loadCSV(`${TAC.Globals.tagBasePath}/temp/wc.txt`);
                 if (wcFileArr && wcFileArr.length > 0) {
                     let wcBasePath = wcFileArr[0][0].trim(); // First line should be the base path
                     TAC.Globals.wildcardFiles = wcFileArr
@@ -151,7 +151,7 @@
                 }
 
                 // To support multiple sources, we need to separate them using the provided "-----" strings
-                let wcExtFileArr = await TacUtils.loadCSV(
+                let wcExtFileArr = await TAC.Utils.loadCSV(
                     `${TAC.Globals.tagBasePath}/temp/wce.txt`
                 );
                 let splitIndices = [];
@@ -182,14 +182,14 @@
                 }
 
                 // Load the yaml wildcard json file and append it as a wildcard file, appending each key as a path component until we reach the end
-                TAC.Globals.yamlWildcards = await TacUtils.readFile(
+                TAC.Globals.yamlWildcards = await TAC.Utils.readFile(
                     `${TAC.Globals.tagBasePath}/temp/wc_yaml.json`,
                     true
                 );
 
                 // Append each key as a path component until we reach a leaf
                 Object.keys(TAC.Globals.yamlWildcards).forEach((file) => {
-                    const flattened = TacUtils.flatten(TAC.Globals.yamlWildcards[file], [], "/");
+                    const flattened = TAC.Utils.flatten(TAC.Globals.yamlWildcards[file], [], "/");
                     Object.keys(flattened).forEach((key) => {
                         TAC.Globals.wildcardExtFiles.push([file, key]);
                     });

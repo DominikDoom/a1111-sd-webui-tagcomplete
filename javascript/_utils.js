@@ -1,6 +1,5 @@
 // Utility functions for tag autocomplete
-
-class TacUtils {
+TAC.Utils = class TacUtils {
     /**
      * Parses a CSV file into a 2D array. Doesn't use regex, so it is very lightweight.
      * We are ignoring newlines in quote fields since we expect one-line entries and parsing would break for unclosed quotes otherwise

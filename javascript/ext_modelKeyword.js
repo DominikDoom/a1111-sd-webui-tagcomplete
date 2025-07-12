@@ -1,6 +1,6 @@
 (function ModelKeywordExtension() {
     async function load() {
-        let modelKeywordParts = (await TacUtils.readFile(`tmp/modelKeywordPath.txt`)).split(",");
+        let modelKeywordParts = (await TAC.Utils.readFile(`tmp/modelKeywordPath.txt`)).split(",");
         TAC.Globals.modelKeywordPath = modelKeywordParts[0];
         let customFileExists = modelKeywordParts[1] === "True";
 
@@ -9,13 +9,13 @@
                 let csv_lines = [];
                 // Only add default keywords if wanted by the user
                 if (TAC.CFG.modelKeywordCompletion !== "Only user list")
-                    csv_lines = await TacUtils.loadCSV(
+                    csv_lines = await TAC.Utils.loadCSV(
                         `${TAC.Globals.modelKeywordPath}/lora-keyword.txt`
                     );
                 // Add custom user keywords if the file exists
                 if (customFileExists)
                     csv_lines = csv_lines.concat(
-                        await TacUtils.loadCSV(
+                        await TAC.Utils.loadCSV(
                             `${TAC.Globals.modelKeywordPath}/lora-keyword-user.txt`
                         )
                     );

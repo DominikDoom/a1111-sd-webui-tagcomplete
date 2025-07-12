@@ -16,7 +16,7 @@
                     .replace("<l:", "")
                     .replace("<", "");
                 let filterCondition = (x) => {
-                    let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), "i");
+                    let regex = new RegExp(TAC.Utils.escapeRegExp(searchTerm, true), "i");
                     return (
                         regex.test(x.toLowerCase()) ||
                         regex.test(x.toLowerCase().replaceAll(" ", "_"))
@@ -50,7 +50,7 @@
         if (TAC.Globals.loras.length === 0) {
             try {
                 TAC.Globals.loras = (
-                    await TacUtils.loadCSV(`${TAC.Globals.tagBasePath}/temp/lora.txt`)
+                    await TAC.Utils.loadCSV(`${TAC.Globals.tagBasePath}/temp/lora.txt`)
                 )
                     .filter((x) => x[0]?.trim().length > 0) // Remove empty lines
                     .map((x) => [x[0]?.trim(), x[1], x[2]]); // Trim filenames and return the name, sortKey, hash pairs
@@ -63,7 +63,7 @@
     async function sanitize(tagType, text) {
         if (tagType === TAC.ResultType.lora) {
             let multiplier = TAC.CFG.extraNetworksDefaultMultiplier;
-            let info = await TacUtils.fetchAPI(`tacapi/v1/lora-info/${text}`);
+            let info = await TAC.Utils.fetchAPI(`tacapi/v1/lora-info/${text}`);
             if (info && info["preferred weight"]) {
                 multiplier = info["preferred weight"];
             }

@@ -13,7 +13,7 @@
                     .replace("<c:", "")
                     .replace("<", "");
                 let filterCondition = (x) => {
-                    let regex = new RegExp(TacUtils.escapeRegExp(searchTerm, true), "i");
+                    let regex = new RegExp(TAC.Utils.escapeRegExp(searchTerm, true), "i");
                     return regex.test(x.terms.toLowerCase()) || regex.test(x.name.toLowerCase());
                 };
                 tempResults = TAC.Globals.chants.filter((x) => filterCondition(x)); // Filter by tagword
@@ -38,7 +38,7 @@
     async function load() {
         if (TAC.CFG.chantFile && TAC.CFG.chantFile !== "None") {
             try {
-                TAC.Globals.chants = await TacUtils.readFile(
+                TAC.Globals.chants = await TAC.Utils.readFile(
                     `${TAC.Globals.tagBasePath}/${TAC.CFG.chantFile}?`,
                     true
                 );
