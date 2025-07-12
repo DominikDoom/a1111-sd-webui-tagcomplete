@@ -8,31 +8,58 @@ TAC.Utils = class TacUtils {
      */
     static parseCSV(str) {
         const arr = [];
-        let quote = false;  // 'true' means we're inside a quoted field
+        let quote = false; // 'true' means we're inside a quoted field
 
         // Iterate over each character, keep track of current row and column (of the returned array)
         for (let row = 0, col = 0, c = 0; c < str.length; c++) {
-            let cc = str[c], nc = str[c+1];        // Current character, next character
-            arr[row] = arr[row] || [];             // Create a new row if necessary
-            arr[row][col] = arr[row][col] || '';   // Create a new column (start with empty string) if necessary
+            let cc = str[c],
+                nc = str[c + 1]; // Current character, next character
+            arr[row] = arr[row] || []; // Create a new row if necessary
+            arr[row][col] = arr[row][col] || ""; // Create a new column (start with empty string) if necessary
 
             // If the current character is a quotation mark, and we're inside a
             // quoted field, and the next character is also a quotation mark,
             // add a quotation mark to the current column and skip the next character
-            if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }
+            if (cc == '"' && quote && nc == '"') {
+                arr[row][col] += cc;
+                ++c;
+                continue;
+            }
 
             // If it's just one quotation mark, begin/end quoted field
-            if (cc == '"') { quote = !quote; continue; }
+            if (cc == '"') {
+                quote = !quote;
+                continue;
+            }
 
             // If it's a comma and we're not in a quoted field, move on to the next column
-            if (cc == ',' && !quote) { ++col; continue; }
+            if (cc == "," && !quote) {
+                ++col;
+                continue;
+            }
 
             // If it's a newline (CRLF), skip the next character and move on to the next row and move to column 0 of that new row
-            if (cc == '\r' && nc == '\n') { ++row; col = 0; ++c; quote = false; continue; }
+            if (cc == "\r" && nc == "\n") {
+                ++row;
+                col = 0;
+                ++c;
+                quote = false;
+                continue;
+            }
 
             // If it's a newline (LF or CR) move on to the next row and move to column 0 of that new row
-            if (cc == '\n') { ++row; col = 0; quote = false; continue; }
-            if (cc == '\r') { ++row; col = 0; quote = false; continue; }
+            if (cc == "\n") {
+                ++row;
+                col = 0;
+                quote = false;
+                continue;
+            }
+            if (cc == "\r") {
+                ++row;
+                col = 0;
+                quote = false;
+                continue;
+            }
 
             // Otherwise, append the current character to the current column
             arr[row][col] += cc;
@@ -47,20 +74,20 @@ TAC.Utils = class TacUtils {
      * @returns {Promise<String | any>} The file content as a string or JSON object (if json is true)
      */
     static async readFile(filePath, json = false, cache = false) {
-        if (!cache)
-            filePath += `?${new Date().getTime()}`;
+        if (!cache) filePath += `?${new Date().getTime()}`;
 
         let response = await fetch(`file=${filePath}`);
 
         if (response.status != 200) {
-            console.error(`Error loading file "${filePath}": ` + response.status, response.statusText);
+            console.error(
+                `Error loading file "${filePath}": ` + response.status,
+                response.statusText
+            );
             return null;
         }
 
-        if (json)
-            return await response.json();
-        else
-            return await response.text();
+        if (json) return await response.json();
+        else return await response.text();
     }
 
     /** Wrapper function to read a file from the path and parse it as CSV
@@ -82,20 +109,21 @@ TAC.Utils = class TacUtils {
     static async fetchAPI(url, json = true, cache = false) {
         if (!cache) {
             const appendChar = url.includes("?") ? "&" : "?";
-            url += `${appendChar}${new Date().getTime()}`
+            url += `${appendChar}${new Date().getTime()}`;
         }
 
         let response = await fetch(url);
 
         if (response.status != 200) {
-            console.error(`Error fetching API endpoint "${url}": ` + response.status, response.statusText);
+            console.error(
+                `Error fetching API endpoint "${url}": ` + response.status,
+                response.statusText
+            );
             return null;
         }
 
-        if (json)
-            return await response.json();
-        else
-            return await response.text();
+        if (json) return await response.json();
+        else return await response.text();
     }
 
     /**
@@ -107,12 +135,15 @@ TAC.Utils = class TacUtils {
     static async postAPI(url, body = null) {
         let response = await fetch(url, {
             method: "POST",
-            headers: {'Content-Type': 'application/json'},
-            body: body
+            headers: { "Content-Type": "application/json" },
+            body: body,
         });
 
         if (response.status != 200) {
-            console.error(`Error posting to API endpoint "${url}": ` + response.status, response.statusText);
+            console.error(
+                `Error posting to API endpoint "${url}": ` + response.status,
+                response.statusText
+            );
             return null;
         }
 
@@ -127,9 +158,12 @@ TAC.Utils = class TacUtils {
      */
     static async putAPI(url, body = null) {
         let response = await fetch(url, { method: "PUT", body: body });
-        
+
         if (response.status != 200) {
-            console.error(`Error putting to API endpoint "${url}": ` + response.status, response.statusText);
+            console.error(
+                `Error putting to API endpoint "${url}": ` + response.status,
+                response.statusText
+            );
             return null;
         }
 
@@ -144,14 +178,20 @@ TAC.Utils = class TacUtils {
      * @returns {Promise<String>} URL to a preview image for the extra network file, if available
      */
     static async getExtraNetworkPreviewURL(filename, type) {
-        const previewJSON = await this.fetchAPI(`tacapi/v1/thumb-preview/${filename}?type=${type}`, true, true);
+        const previewJSON = await this.fetchAPI(
+            `tacapi/v1/thumb-preview/${filename}?type=${type}`,
+            true,
+            true
+        );
         if (previewJSON?.url) {
             const properURL = `sd_extra_networks/thumb?filename=${previewJSON.url}`;
             if ((await fetch(properURL)).status == 200) {
                 return properURL;
             } else {
                 // create blob url
-                const blob = await (await fetch(`tacapi/v1/thumb-preview-blob/${filename}?type=${type}`)).blob();
+                const blob = await (
+                    await fetch(`tacapi/v1/thumb-preview-blob/${filename}?type=${type}`)
+                ).blob();
                 return URL.createObjectURL(blob);
             }
         } else {
@@ -159,7 +199,7 @@ TAC.Utils = class TacUtils {
         }
     }
 
-    static lastStyleRefresh = 0;
+    static #lastStyleRefresh = 0;
     /**
      * Refreshes the styles.txt file if it has changed since the last check.
      * Checks at most once per second to prevent spamming the API.
@@ -167,25 +207,24 @@ TAC.Utils = class TacUtils {
     static async refreshStyleNamesIfChanged() {
         // Only refresh once per second
         let currentTimestamp = new Date().getTime();
-        if (currentTimestamp - lastStyleRefresh < 1000) return;
-        this.lastStyleRefresh = currentTimestamp;
+        if (currentTimestamp - this.#lastStyleRefresh < 1000) return;
+        this.#lastStyleRefresh = currentTimestamp;
 
-        const response = await fetch(`tacapi/v1/refresh-styles-if-changed?${new Date().getTime()}`)
+        const response = await fetch(`tacapi/v1/refresh-styles-if-changed?${new Date().getTime()}`);
         if (response.status === 304) {
             // Not modified
         } else if (response.status === 200) {
             // Reload
-            TAC.Ext.QUEUE_FILE_LOAD.forEach(async fn => {
-                if (fn.toString().includes("styleNames"))
-                    await fn.call(null, true);
-            })
+            TAC.Ext.QUEUE_FILE_LOAD.forEach(async (fn) => {
+                if (fn.toString().includes("styleNames")) await fn.call(null, true);
+            });
         } else {
             // Error
             console.error(`Error refreshing styles.txt: ` + response.status, response.statusText);
         }
     }
 
-    static dbTimeOut;
+    static #dbTimeOut;
     /**
      * Generic debounce function to prevent spamming the autocompletion during fast typing
      * @param {Function} func - The function to debounce
@@ -194,21 +233,22 @@ TAC.Utils = class TacUtils {
      */
     static debounce = (func, wait = 300) => {
         return function (...args) {
-            if (this.dbTimeOut) {
-                clearTimeout(this.dbTimeOut);
+            // Caution: Since we are in an anonymous function, 'this' would not refer to the class
+            if (TacUtils.#dbTimeOut) {
+                clearTimeout(TacUtils.#dbTimeOut);
             }
 
-            this.dbTimeOut = setTimeout(() => {
+            TacUtils.#dbTimeOut = setTimeout(() => {
                 func.apply(this, args);
             }, wait);
-        }
-    }
+        };
+    };
 
     /**
      * Calculates the difference between two arrays (order-sensitive).
      * Fixes duplicates not being seen as changes in a normal filter function.
-     * @param {Array} a 
-     * @param {Array} b 
+     * @param {Array} a
+     * @param {Array} b
      * @returns {Array} The difference between the two arrays
      */
     static difference(a, b) {
@@ -219,9 +259,12 @@ TAC.Utils = class TacUtils {
             return a;
         }
 
-        return [...b.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) - 1),
-            a.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map())
-        )].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
+        return [
+            ...b.reduce(
+                (acc, v) => acc.set(v, (acc.get(v) || 0) - 1),
+                a.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map())
+            ),
+        ].reduce((acc, [v, count]) => acc.concat(Array(Math.abs(count)).fill(v)), []);
     }
 
     /**
@@ -234,17 +277,17 @@ TAC.Utils = class TacUtils {
     static flatten(obj, roots = [], sep = ".") {
         return Object.keys(obj).reduce(
             (memo, prop) =>
-            Object.assign(
-                // create a new object
-                {},
-                // include previously returned object
-                memo,
-                Object.prototype.toString.call(obj[prop]) === "[object Object]"
-                ? // keep working if value is an object
-                    this.flatten(obj[prop], roots.concat([prop]), sep)
-                : // include current prop and value and prefix prop with the roots
-                    { [roots.concat([prop]).join(sep)]: obj[prop] }
-            ),
+                Object.assign(
+                    // create a new object
+                    {},
+                    // include previously returned object
+                    memo,
+                    Object.prototype.toString.call(obj[prop]) === "[object Object]"
+                        ? // keep working if value is an object
+                          this.flatten(obj[prop], roots.concat([prop]), sep)
+                        : // include current prop and value and prefix prop with the roots
+                          { [roots.concat([prop]).join(sep)]: obj[prop] }
+                ),
             {}
         );
     }
@@ -278,37 +321,39 @@ TAC.Utils = class TacUtils {
     /**
      * Utility function to map the use count array from the database to a more readable format,
      * since FastAPI omits the field names in the response.
-     * @param {Array} useCounts 
+     * @param {Array} useCounts
      * @param {Boolean} posAndNeg - Whether to include negative counts
      */
     static mapUseCountArray(useCounts, posAndNeg = false) {
-        return useCounts.map(useCount => {
+        return useCounts.map((useCount) => {
             if (posAndNeg) {
                 return {
-                    "name": useCount[0],
-                    "type": useCount[1],
-                    "count": useCount[2],
-                    "negCount": useCount[3],
-                    "lastUseDate": useCount[4]
-                }
+                    name: useCount[0],
+                    type: useCount[1],
+                    count: useCount[2],
+                    negCount: useCount[3],
+                    lastUseDate: useCount[4],
+                };
             }
             return {
-                "name": useCount[0],
-                "type": useCount[1],
-                "count": useCount[2],
-                "lastUseDate": useCount[3]
-            }
+                name: useCount[0],
+                type: useCount[1],
+                count: useCount[2],
+                lastUseDate: useCount[3],
+            };
         });
     }
     /**
      * Calls API endpoint to increase the count of a tag in the database.
      * Not awaited as it is non-critical and can be executed as fire-and-forget.
-     * @param {String} tagName - The name of the tag 
+     * @param {String} tagName - The name of the tag
      * @param {TAC.ResultType} type - The type of the tag as mapped in {@link TAC.ResultType}
      * @param {Boolean} negative - Whether the tag was typed in a negative prompt field
      */
     static increaseUseCount(tagName, type, negative = false) {
-        this.postAPI(`tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`);
+        this.postAPI(
+            `tacapi/v1/increase-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`
+        );
     }
 
     /**
@@ -319,7 +364,11 @@ TAC.Utils = class TacUtils {
      * @returns {Promise<Number>} The use count of the tag
      */
     static async getUseCount(tagName, type, negative = false) {
-        const response = await this.fetchAPI(`tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`, true, false);
+        const response = await this.fetchAPI(
+            `tacapi/v1/get-use-count?tagname=${tagName}&ttype=${type}&neg=${negative}`,
+            true,
+            false
+        );
         // Guard for no db
         if (response == null) return null;
         // Result
@@ -335,8 +384,8 @@ TAC.Utils = class TacUtils {
      */
     static async getUseCounts(tagNames, types, negative = false) {
         // While semantically weird, we have to use POST here for the body, as urls are limited in length
-        const body = JSON.stringify({"tagNames": tagNames, "tagTypes": types, "neg": negative});
-        const response = await this.postAPI(`tacapi/v1/get-use-count-list`, body)
+        const body = JSON.stringify({ tagNames: tagNames, tagTypes: types, neg: negative });
+        const response = await this.postAPI(`tacapi/v1/get-use-count-list`, body);
         // Guard for no db
         if (response == null) return null;
         // Results
@@ -351,7 +400,7 @@ TAC.Utils = class TacUtils {
         // Guard for no db
         if (response == null) return null;
         // Results
-            return this.mapUseCountArray(response["result"], true);
+        return this.mapUseCountArray(response["result"], true);
     }
     /**
      * Resets the use count of the given tag back to zero.
@@ -361,20 +410,21 @@ TAC.Utils = class TacUtils {
      * @param {Boolean} resetNegCount - Whether to reset the negative count
      */
     static async resetUseCount(tagName, type, resetPosCount, resetNegCount) {
-        await this.putAPI(`tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`);
+        await this.putAPI(
+            `tacapi/v1/reset-use-count?tagname=${tagName}&ttype=${type}&pos=${resetPosCount}&neg=${resetNegCount}`
+        );
     }
 
     /**
      * Creates a table to display an overview of tag usage statistics.
      * Currently unused.
-     * @param {Array} tagCounts - The use count array to use, mapped to named fields by {@link mapUseCountArray} 
-     * @returns 
+     * @param {Array} tagCounts - The use count array to use, mapped to named fields by {@link mapUseCountArray}
+     * @returns
      */
     static createTagUsageTable(tagCounts) {
         // Create table
         let tagTable = document.createElement("table");
-        tagTable.innerHTML =
-        `<thead>
+        tagTable.innerHTML = `<thead>
             <tr>
                 <td>Name</td>
                 <td>Type</td>
@@ -383,14 +433,14 @@ TAC.Utils = class TacUtils {
                 <td>Last used</td>
             </tr>
         </thead>`;
-        tagTable.id = "tac_tagUsageTable"
+        tagTable.id = "tac_tagUsageTable";
 
-        tagCounts.forEach(t => {
+        tagCounts.forEach((t) => {
             let tr = document.createElement("tr");
-            
+
             // Fill values
-            let values = [t.name, t.type-1, t.count, t.negCount, t.lastUseDate]
-            values.forEach(v => {
+            let values = [t.name, t.type - 1, t.count, t.negCount, t.lastUseDate];
+            values.forEach((v) => {
                 let td = document.createElement("td");
                 td.innerText = v;
                 tr.append(td);
@@ -400,8 +450,8 @@ TAC.Utils = class TacUtils {
             delButton.innerText = "🗑️";
             delButton.title = "Reset count";
             tr.append(delButton);
-            
-            tagTable.append(tr)
+
+            tagTable.append(tr);
         });
 
         return tagTable;
@@ -409,8 +459,8 @@ TAC.Utils = class TacUtils {
 
     /**
      * Sliding window function to get possible combination groups of an array
-     * @param {Array} inputArray 
-     * @param {Number} size 
+     * @param {Array} inputArray
+     * @param {Number} size
      * @returns {Array[]} ngram permutations of the input array
      */
     static toNgrams(inputArray, size) {
@@ -422,24 +472,27 @@ TAC.Utils = class TacUtils {
 
     /**
      * Escapes a string for use in a regular expression.
-     * @param {String} string 
-     * @param {Boolean} wildcardMatching - Wildcard matching mode doesn't escape asterisks and question marks as they are handled separately there. 
+     * @param {String} string
+     * @param {Boolean} wildcardMatching - Wildcard matching mode doesn't escape asterisks and question marks as they are handled separately there.
      * @returns {String} The escaped string
      */
     static escapeRegExp(string, wildcardMatching = false) {
         if (wildcardMatching) {
             // Escape all characters except asterisks and ?, which should be treated separately as placeholders.
-            return string.replace(/[-[\]{}()+.,\\^$|#\s]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+            return string
+                .replace(/[-[\]{}()+.,\\^$|#\s]/g, "\\$&")
+                .replace(/\*/g, ".*")
+                .replace(/\?/g, ".");
         }
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
     }
     /**
      * Escapes a string for use in HTML to not break formatting.
-     * @param {String} unsafeText 
+     * @param {String} unsafeText
      * @returns {String} The escaped HTML string
      */
     static escapeHTML(unsafeText) {
-        let div = document.createElement('div');
+        let div = document.createElement("div");
         div.textContent = unsafeText;
         return div.innerHTML;
     }
@@ -447,7 +500,7 @@ TAC.Utils = class TacUtils {
     /** Updates {@link TAC.Globals.currentModelName} to the current model */
     static updateModelName() {
         let sdm = gradioApp().querySelector("#setting_sd_model_checkpoint");
-        let modelDropdown =  sdm?.querySelector("input") || sdm?.querySelector("select");
+        let modelDropdown = sdm?.querySelector("input") || sdm?.querySelector("select");
         if (modelDropdown) {
             TAC.Globals.currentModelName = modelDropdown.value;
         } else {
@@ -461,7 +514,7 @@ TAC.Utils = class TacUtils {
      * From https://stackoverflow.com/a/61975440.
      * Detects value changes in an element that were triggered programmatically
      * @param {HTMLElement} element - The DOM element to observe
-     * @param {String} property - The object property to observe 
+     * @param {String} property - The object property to observe
      * @param {Function} callback - The callback function to call when the property changes
      * @param {Number} delay - The delay in milliseconds to wait before calling the callback
      */
@@ -470,7 +523,7 @@ TAC.Utils = class TacUtils {
         if (elementPrototype.hasOwnProperty(property)) {
             let descriptor = Object.getOwnPropertyDescriptor(elementPrototype, property);
             Object.defineProperty(element, property, {
-                get: function() {
+                get: function () {
                     return descriptor.get.apply(this, arguments);
                 },
                 set: function () {
@@ -481,7 +534,7 @@ TAC.Utils = class TacUtils {
                         setTimeout(callback.bind(this, oldValue, newValue), delay);
                     }
                     return newValue;
-                }
+                },
             });
         }
     }
@@ -496,18 +549,16 @@ TAC.Utils = class TacUtils {
         const textSort = (a, b, reverse = false) => {
             // Assign keys so next sort is faster
             if (!a.sortKey) {
-                a.sortKey = a.type === TAC.ResultType.chant
-                    ? a.aliases
-                    : a.text;
+                a.sortKey = a.type === TAC.ResultType.chant ? a.aliases : a.text;
             }
             if (!b.sortKey) {
-                b.sortKey = b.type === TAC.ResultType.chant
-                    ? b.aliases
-                    : b.text;
+                b.sortKey = b.type === TAC.ResultType.chant ? b.aliases : b.text;
             }
 
-            return reverse ? b.sortKey.localeCompare(a.sortKey) : a.sortKey.localeCompare(b.sortKey);
-        }
+            return reverse
+                ? b.sortKey.localeCompare(a.sortKey)
+                : a.sortKey.localeCompare(b.sortKey);
+        };
         const numericSort = (a, b, reverse = false) => {
             const noKey = reverse ? "-1" : Number.MAX_SAFE_INTEGER;
             let aParsed = parseFloat(a.sortKey || noKey);
@@ -516,9 +567,9 @@ TAC.Utils = class TacUtils {
             if (aParsed === bParsed) {
                 return textSort(a, b, false);
             }
-            
+
             return reverse ? bParsed - aParsed : aParsed - bParsed;
-        }
+        };
 
         return (a, b) => {
             switch (criterion) {
@@ -529,7 +580,7 @@ TAC.Utils = class TacUtils {
                 default:
                     return textSort(a, b);
             }
-        }
+        };
     }
 
     /**
@@ -544,13 +595,11 @@ TAC.Utils = class TacUtils {
         }
     }
     /** The same as {@link processQueue}, but can accept and return results from the queued functions. */
-    static async processQueueReturn(queue, context, ...args)
-    {
+    static async processQueueReturn(queue, context, ...args) {
         let qeueueReturns = [];
         for (let i = 0; i < queue.length; i++) {
             let returnValue = await queue[i].call(context, ...args);
-            if (returnValue)
-                qeueueReturns.push(returnValue);
+            if (returnValue) qeueueReturns.push(returnValue);
         }
         return qeueueReturns;
     }
@@ -562,14 +611,14 @@ TAC.Utils = class TacUtils {
      */
     static async processParsers(textArea, prompt) {
         // Get all parsers that have a successful trigger condition
-        let matchingParsers = TAC.Ext.PARSERS.filter(parser => parser.triggerCondition());
+        let matchingParsers = TAC.Ext.PARSERS.filter((parser) => parser.triggerCondition());
         // Guard condition
         if (matchingParsers.length === 0) {
             return null;
         }
 
-        let parseFunctions = matchingParsers.map(parser => parser.parse);
+        let parseFunctions = matchingParsers.map((parser) => parser.parse);
         // Process them and return the results
         return await this.processQueueReturn(parseFunctions, null, textArea, prompt);
     }
-}
+};
