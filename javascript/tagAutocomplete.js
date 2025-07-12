@@ -31,7 +31,8 @@ const autocompleteCSS = `
         position: absolute;
         z-index: 999;
         max-width: calc(100% - 1.5rem);
-        flex-direction: column; /* Ensure children stack vertically */
+        flex-wrap: wrap;
+        gap: 10px;
     }
     .autocompleteResults {
         background-color: var(--results-bg) !important;
@@ -49,7 +50,6 @@ const autocompleteCSS = `
     .sideInfo {
         display: none;
         position: relative;
-        margin-left: 10px;
         height: 18rem;
         max-width: 16rem;
     }
