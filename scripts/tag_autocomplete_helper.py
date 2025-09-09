@@ -98,9 +98,9 @@ def sort_models(model_list, sort_method = None, name_has_subpath = False):
     # During merging on the JS side we need to re-sort anyway, so here only the sort criteria are calculated.
     # The list itself doesn't need to get sorted at this point.
     if len(model_list[0]) > 2:
-        results = [f'{name},"{sorter(path, name, name_has_subpath)}",{meta}' for path, name, meta in model_list]
+        results = [f'"{name}","{sorter(path, name, name_has_subpath)}",{meta}' for path, name, meta in model_list]
     else:
-        results = [f'{name},"{sorter(path, name, name_has_subpath)}"' for path, name in model_list]
+        results = [f'"{name}","{sorter(path, name, name_has_subpath)}"' for path, name in model_list]
     return results
 
 
