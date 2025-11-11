@@ -748,7 +748,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return Response(status_code=404)
 
         try:
-            json_candidates = glob.glob(base_path.as_posix() + f"/**/{filename}.json", recursive=True)
+            json_candidates = glob.glob(base_path.as_posix() + f"/**/{glob.escape(filename)}.json", recursive=True)
             if json_candidates is not None and len(json_candidates) > 0 and Path(json_candidates[0]).is_file():
                 return FileResponse(json_candidates[0])
         except Exception as e:
@@ -759,7 +759,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return Response(status_code=404)
 
         try:
-            img_glob = glob.glob(base_path.as_posix() + f"/**/{filename}.*", recursive=True)
+            img_glob = glob.glob(base_path.as_posix() + f"/**/{glob.escape(filename)}.*", recursive=True)
             img_candidates = [img for img in img_glob if Path(img).suffix in [".png", ".jpg", ".jpeg", ".webp", ".gif"] and Path(img).is_file()]
             if img_candidates is not None and len(img_candidates) > 0:
                 if blob:
@@ -788,7 +788,7 @@ def api_tac(_: gr.Blocks, app: FastAPI):
 
     @app.get("/tacapi/v1/lora-cached-hash/{lora_name}")
     async def get_lora_cached_hash(lora_name: str):
-        path_glob = glob.glob(LORA_PATH.as_posix() + f"/**/{lora_name}.*", recursive=True)
+        path_glob = glob.glob(LORA_PATH.as_posix() + f"/**/{glob.escape(lora_name)}.*", recursive=True)
         paths = [lora for lora in path_glob if Path(lora).suffix in [".safetensors", ".ckpt", ".pt"] and Path(lora).is_file()]
         if paths is not None and len(paths) > 0:
             path = paths[0]
