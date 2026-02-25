@@ -37,14 +37,14 @@ except ImportError:
 if not IS_FORGE_CLASSIC:
     try:
         HYP_PATH = Path(shared.cmd_opts.hypernetwork_dir).absolute()
-    except AttributeError:
+    except (AttributeError, TypeError):
         HYP_PATH = None
 else:
     HYP_PATH = None
 
 try:
     LORA_PATH = Path(shared.cmd_opts.lora_dir).absolute()
-except AttributeError:
+except (AttributeError, TypeError):
     LORA_PATH = None
 
 try:
@@ -52,7 +52,7 @@ try:
         LYCO_PATH = Path(shared.cmd_opts.lyco_dir_backcompat).absolute()
     except:
         LYCO_PATH = Path(shared.cmd_opts.lyco_dir).absolute() # attempt original non-backcompat path
-except AttributeError:
+except (AttributeError, TypeError):
     LYCO_PATH = None
 
 
