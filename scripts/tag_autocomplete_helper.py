@@ -157,7 +157,8 @@ def parse_dynamic_prompt_format(yaml_wildcards, data, path, root):
         for key, value in d.copy().items():
             if isinstance(value, dict):
                 recurse_dict(value)
-            elif not (isinstance(value, list) and all(isinstance(v, str) for v in value)):
+            elif (not isinstance(value, str) and  # a string value is treated as a list of one item
+                    not (isinstance(value, list) and all(isinstance(v, str) for v in value))):
                 del d[key]
 
     try:
