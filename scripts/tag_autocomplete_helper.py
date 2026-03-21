@@ -151,7 +151,7 @@ def parse_umi_format(umi_tags, data):
         count += 1
 
 
-def parse_dynamic_prompt_format(yaml_wildcards, data, path):
+def parse_dynamic_prompt_format(yaml_wildcards, data, path, root):
     # Recurse subkeys, delete those without string lists as values
     def recurse_dict(d: dict):
         for key, value in d.copy().items():
@@ -162,6 +162,9 @@ def parse_dynamic_prompt_format(yaml_wildcards, data, path):
 
     try:
         recurse_dict(data)
+        # prepend folder parts
+        for part in reversed(path.relative_to(root).parent.parts):
+            data = {part: data}
         # Add to yaml_wildcards
         yaml_wildcards[path.name] = data
     except:
@@ -172,14 +175,14 @@ def get_yaml_wildcards():
     """Returns a list of all tags found in extension YAML files found under a Tags: key."""
     yaml_files = []
     for path in WILDCARD_EXT_PATHS:
-        yaml_files.extend(p for p in path.rglob("*.yml") if p.is_file())
-        yaml_files.extend(p for p in path.rglob("*.yaml") if p.is_file())
+        yaml_files.extend((p, path) for p in path.rglob("*.yml") if p.is_file())
+        yaml_files.extend((p, path) for p in path.rglob("*.yaml") if p.is_file())
 
     yaml_wildcards = {}
 
     umi_tags = {} # { tag: count }
 
-    for path in yaml_files:
+    for path, root in yaml_files:
         try:
             with open(path, encoding="utf8") as file:
                 data = yaml.safe_load(file)
@@ -187,7 +190,7 @@ def get_yaml_wildcards():
                     if (is_umi_format(data)):
                         parse_umi_format(umi_tags, data)
                     else:
-                        parse_dynamic_prompt_format(yaml_wildcards, data, path)
+                        parse_dynamic_prompt_format(yaml_wildcards, data, path, root)
                 else:
                     print('No data found in ' + path.name)
         except (yaml.YAMLError, UnicodeDecodeError, AttributeError, TypeError) as e:
