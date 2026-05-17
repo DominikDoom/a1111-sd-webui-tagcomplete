@@ -1,7 +1,13 @@
 import sqlite3
+import sys
 from contextlib import contextmanager
+from pathlib import Path
 
-from scripts.shared_paths import TAGS_PATH
+try:
+    from scripts.shared_paths import TAGS_PATH
+except ModuleNotFoundError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from shared_paths import TAGS_PATH
 
 db_file = TAGS_PATH.joinpath("tag_frequency.db")
 timeout = 30
