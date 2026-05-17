@@ -17,10 +17,17 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from modules import hashes, script_callbacks, sd_models, shared
 from pydantic import BaseModel
 
-from scripts.model_keyword_support import (get_lora_simple_hash,
-                                           load_hash_cache, update_hash_cache,
-                                           write_model_keyword_path)
-from scripts.shared_paths import *
+try:
+    from scripts.model_keyword_support import (get_lora_simple_hash,
+                                               load_hash_cache, update_hash_cache,
+                                               write_model_keyword_path)
+    from scripts.shared_paths import *
+except ModuleNotFoundError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from model_keyword_support import (get_lora_simple_hash,
+                                       load_hash_cache, update_hash_cache,
+                                       write_model_keyword_path)
+    from shared_paths import *
 
 try:
     from modules import sd_hijack
