@@ -453,6 +453,14 @@ def update_json_files(*args, **kwargs):
     json_files = files
     json_files_withnone = ["None"] + files
 
+js_files = []
+js_files_withnone = []
+def update_js_files(*args, **kwargs):
+    """Returns a list of all potential js data files"""
+    global js_files, js_files_withnone
+    files = [str(j.relative_to(TAGS_PATH)) for j in TAGS_PATH.glob("*.js") if j.is_file()]
+    js_files = files
+    js_files_withnone = ["None"] + files
 
 # Write the tag base path to a fixed location temporary file
 # to enable the javascript side to find our files regardless of extension folder name
@@ -462,6 +470,7 @@ if not STATIC_TEMP_PATH.exists():
 write_tag_base_path()
 update_tag_files()
 update_json_files()
+update_js_files()
 
 # Check if the temp path exists and create it if not
 if not TEMP_PATH.exists():
@@ -516,6 +525,23 @@ def write_style_names(*args, **kwargs):
     if styles:
         write_to_temp_file('styles.txt', styles)
 
+def process_anima_style_data():
+    import re
+    data_file = getattr(shared.opts, 'tac_animaStyle.dataFile', 'None')
+    if not data_file or data_file == 'None':
+        return
+    file_path = TAGS_PATH / data_file
+    if not file_path.exists():
+        return
+    try:
+        content = file_path.read_text(encoding='utf-8')
+        content = re.sub(r'^const\s+\w+\s*=\s*', '', content.strip()).rstrip(';').strip()
+        data = json.loads(content)
+        simplified = [{"name": item["name"], "post_count": item.get("post_count", 0)} for item in data]
+        (TEMP_PATH / "anima_styles.json").write_text(json.dumps(simplified), encoding='utf-8')
+    except Exception as e:
+        print(f"TAC: Error processing Anima Style data.js: {e}")
+
 def write_temp_files(skip_wildcard_refresh = False):
     # Write wildcards to wc.txt if found
     if WILDCARD_PATH.exists() and not skip_wildcard_refresh:
@@ -565,6 +591,8 @@ def write_temp_files(skip_wildcard_refresh = False):
 
     if shared.prompt_styles is not None:
         write_style_names()
+
+    process_anima_style_data()
 
 write_temp_files()
 
@@ -623,6 +651,8 @@ def on_ui_settings():
         "tac_showExtraNetworkPreviews": shared.OptionInfo(True, "Show preview thumbnails for extra networks if available"),
         "tac_modelSortOrder": shared.OptionInfo("Name", "Model sort order", gr.Dropdown, lambda: {"choices": list(sort_criteria.keys())}).info("Order for extra network models and wildcards in dropdown"),
         "tac_useStyleVars": shared.OptionInfo(False, "Search for webui style names").info("Suggests style names from the webui dropdown with '$'. Currently requires a secondary extension like <a href=\"https://github.com/SirVeggie/extension-style-vars\" target=\"_blank\">style-vars</a> to actually apply the styles before generating."),
+        "tac_animaStyle.enabled": shared.OptionInfo(False, "Enable Anima style tag completion with '@'").info("Suggests type:1 (Artist) tags when '@' is typed. Uses data.js if specified below, otherwise falls back to CSV artist tags."),
+        "tac_animaStyle.dataFile": shared.OptionInfo("None", "Anima-Style-Explorer data.js filename", gr.Dropdown, lambda: {"choices": js_files_withnone}, refresh=update_js_files).info("Style tags via '@' for the Anima model. Download data.js from Anima-Style-Explorer (MIT License, Copyright (c) 2026 ThetaCursed) and place it in the tags folder.").needs_restart(),
         # Frequency sorting settings
         "tac_frequencySort": shared.OptionInfo(True, "Locally record tag usage and sort frequent tags higher").info("Will also work for extra networks, keeping the specified base order"),
         "tac_frequencyFunction": shared.OptionInfo("Logarithmic (weak)", "Function to use for frequency sorting", gr.Dropdown, lambda: {"choices": list(frequency_sort_functions.keys())}).info("; ".join([f'<b>{key}</b>: {val}' for key, val in frequency_sort_functions.items()])),

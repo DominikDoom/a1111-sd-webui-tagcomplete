@@ -237,6 +237,7 @@ async function syncOptions() {
         frequencyRecommendCap: opts["tac_frequencyRecommendCap"],
         frequencyIncludeAlias: opts["tac_frequencyIncludeAlias"],
         useStyleVars: opts["tac_useStyleVars"],
+        useAnimaStyles: opts["tac_animaStyle.enabled"],
         // Insertion related settings
         replaceUnderscores: opts["tac_replaceUnderscores"],
         replaceUnderscoresExclusionList: opts["tac_undersocreReplacementExclusionList"],

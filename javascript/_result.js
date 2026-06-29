@@ -13,7 +13,8 @@ const ResultType = Object.freeze({
     "lora": 9,
     "lyco": 10,
     "chant": 11,
-    "styleName": 12
+    "styleName": 12,
+    "animaStyle": 13
 });
 
 // Class to hold result data and annotations to make it clearer to use

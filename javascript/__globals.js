@@ -20,6 +20,7 @@ var lycos = [];
 var modelKeywordDict = new Map();
 var chants = [];
 var styleNames = [];
+var animaStyles = [];
 
 // Selected model info for black/whitelisting
 var currentModelHash = "";
