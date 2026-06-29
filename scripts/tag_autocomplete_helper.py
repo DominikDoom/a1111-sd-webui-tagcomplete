@@ -534,7 +534,7 @@ def process_anima_style_data():
     if not file_path.exists():
         return
     try:
-        content = file_path.read_text(encoding='utf-8')
+        content = file_path.read_text(encoding='utf-8-sig')
         content = re.sub(r'^const\s+\w+\s*=\s*', '', content.strip()).rstrip(';').strip()
         data = json.loads(content)
         simplified = [{"name": item["name"], "post_count": item.get("post_count", 0)} for item in data]
