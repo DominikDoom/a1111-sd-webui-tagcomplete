@@ -789,6 +789,10 @@ def get_style_mtime():
 last_style_mtime = get_style_mtime()
 
 def api_tac(_: gr.Blocks, app: FastAPI):
+    # Run here (after on_ui_settings) so shared.opts has the user's saved value.
+    # The module-level write_temp_files() call runs before settings are registered,
+    # so process_anima_style_data() silently no-ops there for this setting.
+    process_anima_style_data()
     async def get_json_info(base_path: Path, filename: str = None):
         if base_path is None or (not base_path.exists()):
             return Response(status_code=404)
