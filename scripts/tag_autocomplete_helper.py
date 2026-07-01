@@ -639,8 +639,8 @@ def on_ui_settings():
         "tac_modelKeywordCompletion": shared.OptionInfo("Never", "Try to add known trigger words for LORA/LyCO models", gr.Dropdown, lambda: {"choices": ["Never","Only user list","Always"]}).info("Will use & prefer the native activation keywords settable in the extra networks UI. Other functionality requires the <a href=\"https://github.com/mix1009/model-keyword\" target=\"_blank\">model-keyword</a> extension to be installed, but will work with it disabled.").needs_restart(),
         "tac_modelKeywordLocation": shared.OptionInfo("Start of prompt", "Where to insert the trigger keyword", gr.Dropdown, lambda: {"choices": ["Start of prompt","End of prompt","Before LORA/LyCO"]}).info("Only relevant if the above option is enabled"),
         "tac_wildcardCompletionMode": shared.OptionInfo("To next folder level", "How to complete nested wildcard paths", gr.Dropdown, lambda: {"choices": ["To next folder level","To first difference","Always fully"]}).info("e.g. \"hair/colours/light/...\""),
-        "tac_artistAtTrigger": shared.OptionInfo(False, "Show Artist tags (type:1) when typing '@'").info("Filters completions to Artist tags from the loaded tag set. Typing '@' alone lists all Artist tags."),
-        "tac_artistInsertAt": shared.OptionInfo(False, "Automatically add '@' before Artist tags when inserting").info("Works with all Artist tags (type:1). For example, this is the recommended prompt format for Anima models."),
+        "tac_artistAtTrigger": shared.OptionInfo(False, "Show Artist tags when typing '@'").info("Filters completions to Artist tags from the loaded tag set."),
+        "tac_artistInsertAt": shared.OptionInfo(False, "Automatically add '@' before Artist tags when inserting").info("Works with all Artist tags. For example, this is the recommended prompt format for Anima models."),
         # Alias settings
         "tac_alias.searchByAlias": shared.OptionInfo(True, "Search by alias"),
         "tac_alias.onlyShowAlias": shared.OptionInfo(False, "Only show alias"),
