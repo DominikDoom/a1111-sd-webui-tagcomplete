@@ -238,6 +238,8 @@ async function syncOptions() {
         frequencyIncludeAlias: opts["tac_frequencyIncludeAlias"],
         useStyleVars: opts["tac_useStyleVars"],
         // Insertion related settings
+        artistAtTrigger: opts["tac_artistAtTrigger"],
+        artistInsertAt: opts["tac_artistInsertAt"],
         replaceUnderscores: opts["tac_replaceUnderscores"],
         replaceUnderscoresExclusionList: opts["tac_undersocreReplacementExclusionList"],
         escapeParentheses: opts["tac_escapeParentheses"],
@@ -452,6 +454,11 @@ async function insertTextAtCursor(textArea, result, tagword, tabCompletedWithout
                 .replaceAll("[", "\\[")
                 .replaceAll("]", "\\]");
         }
+    }
+
+    // Prepend '@' to artist (type:1) tags if enabled, after sanitization so it composes with the underscore/parenthesis settings (parseInt handles category as both "1" and 1).
+    if (TAC_CFG.artistInsertAt && parseInt(result.category) === 1 && !sanitizedText.startsWith("@")) {
+        sanitizedText = `@${sanitizedText}`;
     }
 
     if ((tagType === ResultType.wildcardFile || tagType === ResultType.yamlWildcard)
