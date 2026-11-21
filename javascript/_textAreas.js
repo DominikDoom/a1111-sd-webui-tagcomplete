@@ -48,6 +48,7 @@ const thirdParty = {
         "base": "#txt2img_script_container",
         "hasIds": true,
         "onDemand": true,
+        "onDemandType": "accordion",
         "selectors": [
             "[id^=MD-t2i][id$=prompt] textarea",
             "[id^=MD-t2i][id$=prompt] input[type='text']"
@@ -57,6 +58,7 @@ const thirdParty = {
         "base": "#img2img_script_container",
         "hasIds": true,
         "onDemand": true,
+        "onDemandType": "accordion",
         "selectors": [
             "[id^=MD-i2i][id$=prompt] textarea",
             "[id^=MD-i2i][id$=prompt] input[type='text']"
@@ -66,6 +68,7 @@ const thirdParty = {
         "base": "#txt2img_script_container",
         "hasIds": true,
         "onDemand": true,
+        "onDemandType": "accordion",
         "selectors": [
             "[id^=script_txt2img_adetailer_ad_prompt] textarea",
             "[id^=script_txt2img_adetailer_ad_negative_prompt] textarea"
@@ -75,6 +78,7 @@ const thirdParty = {
         "base": "#img2img_script_container",
         "hasIds": true,
         "onDemand": true,
+        "onDemandType": "accordion",
         "selectors": [
             "[id^=script_img2img_adetailer_ad_prompt] textarea",
             "[id^=script_img2img_adetailer_ad_negative_prompt] textarea"
@@ -92,6 +96,42 @@ const thirdParty = {
         "hasIds": false,
         "selectors": [
             "Tag Prompt"
+        ]
+    },
+    "forge-neo-json-builder-t2i-static": {
+        "base": "#txt2img_json_builder .jb-side",
+        "hasIds": true,
+        "selectors": [
+            "#jb-sum-caption",
+            "#jb-sum-meta",
+            "#jb-sum-extra",
+        ]
+    },
+    "forge-neo-json-builder-i2i-static": {
+        "base": "#img2img_json_builder .jb-side",
+        "hasIds": true,
+        "selectors": [
+            "#jb-sum-caption",
+            "#jb-sum-meta",
+            "#jb-sum-extra",
+        ]
+    },
+    "forge-neo-json-builder-t2i-dynamic": {
+        "base": "#txt2img_json_builder .jb-list",
+        "hasIds": true,
+        "onDemand": true,
+        "onDemandType": "list",
+        "selectors": [
+            ".jb-item-caption"
+        ]
+    },
+    "forge-neo-json-builder-i2i-dynamic": {
+        "base": "#img2img_json_builder .jb-list",
+        "hasIds": true,
+        "onDemand": true,
+        "onDemandType": "list",
+        "selectors": [
+            ".jb-item-caption"
         ]
     }
 }
@@ -127,10 +167,15 @@ function addOnDemandObservers(setupFunction) {
         let base = gradioApp().querySelector(entry.base);
         if (!base) continue;
 
-        let accordions = [...base?.querySelectorAll(".gradio-accordion")];
-        if (!accordions) continue;
+        // Depending on type, we either observe the base element
+        // or need to find accordions inside it first
+        let observerBaseItems = entry.onDemandType === "accordion"
+            ? [...base?.querySelectorAll(".gradio-accordion")]
+            : [base];
 
-        accordions.forEach(acc => {
+        if (!observerBaseItems) continue;
+
+        observerBaseItems.forEach(acc => {
             let accObserver = new MutationObserver((mutationList, observer) => {
                 for (const mutation of mutationList) {
                     if (mutation.type === "childList") {

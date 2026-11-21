@@ -150,6 +150,11 @@ const autocompleteCSS = `
     .acListItem .acPathPart:nth-child(3n+3) {
         color: var(--live-translation-color-3);
     }
+    
+    /* This is a fix for cursor following breaking in the forge-neo json builder */
+    .jb-side > .jb-section:not(.jb-list-section):not(.jb-submit), .jb-item, .jb-half:has(.autocomplete) {
+        position: relative;
+    }
 `;
 
 async function loadTags(c) {
