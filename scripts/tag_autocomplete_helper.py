@@ -4,6 +4,7 @@
 import glob
 import importlib
 import json
+import os
 import sqlite3
 import sys
 import urllib.parse
@@ -841,11 +842,19 @@ def api_tac(_: gr.Blocks, app: FastAPI):
             return Response(status_code=404)
 
         base = Path(basepath)
-        if base is None or (not base.exists()):
+        if not base.is_absolute():
+            base = FILE_DIR.joinpath(base)
+        base = base.resolve()
+        # Only allow the known wildcard folders as base paths
+        allowed_bases = [WILDCARD_PATH] + list(WILDCARD_EXT_PATHS or [])
+        if base not in [Path(p).resolve() for p in allowed_bases] or (not base.exists()):
             return Response(status_code=404)
 
         try:
-            wildcard_path = base.joinpath(filename)
+            wildcard_path = Path(os.path.normpath(base.joinpath(filename)))
+            # Prevent path traversal out of the wildcard folder
+            if not wildcard_path.is_relative_to(base) or wildcard_path.suffix.lower() != ".txt":
+                return Response(status_code=404)
             if wildcard_path.exists() and wildcard_path.is_file():
                 return FileResponse(wildcard_path)
             else:
